@@ -18,10 +18,10 @@ J'aimerai ajouté dans les regles de l'agent d'écrire dans un fichier resume.md
 
 
 - - - - -
-Prompt : 
-Model : 
-Nombre de crédit utilisé : 
-Resultat : 
+Prompt :
+Model :
+Nombre de crédit utilisé :
+Resultat :
 - - - - -
 Resultat : Regle ajoutee aux deux agents et fichier resume.md cree avec le format demande. Le modele n'etait pas expose par la session.
 - - - - -
@@ -58,7 +58,7 @@ Nombre de crédit utilisé : Non disponible
 
 Dans resume.md aurais tu une solution ?
 
-J'aimerai également supprimer le dossier .claude et déplacer 
+J'aimerai également supprimer le dossier .claude et déplacer
 "## Regles frontend
 
 - Utiliser `src/api/filesApi.ts` pour les appels HTTP et Axios, jamais `fetch` directement.
@@ -66,13 +66,13 @@ J'aimerai également supprimer le dossier .claude et déplacer
 - Ne proposer une action de download que pour un fichier `CLEAN`.
 - Utiliser `StyleSheet` uniquement si le code devient React Native ; pour ce projet web, garder les styles dans `src/styles.css`."
 
-Car cette partie est pas spécifique à l'agent, il faudrait le mettre dans instruction. donc créer le dossier instructions et le fichier adéquat 
+Car cette partie est pas spécifique à l'agent, il faudrait le mettre dans instruction. donc créer le dossier instructions et le fichier adéquat
 Resultat : Modele epingle dans l'agent, consommation premium clarifiee, regles frontend deplacees dans .github/instructions et copie .claude supprimee.
 - - - - -
 
 - - - - -
 Prompt :
-Dans ce cas là supprime model et nombre de crédit du resume.md 
+Dans ce cas là supprime model et nombre de crédit du resume.md
 
 Ensuite ajoute un mcp lucid-icon. Et ajoute la regle qui faut pour des icones toujours utilisé ceci.
 Resultat : Les champs de modele et de credit ont ete retires des metadonnees du journal, le MCP `lucid-icon` lance `lucide-mcp`, et les regles frontend imposent son utilisation pour choisir les icones.
@@ -80,7 +80,7 @@ Resultat : Les champs de modele et de credit ont ete retires des metadonnees du 
 
 - - - - -
 Prompt :
-Peux tu etre plus precis sur la typographie, les titres, text basique, grad etc... 
+Peux tu etre plus precis sur la typographie, les titres, text basique, grad etc...
 
 J'aimerai ajouter ca pour les regles test du back : # Testing Guidelines
 
@@ -284,7 +284,7 @@ public class OrderService {
 - Google Java Style Guide
 - Effective Java, Joshua Bloch
 
-J'aimerai aussi avec un context marker tout le temps utilisé par l'agent : 
+J'aimerai aussi avec un context marker tout le temps utilisé par l'agent :
 ## Core Guidelines
 You MUST strictly adhere to the following guidelines:
 
@@ -324,25 +324,25 @@ Resultat : Showcase frontend implementee avec SearchBar, Button, Tag, Row, Colum
 
 - - - - -
 Prompt :
-/plan-approve-implement 
+/plan-approve-implement
 
 Il faut améliorer les tags, il manque des couleurs de fond + l'animation de couleur au hover.
 
-Maintenant on va vouloir ajouter des nouveaux composant dans la bibliotheque de composants. 
+Maintenant on va vouloir ajouter des nouveaux composant dans la bibliotheque de composants.
 
-Un SideNavBar lateral: 
-Avec un NavHeader contenant une icone (qui sera un shield pour representé l'application) une petite description. 
+Un SideNavBar lateral:
+Avec un NavHeader contenant une icone (qui sera un shield pour representé l'application) une petite description.
 
-En dessous de cette sections. Une list de NavItem item qui amene sur une route avec un affiche un composant. Ces navitem doivent avoir une animation avec un tres leger zoom hover et une couleur de fond blanc qui devient tres legerement grisatre. 
+En dessous de cette sections. Une list de NavItem item qui amene sur une route avec un affiche un composant. Ces navitem doivent avoir une animation avec un tres leger zoom hover et une couleur de fond blanc qui devient tres legerement grisatre.
 
-Et tout en bas la version de l'application + Un état du back end avec bouton indicateur. 
+Et tout en bas la version de l'application + Un état du back end avec bouton indicateur.
 
-Je ferais aussi un composant "Header", qui sera un composant à la racine de App.tsx. 
+Je ferais aussi un composant "Header", qui sera un composant à la racine de App.tsx.
 
-Header contiendra Le titre de l'application et des elements en props mit en colonne. 
+Header contiendra Le titre de l'application et des elements en props mit en colonne.
 
-Ensuite un composant section. 
-Avec une ligne Avec icone titre, et tout à droite une description. Et son contenue. 
+Ensuite un composant section.
+Avec une ligne Avec icone titre, et tout à droite une description. Et son contenue.
 Resultat : Tags semantiques avec fonds pleins et transition hover, shell applicatif avec SideNavBar responsive, navigation History native vers la vue Fichiers, Header, Section, et BackendStatus reutilisables avec tests miroirs.
 - - - - -
 
@@ -362,4 +362,10 @@ Resultat : Le skill `feature-issue-pr` autorise, lorsque le workflow complet est
 Prompt :
 #file:write-feature-resume
 Resultat : Documentation de feature ajoutee dans docs/features/securefiles-console-foundation.md a partir des changements staged de la branche, puis entree de journal ajoutee dans resume.md.
+- - - - -
+
+- - - - -
+Prompt :
+#file:feature-issue-pr
+Resultat : Serie de commits Conventional Commits creee, branche `feat/Initialisation_composant_atomic` poussee sur `origin`, resume de feature rafraichi et committe ; creation d'issue et de pull request bloquee faute de session GitHub authentifiee dans les outils disponibles.
 - - - - -
