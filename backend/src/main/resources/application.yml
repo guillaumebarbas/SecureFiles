@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/securefiles}
+    username: ${DATABASE_USERNAME:securefiles}
+    password: ${DATABASE_PASSWORD:securefiles-local-only}
+  jpa:
+    hibernate:
+      ddl-auto: ${DDL_AUTO:update}
+    open-in-view: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
