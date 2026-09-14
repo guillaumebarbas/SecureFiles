@@ -369,3 +369,9 @@ Prompt :
 #file:feature-issue-pr
 Resultat : Serie de commits Conventional Commits creee, branche `feat/Initialisation_composant_atomic` poussee sur `origin`, resume de feature rafraichi et committe ; creation d'issue et de pull request bloquee faute de session GitHub authentifiee dans les outils disponibles.
 - - - - -
+
+- - - - -
+Prompt :
+Ok j'ai allumé le mcp , relance l'issue + pr
+Resultat : Issue `#1` reutilisee et documentee par commentaire, pull request `#2` creee de `feat/Initialisation_composant_atomic` vers `main`, verification faite sur la branche source, la base et le lien `Closes #1`.
+- - - - -
