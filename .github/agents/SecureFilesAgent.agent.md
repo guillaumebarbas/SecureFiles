@@ -51,8 +51,16 @@ Skills SecureFiles a activer selon le besoin :
 - [Securite du flux de fichiers](../skills/securefiles-security/SKILL.md)
 - [Frontend UX/UI](../skills/securefiles-frontend/SKILL.md)
 - [Documentation de feature](../skills/write-feature-resume/SKILL.md) pour documenter les commits et changements locaux d'une branche.
+- [Livraison issue/PR](../skills/feature-issue-pr/SKILL.md) pour analyser tous les commits, creer l'issue et ouvrir une pull request vers `main`.
 
 Pour une tache transversale, charger au minimum `clean_code.md` et `strategy_test.md`. Pour toute tache frontend, charger aussi `ux_ui.md`.
+
+## Workflow planification puis implementation
+
+- Utiliser le [prompt plan-approve-implement](../prompts/plan-approve-implement.prompt.md) lorsqu'une demande necessite une analyse du code, un plan explicite, une relecture du plan et une validation utilisateur avant implementation.
+- Pour une exploration multi-fichiers ou une frontiere d'architecture incertaine, deleguer la lecture au [SecureFilesPlanner](./SecureFilesPlanner.agent.md). Ce sous-agent est strictement en lecture seule et ne peut ni modifier ni executer de commande.
+- Toujours verifier les constats du planner dans le code local ; son avis ne remplace ni le contrat, ni les tests, ni la decision de l'agent principal.
+- Ne jamais commencer l'implementation avant une approbation explicite du plan final. Si le besoin ou le perimetre change apres approbation, repasser par une nouvelle analyse et une nouvelle validation.
 
 ## TDD obligatoire
 

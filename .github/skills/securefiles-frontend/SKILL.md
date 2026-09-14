@@ -21,6 +21,8 @@ description: Use when changing the React/Vite console, file upload workflow, fil
 - N'afficher une action de telechargement active que lorsque `getDownloadUrl` retourne une URL pour un fichier `CLEAN`.
 - Gerer explicitement chargement, liste vide, upload en cours, progression, erreur reseau et rafraichissement.
 - Utiliser des controles semantiques, des labels accessibles, un focus visible et des noms pour les boutons d'icone.
+- Utiliser `Row` et `Column` pour aligner les elements ; reserver `display: flex` aux primitives de layout et aux composants qui portent eux-memes cette responsabilite.
+- Afficher un tooltip uniquement pour un controle sans texte visible ; un bouton, lien ou controle qui possede deja un libelle ne doit pas dupliquer ce libelle dans un tooltip.
 - Preserver la grille de la console de reference : synthese rapide, depot evident, registre lisible et etat du service antivirus.
 - Stabiliser les dimensions des lignes, badges et boutons pour eviter les sauts pendant un changement de statut.
 - Tester desktop et mobile, les noms longs, les listes volumineuses et les erreurs sans chevauchement.
