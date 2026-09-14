@@ -1,0 +1,22 @@
+# Java / Maven
+backend/target/
+*.class
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Runtime data
+backend/var/files/*
+!backend/var/files/.gitkeep
+backend/var/upload-tmp/
+
+# Environment and IDE
+.env
+*.local
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/mcp.json
+.DS_Store
