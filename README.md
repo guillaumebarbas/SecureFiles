@@ -36,10 +36,12 @@ SecureFiles/
 │   └── src/                 # a reconstruire
 ├── frontend/                # console React + Vite a reconstruire
 │   ├── package.json         # dependances et scripts npm
-│   └── src/                 # a reconstruire
+│   └── src/                 # code applicatif et tests dans src/tests/
+├── Makefile                 # alias de lancement du frontend et du backend
 ├── rules/                   # regles partagees de code, tests et UX/UI
 ├── resume.md                # journal resume des prompts traites
 ├── .github/skills/          # skills SecureFiles charges par l'agent VS Code
+├── .github/prompts/         # prompts de workflow declenches a la demande
 ├── .github/instructions/    # instructions ciblees par type de fichier
 ├── .github/agents/          # agent VS Code SecureFilesAgent
 ├── docker-compose.yml       # PostgreSQL et ClamAV locaux
@@ -86,6 +88,17 @@ Le scaffold actuel ne demarre pas encore d'API ou de console : il ne contient vo
 
 La console est disponible sur `http://localhost:5173` et l'API sur `http://localhost:8080`.
 
+### Alias de lancement
+
+Depuis la racine du depot :
+
+```bash
+make front
+make back
+```
+
+`make front` lance Vite depuis `frontend/` et `make back` lance Spring Boot depuis `backend/`.
+
 ## Test rapide de l'API
 
 ```bash
@@ -126,7 +139,7 @@ Les agents chargent les regles partagees depuis `rules/` selon la tache :
 - `rules/strategy_test.md` pour la couverture du domaine, les doubles de ports et le nommage des tests ;
 - `rules/ux_ui.md` pour la console, les etats de scan, le responsive et l'accessibilite.
 
-Les skills specialises sont documentes dans `.github/skills/README.md`. L'agent les charge au besoin pour les revues, tests, changements de securite, evolutions frontend et documentation des features. Les conventions propres au frontend sont appliquees depuis `.github/instructions/frontend.instructions.md`.
+Les skills specialises sont documentes dans `.github/skills/README.md`. L'agent les charge au besoin pour les revues, tests, changements de securite, evolutions frontend, documentation des features et livraison issue/PR. Le prompt [.github/prompts/plan-approve-implement.prompt.md](.github/prompts/plan-approve-implement.prompt.md) impose une validation du plan avant implementation et peut deleguer l'exploration au planner [SecureFilesPlanner](.github/agents/SecureFilesPlanner.agent.md) en lecture seule. Les conventions propres au frontend sont appliquees depuis `.github/instructions/frontend.instructions.md`.
 
 ## MCP GitHub et icones Lucide
 

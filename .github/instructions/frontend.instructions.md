@@ -15,5 +15,12 @@ applyTo: "frontend/**/*.{ts,tsx,css,html}"
 - Garder les etats de scan visibles et explicites.
 - Ne proposer une action de download que pour un fichier `CLEAN`.
 - Garder les styles web dans `frontend/src/styles.css` ; ne pas utiliser `StyleSheet`, reserve a React Native.
-- Donner un tooltip au survol et au focus a chaque bouton ou element actionnable.
+- Placer tous les fichiers de test frontend sous `frontend/src/tests`, avec une arborescence miroir de `frontend/src` et des imports relatifs adaptes.
+- Donner a chaque composant et chaque page un fichier `style.ts` voisin pour ses styles propres ; conserver les styles globaux dans `frontend/src/styles.css`.
+- Limiter chaque composant a 500 lignes maximum ; extraire les sous-composants lorsqu'une responsabilite devient distincte.
+- Extraire les constantes et callbacks reutilises ou volumineux au lieu de surcharger le JSX de la vue.
+- Garder les retours JSX lisibles, avec une composition de page qui orchestre les composants sans contenir toute leur logique.
+- Organiser l'arborescence par parcours utilisateur : placer les primitives reutilisables dans `frontend/src/shared` et la composition specifique dans un dossier de fonctionnalite ou de page.
+- Donner un tooltip au survol et au focus uniquement aux controles sans texte visible, notamment les boutons et icones icon-only ; les controles qui affichent deja un libelle ne doivent pas ajouter de tooltip.
+- Utiliser `Row` et `Column` pour aligner les elements dans les pages et composants ; ne pas ajouter `display: flex` directement dans une composition, sauf dans l'implementation d'une primitive de layout ou d'un composant dont l'alignement est sa responsabilite propre.
 - Valider toute modification avec le test cible puis `npm run build` depuis `frontend/`.

@@ -10,5 +10,6 @@ Ces skills sont des guides locaux, adaptes au domaine de SecureFiles. Ils repren
 - `securefiles-security` : verifier upload, quarantaine, ClamAV, download, flux et logs.
 - `securefiles-frontend` : modifier la console React en respectant l'UX/UI de reference et le contrat API.
 - `write-feature-resume` : documenter une feature a partir des commits, changements locaux et fichiers non suivis de la branche.
+- `feature-issue-pr` : analyser tous les commits d'une branche, appeler `write-feature-resume`, puis creer une issue et une pull request vers `main`.
 
 Chaque skill renvoie vers les regles partagees dans `rules/`. Charger uniquement les skills utiles a la tache, et charger `securefiles-security` pour tout changement qui touche le contenu ou le statut d'un fichier.

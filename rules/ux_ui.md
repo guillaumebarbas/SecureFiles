@@ -67,10 +67,15 @@ Ces regles decrivent uniquement le langage visuel de la console SecureFiles : di
 - Utiliser les icones Lucide ou la bibliotheque deja presente au lieu de dessiner des SVG equivalents a la main.
 - Preferer une icone familiere pour les actions d'outil ; ajouter un libelle lorsque le symbole seul peut etre ambigu.
 - Donner aux boutons d'icone une dimension stable, une zone de clic reguliere et un etat hover/focus visuellement coherent.
-- Chaque bouton ou element actionnable, y compris bouton d'icone, lien d'action, toggle, selecteur et declencheur de menu, doit afficher un tooltip au survol et au focus avec le verbe et la cible de l'action.
+- Chaque controle sans texte visible, notamment bouton d'icone, icone actionnable, toggle compact ou declencheur icon-only, doit afficher un tooltip au survol et au focus avec le verbe et la cible de l'action ; un bouton, lien ou controle qui affiche deja un libelle ne doit pas ajouter de tooltip redondant.
 - Un tooltip doit apparaitre apres environ 150 a 250 ms, rester proche du controle, utiliser une surface sombre stable et ne jamais masquer le controle ou l'information principale.
 - Utiliser les badges et pastilles pour les etats courts, avec un contraste de fond et de texte mesure et sans surcharge de bordures.
 - Ne pas utiliser une icone uniquement comme decoration si elle concurrence le titre ou l'action principale.
+
+## Alignement des composants
+
+- Utiliser les primitives partagees `Row` et `Column` pour aligner les elements dans les pages et composants.
+- Ne pas ajouter `display: flex` dans chaque composition ; le reserver aux primitives de layout et aux composants qui controlent directement leur propre structure interne.
 
 ## Animation et mouvement
 
