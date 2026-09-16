@@ -131,6 +131,8 @@ h3 {
 }
 
 .app-header {
+  position: relative;
+  z-index: 30;
   width: 100%;
   padding: 28px 38px 22px;
   border-bottom: 1px solid var(--border);
@@ -172,14 +174,164 @@ h3 {
   text-align: right;
 }
 
-.app-header__description {
-  max-width: 65ch;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
 .app-main__view {
   animation: app-view-enter 280ms ease both;
+}
+
+.login {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+.login__primary {
+  max-width: 240px;
+  flex-shrink: 0;
+}
+
+.login__action,
+.login__account {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  max-width: 240px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease,
+    transform 140ms ease;
+}
+
+.login__action:hover,
+.login__account:hover {
+  border-color: rgba(57, 103, 246, 0.3);
+  color: var(--action-hover);
+  background: #edf2ff;
+  box-shadow: 0 5px 12px rgba(57, 103, 246, 0.08);
+  transform: translateY(-1px);
+}
+
+.login__account span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login__menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 40;
+  min-width: 184px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  animation: login-menu-enter 180ms ease both;
+}
+
+.login__panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 40;
+  width: min(320px, calc(100vw - 28px));
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  animation: login-menu-enter 180ms ease both;
+}
+
+.app-header .login__panel {
+  right: 0;
+  left: auto;
+}
+
+.login__form {
+  display: grid;
+  gap: 12px;
+  text-align: left;
+}
+
+.login__form-title {
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', 'Avenir Next', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.login__field {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.login__field input {
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  background: var(--surface);
+  font: inherit;
+  font-weight: 400;
+  outline: 0;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.login__field input:focus {
+  border-color: var(--action-primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.login__form .shared-button {
+  width: 100%;
+}
+
+.login__switch {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  color: var(--action-primary);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.login__switch:hover {
+  color: var(--action-hover);
+  text-decoration: underline;
+}
+
+.login__menu .login__action {
+  width: 100%;
+  max-width: none;
+  justify-content: flex-start;
+  min-height: 36px;
+  padding: 0 10px;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.login__menu .login__action:hover {
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
 }
 
 .app-sidebar {
@@ -421,6 +573,37 @@ h3 {
 .dashboard-page {
   display: grid;
   gap: 18px;
+}
+
+.profile-page {
+  display: grid;
+  gap: 18px;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 40px 0 72px;
+}
+
+.profile-page__name {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface-secondary);
+}
+
+.profile-page__name dt {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profile-page__name dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: 'Space Grotesk', 'Avenir Next', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .dashboard-page__description {
@@ -1096,6 +1279,18 @@ h3 {
   }
 }
 
+@keyframes login-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 760px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -1148,7 +1343,7 @@ h3 {
   .app-header__content {
     width: 100%;
     margin-left: 0;
-    justify-content: flex-start;
+    justify-content: flex-end;
     text-align: left;
   }
 
@@ -1172,6 +1367,10 @@ h3 {
 
   .files-page,
   .dashboard-page {
+    padding: 24px 0 48px;
+  }
+
+  .profile-page {
     padding: 24px 0 48px;
   }
 
@@ -1231,6 +1430,15 @@ h3 {
 
   .showcase-icon-button {
     align-self: flex-start;
+  }
+
+  .login__account {
+    max-width: calc(100vw - 28px);
+  }
+
+  .login__menu,
+  .login__panel {
+    max-width: calc(100vw - 28px);
   }
 }
 

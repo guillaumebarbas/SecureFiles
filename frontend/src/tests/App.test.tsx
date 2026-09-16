@@ -32,9 +32,10 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
     expect(screen.getByText("Vue d'ensemble")).toHaveClass('app-header__eyebrow');
     expect(screen.queryByText("SecureFiles / Vue d'ensemble")).not.toBeInTheDocument();
-    expect(screen.getByText(
+    expect(screen.queryByText(
       "Une vue d'accueil pour suivre rapidement l'etat du service et retrouver les zones de travail.",
-    )).toBeVisible();
+    )).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Se connecter' })).toBeVisible();
     expect(await screen.findByRole('button', { name: 'Service online' })).toBeVisible();
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
   });
@@ -60,6 +61,18 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Composants reutilisables', level: 1 })).toBeVisible();
     expect(screen.getByText('Bibliotheque partagee')).toHaveClass('app-header__eyebrow');
     expect(screen.queryByText('SecureFiles / Bibliotheque partagee')).not.toBeInTheDocument();
+  });
+
+  it('opens the profile page from the primary navigation', async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+    await user.click(screen.getByRole('link', { name: 'Profil' }));
+
+    expect(window.location.pathname).toBe('/profile');
+    expect(screen.getByRole('link', { name: 'Profil' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('heading', { name: 'Profil', level: 1 })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Informations du profil', level: 2 })).toBeVisible();
   });
 
   it('renders the offline service state when the health check fails', async () => {

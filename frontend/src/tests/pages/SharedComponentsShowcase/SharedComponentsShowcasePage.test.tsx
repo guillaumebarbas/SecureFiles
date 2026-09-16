@@ -38,4 +38,30 @@ describe('SharedComponentsShowcasePage', () => {
 
     expect(within(table).getByText('CLEAN')).toBeVisible();
   });
+
+  it('demonstrates disconnected and connected login states', async () => {
+    const user = userEvent.setup();
+
+    render(<SharedComponentsShowcasePage />);
+
+    const loginButton = screen.getByRole('button', { name: 'Se connecter' });
+
+    expect(loginButton).toBeVisible();
+    await user.click(loginButton);
+
+    const connectionForm = screen.getByRole('form', { name: 'Connexion' });
+    await user.type(within(connectionForm).getByLabelText('Pseudo'), 'Utilisateur de démonstration');
+    await user.type(within(connectionForm).getByLabelText('Mot de passe'), 'mot-de-passe');
+    await user.click(within(connectionForm).getByRole('button', { name: 'Se connecter' }));
+
+    const accountButton = screen.getByRole('button', { name: 'Utilisateur de démonstration' });
+
+    expect(accountButton).toBeVisible();
+    await user.click(accountButton);
+    expect(await screen.findByRole('menuitem', { name: 'Se déconnecter' })).toBeVisible();
+
+    await user.click(screen.getByRole('menuitem', { name: 'Se déconnecter' }));
+
+    expect(screen.getByRole('button', { name: 'Se connecter' })).toBeVisible();
+  });
 });
