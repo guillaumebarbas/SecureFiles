@@ -611,3 +611,51 @@ Créer une branche et une issue pour améliorer l'ux/ui et fix certaine erreur f
 + ajoute le fait que quand je fait /plan-implement rajoute dans resume la demande + resultat du prompt.
 Resultat : Branche `feat/frontend-ux-ui-fixes` creee et publiee depuis `main`, issue GitHub `#9` creee pour cadrer les corrections UX/UI et fonctionnelles de la console frontend. Le workflow `/plan-implement` dispose maintenant d'un alias invocable et impose l'ajout de la demande verbatim et du resultat factuel a la fin de `resume.md`; aucune correction frontend n'a encore ete implementee.
 - - - - -
+
+- - - - -
+Prompt :
+/plan-implement J'ai pas mal d'amélioration à faire d'un point de vu ux/ui.
+
+1) Le header devrait avoir le titre de la page actuel + Une petite description avec un texte leger
+
+Ce qui fera que dans une page on ai plus "SecureFiles / Vue d'ensemble
+
+Dashboard
+Une vue d'accueil pour suivre rapidement l'etat du service et retrouver les zones de travail." Et serait deplacer dans le header
+
+2) Il manque un endpoint pour tester si le backend est opérationel  
+Etat du backend inconnu. J'aurais plutôt écrit "Service online" ou "offline"
+
+3) Lors de l'upload d'un fichier, une fois le fichier envoyer le bouton "envoyer le fichier" ne devrait plus apparaitre , on devrait avoir une indiciation nous disant de recliquer sur l'upload pour un nouveau fichier.
+Resultat : Analyse terminee et PLAN FINAL presente. Le backend expose deja `GET /actuator/health`; le plan prevoit son appel via `filesApi`, son proxy Vite, l'affichage `online/offline`, le transfert du titre et de la description de route dans le Header, puis la reinitialisation de la selection apres acceptation d'un upload. Aucun code ni test n'a ete execute; l'approbation explicite du plan est attendue.
+- - - - -
+
+- - - - -
+Prompt :
+go
+Resultat : Header rendu contextuel par route avec titre, eyebrow et description, introductions redondantes retirees des pages, healthcheck Actuator consomme via `filesApi` avec proxy Vite et statuts `Service online`/`Service offline`, et selection d'upload reinitialisee apres acceptation avec indication de nouveau fichier sans interrompre le polling. Tests frontend : 17 suites et 54 tests passes ; build Vite passe ; serveur de developpement disponible sur `http://127.0.0.1:5177/`.
+- - - - -
+
+- - - - -
+Prompt :
+approuve
+Resultat : Header reorganise sur une ligne avec contexte de route sans `SecureFiles`, contexte en bleu, titre a gauche et description alignee a droite sur desktop avec adaptation mobile. Le recapitulatif d'un upload accepte reste visible 10 secondes puis disparait avec une transition fluide avant son retrait du DOM ; les erreurs et le polling restent inchanges. Tests frontend : 17 suites et 55 tests passes ; build Vite passe.
+- - - - -
+
+- - - - -
+Prompt :
+il faut juste inverser les deux premier éléments du header
+Resultat : Le Header affiche maintenant le titre avant le contexte de route bleu. Tests Header/App : 2 fichiers et 5 tests passes ; suite frontend complete : 17 fichiers et 55 tests passes ; build Vite passe.
+- - - - -
+
+- - - - -
+Prompt :
+Supprime l'onglet fichiers pour l'instant il ne sert à rien.
+Resultat : L'onglet `Fichiers` a ete retire de la navigation principale. La route `/files` et sa page restent conservees pour une reutilisation ulterieure. Tests frontend : 17 suites et 55 tests passes ; build Vite passe.
+- - - - -
+
+- - - - -
+Prompt :
+Follow instructions in #prompt:SKILL.md
+Resultat : Le resume de feature `04-frontend-ux-ui-fixes.md` a ete cree a partir du statut Git, des diffs, des fichiers non suivis et de l'historique observes. L'index `docs/features/README.md` reference ce nouveau document ; le statut reste `Implementing` car les changements de feature sont unstaged.
+- - - - -
