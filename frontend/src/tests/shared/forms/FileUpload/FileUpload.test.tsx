@@ -44,6 +44,18 @@ describe('FileUpload', () => {
     expect(screen.getByRole('button', { name: 'Envoyer le fichier' })).toBeVisible();
   });
 
+  it('displays the selected file size with a readable unit', async () => {
+    const user = userEvent.setup();
+    const file = new File(['safe content'], 'MicrosoftTeams.pkg', { type: 'application/octet-stream' });
+    Object.defineProperty(file, 'size', { value: 357099924 });
+
+    render(<FileUpload />);
+
+    await user.upload(screen.getByLabelText('Choisir un fichier'), file);
+
+    expect(screen.getByText(/340\.6 Mo/)).toBeVisible();
+  });
+
   it('displays the maximum upload size loaded from the backend', async () => {
     mockedGetUploadConfiguration.mockResolvedValue({ maximumSizeBytes: 1_073_741_824 });
 
