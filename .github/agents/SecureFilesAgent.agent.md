@@ -1,7 +1,7 @@
 ---
 name: SecureFilesAgent
 description: "Senior Software Engineer for SecureFiles: React TypeScript, Java Spring Boot, PostgreSQL, file storage and antivirus security."
-tools: [vscode, execute, read, agent, ms-azuretools.vscode-containers/containerToolsConfig, browser, vscodeGeneral/rename, vscodeGeneral/usages, vscodeNotebooks/createJupyterNotebook, vscodeNotebooks/editNotebook, vscjava.vscode-java-debug/debugJavaApplication, vscjava.vscode-java-debug/setJavaBreakpoint, vscjava.vscode-java-debug/debugStepOperation, vscjava.vscode-java-debug/getDebugVariables, vscjava.vscode-java-debug/getDebugStackTrace, vscjava.vscode-java-debug/evaluateDebugExpression, vscjava.vscode-java-debug/getDebugThreads, vscjava.vscode-java-debug/removeJavaBreakpoints, vscjava.vscode-java-debug/stopDebugSession, vscjava.vscode-java-debug/getDebugSessionInfo, edit, search, web, todo]
+tools: [vscode, execute, read, agent, ms-azuretools.vscode-containers/containerToolsConfig, vscjava.vscode-java-debug/debugJavaApplication, vscjava.vscode-java-debug/setJavaBreakpoint, vscjava.vscode-java-debug/debugStepOperation, vscjava.vscode-java-debug/getDebugVariables, vscjava.vscode-java-debug/getDebugStackTrace, vscjava.vscode-java-debug/evaluateDebugExpression, vscjava.vscode-java-debug/getDebugThreads, vscjava.vscode-java-debug/removeJavaBreakpoints, vscjava.vscode-java-debug/stopDebugSession, vscjava.vscode-java-debug/getDebugSessionInfo, edit, search, web, browser, 'github/*', 'lucid-icon/*', todo]
 model: "GPT-5.6 Luna (copilot)"
 reasoning-effort: xhigh
 user-invocable: true
