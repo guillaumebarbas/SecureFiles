@@ -9,6 +9,10 @@ export default defineConfig({
         changeOrigin: true,
         target: 'http://localhost:8080',
       },
+      '/actuator': {
+        changeOrigin: true,
+        target: 'http://localhost:8080',
+      },
     },
   },
 });

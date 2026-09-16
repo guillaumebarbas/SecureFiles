@@ -6,7 +6,7 @@ export const backendStatusClassNames = {
 } as const;
 
 export const backendStatusLabels: Record<BackendStatusValue, string> = {
-  offline: 'Backend indisponible',
-  online: 'Backend disponible',
-  unknown: 'Etat du backend inconnu',
+  offline: 'Service offline',
+  online: 'Service online',
+  unknown: 'Verification du service...',
 };

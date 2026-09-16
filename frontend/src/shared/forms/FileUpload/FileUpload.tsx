@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Clock3, CloudUpload, LoaderCircle, ShieldAlert, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -29,6 +29,8 @@ type UploadConfigurationState =
   | { kind: 'available'; maximumSizeBytes: number }
   | { kind: 'error'; message: string };
 
+type AcceptedFeedbackVisibility = 'hidden' | 'hiding' | 'visible';
+
 export type FileUploadProps = {
   onAccepted?: (response: FileMetadataResponse) => void;
   onStatusChange?: (response: FileMetadataResponse) => void;
@@ -36,6 +38,8 @@ export type FileUploadProps = {
 
 const METADATA_POLL_INTERVAL_MS = 250;
 const MAX_METADATA_POLL_RETRIES = 3;
+const ACCEPTED_FEEDBACK_DISMISS_DELAY_MS = 10_000;
+const ACCEPTED_FEEDBACK_EXIT_DURATION_MS = 320;
 
 function statusIcon(status: ScanStatus): LucideIcon {
   if (status === 'CLEAN') {
@@ -112,8 +116,10 @@ function formatMaximumUploadSize(maximumSizeBytes: number) {
 
 export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
   const inputId = `shared-file-upload-input-${useId().replace(/:/g, '')}`;
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [feedback, setFeedback] = useState<UploadFeedback>({ kind: 'idle' });
+  const [acceptedFeedbackVisibility, setAcceptedFeedbackVisibility] = useState<AcceptedFeedbackVisibility>('hidden');
   const [uploadConfiguration, setUploadConfiguration] = useState<UploadConfigurationState>({
     kind: 'loading',
   });
@@ -128,7 +134,36 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
       ? 'Le fichier depasse la taille maximale autorisee.'
       : null;
 
+  const acceptedFeedbackDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const acceptedFeedbackRemovalTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearAcceptedFeedbackTimers() {
+    if (acceptedFeedbackDismissTimer.current) {
+      clearTimeout(acceptedFeedbackDismissTimer.current);
+      acceptedFeedbackDismissTimer.current = null;
+    }
+    if (acceptedFeedbackRemovalTimer.current) {
+      clearTimeout(acceptedFeedbackRemovalTimer.current);
+      acceptedFeedbackRemovalTimer.current = null;
+    }
+  }
+
+  function scheduleAcceptedFeedbackDismissal() {
+    clearAcceptedFeedbackTimers();
+    setAcceptedFeedbackVisibility('visible');
+    acceptedFeedbackDismissTimer.current = setTimeout(() => {
+      acceptedFeedbackDismissTimer.current = null;
+      setAcceptedFeedbackVisibility('hiding');
+      acceptedFeedbackRemovalTimer.current = setTimeout(() => {
+        acceptedFeedbackRemovalTimer.current = null;
+        setAcceptedFeedbackVisibility('hidden');
+      }, ACCEPTED_FEEDBACK_EXIT_DURATION_MS);
+    }, ACCEPTED_FEEDBACK_DISMISS_DELAY_MS);
+  }
+
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    clearAcceptedFeedbackTimers();
+    setAcceptedFeedbackVisibility('hidden');
     setSelectedFile(event.target.files?.[0] ?? null);
     setFeedback({ kind: 'idle' });
   }
@@ -136,6 +171,13 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
   function handleUploadConfigurationRetry() {
     setUploadConfiguration({ kind: 'loading' });
     setUploadConfigurationRequestVersion((currentVersion) => currentVersion + 1);
+  }
+
+  function clearFileSelection() {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -166,7 +208,9 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
             : currentFeedback);
         },
       });
+      clearFileSelection();
       setFeedback({ kind: 'accepted', response });
+      scheduleAcceptedFeedbackDismissal();
       onAccepted?.(response);
     } catch (error) {
       setFeedback({
@@ -175,6 +219,8 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
       });
     }
   }
+
+  useEffect(() => () => clearAcceptedFeedbackTimers(), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -299,6 +345,11 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
             <span className={fileUploadClassNames.zoneContent}>
               <CloudUpload aria-hidden="true" size={34} />
               <span>Choisissez un fichier</span>
+              {feedback.kind === 'accepted' && !selectedFile ? (
+                <span className={fileUploadClassNames.zoneHint}>
+                  Cliquez sur la zone pour choisir un nouveau fichier
+                </span>
+              ) : null}
               <span className={fileUploadClassNames.zoneHint}>PDF, image ou archive securisee</span>
               {uploadConfiguration.kind === 'available' ? (
                 <span className={fileUploadClassNames.zoneHint}>
@@ -314,6 +365,7 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
               disabled={isUploading}
               id={inputId}
               onChange={handleFileChange}
+              ref={fileInputRef}
               type="file"
             />
           </label>
@@ -370,12 +422,21 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
           </Row>
         </div>
       ) : null}
-      <UploadFeedbackView feedback={feedback} />
+      <UploadFeedbackView
+        acceptedFeedbackVisibility={acceptedFeedbackVisibility}
+        feedback={feedback}
+      />
     </div>
   );
 }
 
-function UploadFeedbackView({ feedback }: { feedback: UploadFeedback }) {
+function UploadFeedbackView({
+  acceptedFeedbackVisibility,
+  feedback,
+}: {
+  acceptedFeedbackVisibility: AcceptedFeedbackVisibility;
+  feedback: UploadFeedback;
+}) {
   if (feedback.kind === 'error') {
     return (
       <div
@@ -392,9 +453,18 @@ function UploadFeedbackView({ feedback }: { feedback: UploadFeedback }) {
     return null;
   }
 
+  if (acceptedFeedbackVisibility === 'hidden') {
+    return null;
+  }
+
   const StatusIcon = statusIcon(feedback.response.status);
+  const feedbackClassName = [
+    fileUploadClassNames.feedback,
+    fileUploadClassNames.feedbackAccepted,
+    acceptedFeedbackVisibility === 'hiding' ? fileUploadClassNames.feedbackHiding : null,
+  ].filter(Boolean).join(' ');
   return (
-    <div aria-live="polite" className={fileUploadClassNames.feedback} role="status">
+    <div aria-live="polite" className={feedbackClassName} role="status">
       <Row align="center" gap="10px" wrap="wrap">
         <Tag
           icon={StatusIcon}

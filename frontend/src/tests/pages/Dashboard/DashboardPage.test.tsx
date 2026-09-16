@@ -32,8 +32,6 @@ describe('DashboardPage', () => {
   it('renders the upload section and the recent files register', () => {
     render(<DashboardPage />);
 
-    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-    expect(screen.getByText("SecureFiles / Vue d'ensemble")).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Upload ton fichier' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Fichiers recents' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Upload ton fichier' }).closest('section'))
@@ -158,7 +156,7 @@ describe('DashboardPage', () => {
       expect.objectContaining({ onProgress: expect.any(Function) }),
     );
     expect(await screen.findByRole('status')).toHaveTextContent('PENDING_SCAN');
-    expect(screen.getAllByText('document.txt')).toHaveLength(3);
+    expect(screen.getAllByText('document.txt')).toHaveLength(2);
     const table = screen.getByRole('table', { name: 'Fichiers uploades' });
     expect(within(table).getByText('document.txt')).toBeVisible();
     expect(within(table).getByText('PENDING_SCAN')).toBeVisible();

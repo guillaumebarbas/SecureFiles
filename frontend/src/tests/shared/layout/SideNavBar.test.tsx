@@ -25,6 +25,6 @@ describe('SideNavBar', () => {
     expect(screen.getByRole('link', { name: 'Bibliotheque' })).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('link', { name: 'Fichiers' })).not.toHaveAttribute('aria-current');
     expect(screen.getByText('Version 0.1.0')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Etat du backend inconnu' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Verification du service...' })).toBeVisible();
   });
 });

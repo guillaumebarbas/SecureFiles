@@ -1,9 +1,11 @@
 export const fileUploadClassNames = {
   feedback: 'shared-file-upload__feedback',
+  feedbackAccepted: 'shared-file-upload__feedback--accepted',
   feedbackError: 'shared-file-upload__feedback--error',
   feedbackId: 'shared-file-upload__feedback-id',
   feedbackMessage: 'shared-file-upload__feedback-message',
   feedbackPollingError: 'shared-file-upload__feedback-polling-error',
+  feedbackHiding: 'shared-file-upload__feedback--hiding',
   form: 'shared-file-upload__form',
   input: 'shared-file-upload__input',
   loading: 'shared-file-upload__loading',

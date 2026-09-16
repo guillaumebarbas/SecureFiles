@@ -30,6 +30,12 @@ export type UploadConfiguration = {
   maximumSizeBytes: number;
 };
 
+export type BackendHealthStatus = 'online' | 'offline';
+
+type BackendHealthResponse = {
+  status?: string;
+};
+
 export type GetFileMetadataOptions = {
   signal?: AbortSignal;
 };
@@ -53,6 +59,15 @@ export class FilesApiError extends Error {
     this.code = code;
     this.status = status;
     this.name = 'FilesApiError';
+  }
+}
+
+export async function checkBackendHealth(): Promise<BackendHealthStatus> {
+  try {
+    const response = await axios.get<BackendHealthResponse>('/actuator/health');
+    return response.data.status === 'UP' ? 'online' : 'offline';
+  } catch {
+    return 'offline';
   }
 }
 

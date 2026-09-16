@@ -45,14 +45,6 @@ export function SharedComponentsShowcasePage() {
 
   return (
     <div className={showcaseClassNames.root}>
-      <div className={showcaseClassNames.intro}>
-        <p className="eyebrow">SecureFiles / Bibliotheque partagee</p>
-        <h2>Composants reutilisables</h2>
-        <p className="showcase-intro__description">
-          Une page de reference pour verifier les composants de la console et leurs etats accessibles.
-        </p>
-      </div>
-
       <Section
         description="Un champ compact pour retrouver un fichier par son nom."
         icon={Search}
