@@ -591,3 +591,9 @@ Prompt :
 go
 Resultat : Codes backend/frontend centralises, endpoint de configuration de taille ajoute, blocage frontend avec relance, 413 serveur, verification MinIO post-ecriture et test multipart de 19 553 061 octets valides.
 - - - - -
+
+- - - - -
+Prompt :
+le mcp pourtant est bien lancé peux tu me lancer les pr et remplir la doc ? doc/features avec differents .md numéroté pour avoir l'ordre
+Resultat : Les resumes de livraison sont numerotes dans l'ordre backend, frontend puis fondation documentaire; un index de lecture est ajoute. La creation GitHub est tentee via les outils exposes par la session.
+- - - - -
