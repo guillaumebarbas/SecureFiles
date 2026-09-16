@@ -89,7 +89,7 @@ class FileScanFlowIntegrationTest {
                     () -> restTemplate.getForObject(apiUrl() + "/" + fileId, JsonNode.class),
                     response -> isTerminal(response.path("status").asText()));
             } catch (ConditionTimeoutException exception) {
-                throw new AssertionError(buildTimeoutDiagnostic(fileId), exception);
+                throw new AssertionError(buildTerminalDiagnostic(fileId), exception);
             }
 
             assertThat(terminalResponse.path("status").asText()).isEqualTo("CLEAN");
@@ -136,7 +136,7 @@ class FileScanFlowIntegrationTest {
                                 () -> restTemplate.getForObject(apiUrl() + "/" + fileId, JsonNode.class),
                                 response -> isTerminal(response.path("status").asText()));
             } catch (ConditionTimeoutException exception) {
-                throw new AssertionError(buildTimeoutDiagnostic(fileId), exception);
+                throw new AssertionError(buildTerminalDiagnostic(fileId), exception);
             }
 
             assertThat(terminalResponse.path("status").asText()).isEqualTo("CLEAN");
@@ -156,6 +156,10 @@ class FileScanFlowIntegrationTest {
     }
 
     private void assertUploadedFileReachesInfected(Path file) {
+        assertUploadedFileReachesStatus(file, "INFECTED", Duration.ofSeconds(30));
+    }
+
+    private void assertUploadedFileReachesStatus(Path file, String expectedStatus, Duration timeout) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
@@ -175,23 +179,32 @@ class FileScanFlowIntegrationTest {
         JsonNode terminalResponse;
         try {
             terminalResponse = await()
-                    .atMost(Duration.ofSeconds(30))
+                .atMost(timeout)
                     .pollInterval(Duration.ofMillis(250))
                     .until(
                             () -> restTemplate.getForObject(apiUrl() + "/" + fileId, JsonNode.class),
                             response -> isTerminal(response.path("status").asText()));
         } catch (ConditionTimeoutException exception) {
-            throw new AssertionError(buildTimeoutDiagnostic(fileId), exception);
+            throw new AssertionError(buildTerminalDiagnostic(fileId), exception);
         }
 
-        assertThat(terminalResponse.path("status").asText()).isEqualTo("INFECTED");
+        String actualStatus = terminalResponse.path("status").asText();
+        assertThat(actualStatus)
+            .withFailMessage(
+                "File %s reached status %s instead of %s. metadata=%s, %s",
+                fileId,
+                actualStatus,
+                expectedStatus,
+                terminalResponse,
+                buildTerminalDiagnostic(fileId))
+            .isEqualTo(expectedStatus);
     }
 
     private Path externalTestFile(String environmentVariable) {
         String configuredPath = System.getenv(environmentVariable);
         Assumptions.assumeTrue(
                 configuredPath != null && !configuredPath.isBlank(),
-                () -> "Set " + environmentVariable + " to execute this EICAR integration test.");
+            () -> "Set " + environmentVariable + " to execute this integration test.");
         Path file = Path.of(configuredPath);
         assertThat(Files.isRegularFile(file))
                 .as("The file configured through %s must be a regular file", environmentVariable)
@@ -202,7 +215,7 @@ class FileScanFlowIntegrationTest {
         return file;
     }
 
-    private String buildTimeoutDiagnostic(UUID fileId) {
+    private String buildTerminalDiagnostic(UUID fileId) {
         Map<String, Object> file = querySingleRow(
             "select status, scan_attempt_count, scan_lease_until, next_scan_at, "
                 + "failure_code, updated_at from stored_file where id = ?",
@@ -214,7 +227,7 @@ class FileScanFlowIntegrationTest {
         Map<String, Object> outbox = querySingleRow(
             "select published_at, publish_attempts, event_type from outbox_event where file_id = ?",
             fileId);
-        return "Scan did not reach a terminal status. stored_file=" + file
+        return "stored_file=" + file
             + ", scan_attempt=" + attempts
             + ", outbox_event=" + outbox;
     }

@@ -102,9 +102,9 @@ function statusMessage(status: ScanStatus) {
   }
 }
 
-function formatMaximumUploadSize(maximumSizeBytes: number) {
+function formatFileSize(sizeBytes: number) {
   const units = ['o', 'Ko', 'Mo', 'Go'];
-  let readableSize = maximumSizeBytes;
+  let readableSize = sizeBytes;
   let unitIndex = 0;
   while (readableSize >= 1024 && unitIndex < units.length - 1) {
     readableSize /= 1024;
@@ -353,7 +353,7 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
               <span className={fileUploadClassNames.zoneHint}>PDF, image ou archive securisee</span>
               {uploadConfiguration.kind === 'available' ? (
                 <span className={fileUploadClassNames.zoneHint}>
-                  Taille maximale autorisee : {formatMaximumUploadSize(
+                  Taille maximale autorisee : {formatFileSize(
                     uploadConfiguration.maximumSizeBytes,
                   )}
                 </span>
@@ -371,7 +371,7 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
           </label>
           {selectedFile ? (
             <p className={fileUploadClassNames.selectedFile}>
-              Fichier selectionne : <strong>{selectedFile.name}</strong> ({selectedFile.size} octets)
+              Fichier selectionne : <strong>{selectedFile.name}</strong> ({formatFileSize(selectedFile.size)})
             </p>
           ) : null}
           {selectedFile ? (
