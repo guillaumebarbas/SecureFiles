@@ -4,4 +4,4 @@ front:
 	npm --prefix frontend run dev
 
 back:
-	mvn -f backend/pom.xml spring-boot:run
+	SPRING_PROFILES_ACTIVE=local mvn -f backend/pom.xml spring-boot:run

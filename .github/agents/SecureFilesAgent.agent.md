@@ -2,7 +2,7 @@
 name: SecureFilesAgent
 description: "Senior Software Engineer for SecureFiles: React TypeScript, Java Spring Boot, PostgreSQL, file storage and antivirus security."
 tools: [vscode, execute, read, agent, ms-azuretools.vscode-containers/containerToolsConfig, browser, vscodeGeneral/rename, vscodeGeneral/usages, vscodeNotebooks/createJupyterNotebook, vscodeNotebooks/editNotebook, vscjava.vscode-java-debug/debugJavaApplication, vscjava.vscode-java-debug/setJavaBreakpoint, vscjava.vscode-java-debug/debugStepOperation, vscjava.vscode-java-debug/getDebugVariables, vscjava.vscode-java-debug/getDebugStackTrace, vscjava.vscode-java-debug/evaluateDebugExpression, vscjava.vscode-java-debug/getDebugThreads, vscjava.vscode-java-debug/removeJavaBreakpoints, vscjava.vscode-java-debug/stopDebugSession, vscjava.vscode-java-debug/getDebugSessionInfo, edit, search, web, todo]
-model: "GPT-5.4 (copilot)"
+model: "GPT-5.6 Luna (copilot)"
 reasoning-effort: xhigh
 user-invocable: true
 ---
@@ -109,7 +109,9 @@ Pour une tache transversale, charger au minimum `clean_code.md` et `strategy_tes
 
 ## Invariants non negociables
 
-- Un fichier nouvellement recu est `PENDING_SCAN`.
+- Un transfert incomplet peut etre represente par `UPLOADING`, mais il n'est jamais
+	scannable, telechargeable ni retourne comme upload accepte.
+- Un upload complet et valide passe a `PENDING_SCAN` avant toute demande de scan.
 - Seul `CLEAN` autorise l'ouverture du flux de telechargement.
 - Une panne ou une reponse inconnue de l'antivirus est un echec ferme.
 - Les octets restent hors PostgreSQL ; les acces passent par un port de stockage.
@@ -119,12 +121,16 @@ Pour une tache transversale, charger au minimum `clean_code.md` et `strategy_tes
 
 ## Architecture backend
 
-- `domain/` : modele pur et ports.
-- `application/` : orchestration des cas d'utilisation.
+- `domain/file/model/` : modele, statuts et transitions purs.
+- `domain/file/port/` : ports entrants et sortants du contexte fichier.
+- `domain/file/usecases/` : implementations pures et uniques des cas d'utilisation
+	metier, par exemple `UploadFileUseCase`.
+- `application/` : orchestration transverse sans reimplementation de la logique metier.
+- `application/controller/` : controleurs HTTP et traduction des erreurs de frontiere.
+- `application/dto/` et `application/mapper/` : DTOs applicatifs et conversions pures.
 - `infrastructure/` : JPA, volume/objet et client ClamAV.
-- `interfaces/rest/` : controleurs et DTOs ; jamais d'entite JPA dans une reponse.
 
-Le controleur ne decide pas si un fichier est telechargeable : cette decision appartient au cas d'utilisation de download et au domaine.
+Le controleur ne decide pas si un fichier est telechargeable : cette decision appartient au cas d'utilisation de download et au domaine. Il ne renvoie jamais d'entite JPA.
 
 ## Methode de travail
 

@@ -16,6 +16,9 @@ Ce document definit les conventions Java et les pratiques de conception applicab
 - **Methods:** camelCase et oriente verbe : `calculateChecksum()`.
 - **Variables / Parameters / Fields:** camelCase : `storedFile`, `scanResult`.
 - **Constants:** UPPER_SNAKE_CASE avec `static final` : `DEFAULT_MAX_FILE_SIZE`.
+- **Production types:** une classe ou un type de production backend doit etre top-level et place dans son propre fichier. Les classes imbriquees ne sont pas utilisees pour cacher un detail d'implementation ; extraire ce detail dans un type nomme et testable.
+- **Use case methods:** decomposer les workflows en methodes privees courtes, nommees par intention metier (`validateUploadRequest`, `storeFileContent`, `completeUploadForScanning`). Utiliser le camelCase Java, avec un verbe explicite, et non des noms de type `CheckIf...` ou `Launch...` en PascalCase.
+- **Tests:** les tests du domaine appellent une classe et une methode de production. `@Mock` est autorise uniquement pour une dependance de production du systeme teste, qui reste une instance reelle. Les fakes, stubs, spies, implementations anonymes de ports et classes auxiliaires de test sont interdits. Les couches `application` et `infrastructure` ne sont pas testees comme couches ; seuls les mappers purs sont testes.
 
 ## Java Records
 
@@ -74,7 +77,10 @@ Ne jamais journaliser de secret, token, contenu de fichier, nom de fichier sensi
 
 - Utiliser Maven pour les builds et les dependances.
 - Preferer les dependances deja presentes dans `backend/pom.xml` ; toute nouvelle dependance doit avoir une justification et un test cible.
-- Maintenir la separation `domain`, `application`, `infrastructure` et `interfaces/rest` ; ne pas introduire Spring, JPA ou HTTP dans le domaine pur.
+- Maintenir la separation `domain`, `application` et `infrastructure`. Les adaptateurs
+    HTTP sont places sous `application/controller`, tandis que `application/dto` et
+    `application/mapper` restent independants de Spring ; ne pas introduire Spring, JPA ou
+    HTTP dans le domaine pur.
 
 ## References & Further Reading
 

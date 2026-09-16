@@ -22,7 +22,9 @@ description: Use when changing file upload, quarantine, antivirus scanning, stor
 - Le stockage des octets passe par un port. PostgreSQL conserve les metadonnees, jamais le contenu.
 - Les logs excluent secret, token, contenu, hash inutilement expose et donnees personnelles non necessaires.
 - Les transitions de statut sont atomiques ou protegees contre les doubles scans et les courses entre scan et download.
-- Toute modification ajoute un test du refus associe et verifie les chemins d'exception.
+- Toute modification du domaine ajoute un test du refus associe et verifie les chemins
+	d'exception. Les modifications des couches `application` et `infrastructure` n'ajoutent
+	pas de test de couche ; seuls les mappers purs sont testes.
 
 ## Revue rapide
 

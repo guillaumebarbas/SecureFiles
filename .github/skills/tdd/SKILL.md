@@ -27,22 +27,26 @@ Charger ce skill avant toute implementation ou modification de code, que le code
 
 ## Application SecureFiles
 
-- Domaine backend : viser 100 % des lignes et branches utiles avec des tests purs et des interfaces publiques.
-- Application backend : tester les cas d'utilisation avec des doubles des ports et verifier les interactions de securite.
-- Infrastructure backend : utiliser des tests d'integration ou de contrat pour PostgreSQL, le stockage et ClamAV.
+- Domaine backend : viser 100 % des lignes et branches utiles via les interfaces publiques de types de production reels. `@Mock` est permis uniquement pour leurs dependances de production.
+- Application backend : ne pas tester la couche d'orchestration ; tester uniquement les
+	mappers purs sous `application/mapper`.
+- Infrastructure backend : ne pas ajouter de test de couche pour PostgreSQL, le stockage,
+	RabbitMQ ou ClamAV.
 - Frontend : tester les comportements visibles des composants, hooks et appels API ; ne pas tester la structure interne du composant.
 - Respecter les invariants de `rules/strategy_test.md` et les noms de tests du projet.
 
 ## Anti-patterns
 
 - Ne pas ecrire toute la suite de tests avant l'implementation : avancer par tranches verticales.
-- Ne pas mocker les classes internes que le test controle ; mocker uniquement les limites externes ou les ports necessaires a l'isolation.
+- Ne pas creer ou utiliser de fake, stub, spy, implementation anonyme de port ou classe de support dediee aux tests. Utiliser `@Mock` uniquement pour une dependance de production du systeme de production teste, jamais pour ce systeme lui-meme.
 - Ne pas tester des methodes privees, des appels internes, un ordre d'appels non contractuel ou des compteurs d'invocation sans raison comportementale.
 - Ne pas recalculer la valeur attendue avec le meme algorithme que le code ; utiliser une valeur litterale ou une source de verite independante.
 - La refactorisation generale appartient a une etape separee apres le vert, pas au milieu d'une boucle rouge-verte.
 
 ## Validation
 
-- Backend : lancer le test cible puis `mvn test` depuis `backend/` lorsque la tranche est stable.
+- Backend : lancer le test cible des mappers ou du domaine puis `mvn test` depuis `backend/`
+	lorsque la tranche est stable. Pour `application` ou `infrastructure` sans mapper,
+	utiliser une compilation ciblee sans test de couche.
 - Frontend : lancer le test cible puis `npm run build` depuis `frontend/` lorsque la tranche est stable.
 - Si aucun harnais de test n'existe encore, creer d'abord le plus petit harnais necessaire et le tester dans une tranche dediee.
