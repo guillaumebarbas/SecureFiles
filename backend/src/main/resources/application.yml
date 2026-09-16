@@ -16,8 +16,8 @@ spring:
           time_zone: UTC
   servlet:
     multipart:
-      max-file-size: ${MAX_FILE_SIZE:1GB}
-      max-request-size: ${MAX_REQUEST_SIZE:1100MB}
+      max-file-size: ${MAX_FILE_SIZE_BYTES:1073741824}B
+      max-request-size: ${MAX_REQUEST_SIZE_BYTES:1153433600}B
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -35,7 +35,7 @@ management:
 
 securefiles:
   upload:
-    maximum-size: ${MAX_FILE_SIZE:1GB}
+    maximum-size: ${MAX_FILE_SIZE_BYTES:1073741824}B
   storage:
     endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
     access-key: ${MINIO_ACCESS_KEY:securefiles}
@@ -44,7 +44,7 @@ securefiles:
     quarantine-prefix: ${MINIO_QUARANTINE_PREFIX:quarantine}
   clamav:
     host: ${CLAMAV_HOST:localhost}
-    port: ${CLAMAV_PORT:3310}
+    port: ${CLAMAV_PORT:3311}
     connect-timeout: ${CLAMAV_CONNECT_TIMEOUT:PT5S}
     read-timeout: ${CLAMAV_READ_TIMEOUT:PT60S}
     chunk-size: ${CLAMAV_CHUNK_SIZE:8192}

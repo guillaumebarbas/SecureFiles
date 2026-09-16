@@ -18,8 +18,12 @@ services:
   clamav:
     image: clamav/clamav:1.4
     platform: linux/amd64
+    environment:
+      CLAMD_CONF_StreamMaxLength: ${MAX_FILE_SIZE_BYTES:-1073741824}
+      CLAMD_CONF_MaxFileSize: ${MAX_FILE_SIZE_BYTES:-1073741824}
+      CLAMD_CONF_MaxScanSize: ${MAX_FILE_SIZE_BYTES:-1073741824}
     ports:
-      - "3310:3310"
+      - "${CLAMAV_HOST_PORT:-3311}:3310"
     volumes:
       - securefiles-clamav:/var/lib/clamav
     healthcheck:
