@@ -1,39 +1,43 @@
 import { startTransition, useEffect, useState } from 'react';
-import { Home, LayoutGrid } from 'lucide-react';
+import { CircleUserRound, Home, LayoutGrid } from 'lucide-react';
 import { checkBackendHealth } from './api/filesApi';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
 import { FilesPage } from './pages/Files/FilesPage';
+import { ProfilePage } from './pages/Profile/ProfilePage';
 import { SharedComponentsShowcasePage } from './pages/SharedComponentsShowcase/SharedComponentsShowcasePage';
 import type { BackendStatusValue } from './shared/layout/BackendStatus/style';
 import { Header } from './shared/layout/Header/Header';
+import { Login } from './shared/layout/Login/Login';
 import { SideNavBar } from './shared/layout/SideNavBar/SideNavBar';
 import type { NavItemDefinition } from './shared/layout/NavItem/NavItem';
 import { appClassNames } from './app/style';
 
-export type AppRoute = '/' | '/components' | '/files';
+export type AppRoute = '/' | '/components' | '/files' | '/profile';
 
 const applicationVersion = '0.1.0';
 
 const navigationItems: readonly NavItemDefinition[] = [
   { href: '/', icon: Home, label: 'Dashboard' },
+  { href: '/profile', icon: CircleUserRound, label: 'Profil' },
   { href: '/components', icon: LayoutGrid, label: 'Bibliotheque' },
 ];
 
-const routeMetadata: Record<AppRoute, { description: string; eyebrow: string; title: string }> = {
+const routeMetadata: Record<AppRoute, { eyebrow: string; title: string }> = {
   '/': {
-    description: 'Une vue d\'accueil pour suivre rapidement l\'etat du service et retrouver les zones de travail.',
     eyebrow: 'Vue d\'ensemble',
     title: 'Dashboard',
   },
   '/components': {
-    description: 'Une page de reference pour verifier les composants de la console et leurs etats accessibles.',
     eyebrow: 'Bibliotheque partagee',
     title: 'Composants reutilisables',
   },
   '/files': {
-    description: 'Un registre pret a recevoir les fichiers et leurs statuts de scan.',
     eyebrow: 'Registre des fichiers',
     title: 'Fichiers',
+  },
+  '/profile': {
+    eyebrow: 'Compte',
+    title: 'Profil',
   },
 };
 
@@ -46,6 +50,10 @@ function routeFromPathname(pathname: string): AppRoute {
     return '/components';
   }
 
+  if (pathname === '/profile') {
+    return '/profile';
+  }
+
   return '/';
 }
 
@@ -56,6 +64,10 @@ function renderCurrentPage(route: AppRoute) {
 
   if (route === '/components') {
     return <SharedComponentsShowcasePage />;
+  }
+
+  if (route === '/profile') {
+    return <ProfilePage />;
   }
 
   return <FilesPage />;
@@ -116,11 +128,9 @@ export function App() {
         version={applicationVersion}
       />
       <div className={appClassNames.content}>
-        <Header
-          description={currentRouteMetadata.description}
-          eyebrow={currentRouteMetadata.eyebrow}
-          title={currentRouteMetadata.title}
-        />
+        <Header eyebrow={currentRouteMetadata.eyebrow} title={currentRouteMetadata.title}>
+          <Login />
+        </Header>
         <main className={appClassNames.main}>
           <div className={appClassNames.view} key={currentRoute}>
             {renderCurrentPage(currentRoute)}

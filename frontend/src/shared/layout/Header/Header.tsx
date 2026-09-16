@@ -5,12 +5,11 @@ import { headerClassNames } from './style';
 type HeaderProps = {
   children?: ReactNode;
   className?: string;
-  description?: string;
   eyebrow?: string;
   title: string;
 };
 
-export function Header({ children, className, description, eyebrow, title }: HeaderProps) {
+export function Header({ children, className, eyebrow, title }: HeaderProps) {
   const headerClassName = [headerClassNames.root, className].filter(Boolean).join(' ');
 
   return (
@@ -26,9 +25,8 @@ export function Header({ children, className, description, eyebrow, title }: Hea
           <h1>{title}</h1>
           {eyebrow ? <span className={headerClassNames.eyebrow}>{eyebrow}</span> : null}
         </Row>
-        {description || children ? (
+        {children ? (
           <Row align="center" className={headerClassNames.content} gap="16px" wrap="wrap">
-            {description ? <p className={headerClassNames.description}>{description}</p> : null}
             {children}
           </Row>
         ) : null}

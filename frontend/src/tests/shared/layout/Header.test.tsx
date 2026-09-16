@@ -3,10 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { Header } from '../../../shared/layout/Header/Header';
 
 describe('Header', () => {
-  it('renders its route context, description, and received elements', () => {
+  it('renders its route context and received elements', () => {
     render(
       <Header
-        description="Une vue d'accueil pour suivre rapidement l'etat du service."
         eyebrow="Vue d'ensemble"
         title="Dashboard"
       >
@@ -22,7 +21,7 @@ describe('Header', () => {
     expect(screen.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
     expect(screen.getByText("Vue d'ensemble")).toHaveClass('app-header__eyebrow');
     expect(screen.queryByText("SecureFiles / Vue d'ensemble")).not.toBeInTheDocument();
-    expect(screen.getByText("Une vue d'accueil pour suivre rapidement l'etat du service.")).toBeVisible();
+    expect(screen.queryByText("Une vue d'accueil pour suivre rapidement l'etat du service.")).not.toBeInTheDocument();
     expect(screen.getByText('Contexte de la vue')).toBeVisible();
     expect(screen.getByText('Action de la vue')).toBeVisible();
     expect(heading).toBeTruthy();
@@ -30,6 +29,6 @@ describe('Header', () => {
     expect(heading?.firstElementChild).toHaveTextContent('Dashboard');
     expect(heading?.lastElementChild).toHaveTextContent("Vue d'ensemble");
     expect(content).toBeTruthy();
-    expect(content?.querySelector('.app-header__description')).toBeTruthy();
+    expect(content?.querySelector('.app-header__description')).toBeNull();
   });
 });

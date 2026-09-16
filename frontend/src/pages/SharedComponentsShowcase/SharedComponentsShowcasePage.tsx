@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { Clock3, CloudUpload, Download, Info, Search, ShieldCheck, Upload } from 'lucide-react';
+import {
+  CircleUserRound,
+  Clock3,
+  CloudUpload,
+  Download,
+  Info,
+  Search,
+  ShieldCheck,
+  Upload,
+} from 'lucide-react';
 import { Button } from '../../shared/actions/Button';
 import { GenericTable, type TableColumn } from '../../shared/data/GenericTable';
 import { Icon } from '../../shared/feedback/Icon';
@@ -8,6 +17,7 @@ import { Tooltip } from '../../shared/feedback/Tooltip';
 import { FileUpload } from '../../shared/forms/FileUpload/FileUpload';
 import { SearchBar } from '../../shared/forms/SearchBar';
 import { Column } from '../../shared/layout/Column';
+import { Login, type LoginUser } from '../../shared/layout/Login/Login';
 import { Row } from '../../shared/layout/Row';
 import { Section } from '../../shared/layout/Section/Section';
 import { showcaseClassNames } from './style';
@@ -41,7 +51,9 @@ const showcaseColumns: TableColumn<ShowcaseFile>[] = [
 ];
 
 export function SharedComponentsShowcasePage() {
+  const [loggedInUser, setLoggedInUser] = useState<LoginUser>();
   const [submittedSearch, setSubmittedSearch] = useState('');
+  const demoUser: LoginUser = { name: 'Utilisateur de démonstration' };
 
   return (
     <div className={showcaseClassNames.root}>
@@ -70,6 +82,19 @@ export function SharedComponentsShowcasePage() {
           </Button>
           <Button variant="gradient">Action accentuee</Button>
         </Row>
+      </Section>
+
+      <Section
+        description="Un exemple local des états de connexion du header."
+        icon={CircleUserRound}
+        title="Connexion"
+      >
+        <Login
+          onLogin={() => setLoggedInUser(demoUser)}
+          onLogout={() => setLoggedInUser(undefined)}
+            onRegister={() => setLoggedInUser(demoUser)}
+          user={loggedInUser}
+        />
       </Section>
 
       <Section
