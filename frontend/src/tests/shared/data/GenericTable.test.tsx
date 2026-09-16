@@ -32,6 +32,8 @@ describe('GenericTable', () => {
 
     const table = screen.getByRole('table', { name: 'Registre des fichiers' });
 
+    expect(table).toHaveClass('shared-table--framed');
+    expect(table.parentElement).toHaveClass('shared-table__viewport');
     expect(within(table).getByRole('columnheader', { name: /nom/i })).toBeVisible();
     expect(within(table).getByText('zulu.pdf')).toBeVisible();
     expect(within(table).getByText('CLEAN')).toBeVisible();
@@ -74,5 +76,71 @@ describe('GenericTable', () => {
     );
 
     expect(screen.getByText('Aucun fichier')).toBeVisible();
+  });
+
+  it('renders a newly inserted row first while keeping existing rows below it', () => {
+    const insertedRow: FileRow = {
+      id: 'file-3',
+      name: 'new-file.pdf',
+      status: 'PENDING_SCAN',
+    };
+
+    render(
+      <GenericTable
+        animatedRowKey={insertedRow.id}
+        caption="Registre avec insertion"
+        columns={columns}
+        getRowKey={(row) => row.id}
+        rows={[insertedRow, ...rows]}
+      />,
+    );
+
+    const table = screen.getByRole('table', { name: 'Registre avec insertion' });
+    const renderedRows = within(table).getAllByRole('row').slice(1);
+
+    expect(renderedRows[0]).toHaveTextContent('new-file.pdf');
+    expect(renderedRows[1]).toHaveTextContent('zulu.pdf');
+    expect(renderedRows[2]).toHaveTextContent('alpha.pdf');
+  });
+
+  it('paginates sorted rows and exposes page and element counts', async () => {
+    const user = userEvent.setup();
+    const paginatedRows: FileRow[] = [
+      ...rows,
+      { id: 'file-3', name: 'middle.pdf', status: 'SCANNING' },
+    ];
+
+    render(
+      <GenericTable
+        caption="Registre pagine"
+        columns={columns}
+        getRowKey={(row) => row.id}
+        pagination={{ pageSize: 2, pageSizeOptions: [2, 3] }}
+        rows={paginatedRows}
+      />,
+    );
+
+    const table = screen.getByRole('table', { name: 'Registre pagine' });
+    expect(within(table).getByText('zulu.pdf')).toBeVisible();
+    expect(within(table).getByText('alpha.pdf')).toBeVisible();
+    expect(within(table).queryByText('middle.pdf')).not.toBeInTheDocument();
+    expect(screen.getByText('Page 1 sur 2')).toBeVisible();
+    expect(screen.getByText('3 elements')).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Page suivante' }));
+
+    expect(screen.getByText('Page 2 sur 2')).toBeVisible();
+    expect(within(table).getByText('middle.pdf')).toBeVisible();
+    expect(within(table).queryByText('zulu.pdf')).not.toBeInTheDocument();
+
+    await user.click(within(table).getByRole('button', { name: 'Trier par Nom' }));
+
+    expect(screen.getByText('Page 1 sur 2')).toBeVisible();
+    expect(within(table).getByText('alpha.pdf')).toBeVisible();
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Elements par page' }), '3');
+
+    expect(screen.getByText('Page 1 sur 1')).toBeVisible();
+    expect(within(table).getByText('middle.pdf')).toBeVisible();
   });
 });

@@ -21,6 +21,9 @@
   --waiting: #d8911f;
   --waiting-surface: #fff4dd;
   --danger: #df3e55;
+  --table-grid: #e8ebef;
+  --table-header: #eef0f3;
+  --table-outline: #d7dce4;
   --focus-ring: rgba(57, 103, 246, 0.24);
   --shadow-soft: 0 12px 32px rgba(23, 35, 61, 0.08);
   --radius-panel: 8px;
@@ -35,11 +38,18 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  overflow: hidden;
   background:
     linear-gradient(rgba(219, 227, 240, 0.34) 1px, transparent 1px),
     linear-gradient(90deg, rgba(219, 227, 240, 0.34) 1px, transparent 1px),
     var(--canvas);
   background-size: 32px 32px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
 }
 
 button,
@@ -98,25 +108,35 @@ h3 {
 .app-shell {
   display: grid;
   grid-template-columns: minmax(232px, 268px) minmax(0, 1fr);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .app-content {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
   min-width: 0;
-  padding: 0 38px 48px;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .app-main {
-  width: min(1180px, 100%);
-  margin: 0 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 38px 48px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
 .app-header {
-  width: min(1180px, 100%);
-  margin: 0 auto;
-  padding: 32px 0 24px;
+  width: 100%;
+  padding: 28px 38px 22px;
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 8px 24px rgba(23, 35, 61, 0.04);
 }
 
 .app-header__row {
@@ -129,10 +149,15 @@ h3 {
 }
 
 .app-header__content {
+  align-items: flex-end;
   max-width: 100%;
   margin-left: auto;
   gap: 12px;
   color: var(--text-secondary);
+}
+
+.app-main__view {
+  animation: app-view-enter 280ms ease both;
 }
 
 .app-header__route-label {
@@ -143,9 +168,10 @@ h3 {
 }
 
 .app-sidebar {
-  position: sticky;
-  top: 0;
   min-height: 100vh;
+  height: 100vh;
+  padding: 24px 16px 18px;
+  overflow-y: auto;
   padding: 24px 16px 18px;
   border-right: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.92);
@@ -153,7 +179,7 @@ h3 {
 
 .app-sidebar__content {
   width: 100%;
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 .nav-header {
@@ -365,9 +391,231 @@ h3 {
   font-weight: 700;
 }
 
-.showcase-page {
-  width: min(1180px, calc(100% - 48px));
+.files-page,
+.showcase-page,
+.dashboard-page {
+  width: min(1180px, 100%);
   margin: 0 auto;
+}
+
+.files-page,
+.dashboard-page {
+  padding: 40px 0 72px;
+}
+
+.dashboard-page {
+  display: grid;
+  gap: 18px;
+}
+
+.dashboard-page__hero {
+  display: grid;
+  gap: 14px;
+  padding: 8px 0 4px;
+}
+
+.dashboard-page__hero h2 {
+  max-width: 14ch;
+}
+
+.dashboard-page__description {
+  max-width: 62ch;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.dashboard-page__files-loading {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.dashboard-page__files-error {
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(223, 62, 85, 0.22);
+  border-radius: var(--radius-control);
+  background: #fff1f3;
+}
+
+.dashboard-page__files-error p {
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dashboard-page__upload-content {
+  width: 100%;
+}
+
+.dashboard-page__upload-content .shared-file-upload {
+  width: min(760px, 100%);
+}
+
+.shared-file-upload {
+  width: 100%;
+}
+
+.shared-file-upload__form {
+  max-width: 760px;
+}
+
+.shared-file-upload__zone {
+  position: relative;
+  display: grid;
+  min-height: 220px;
+  padding: 32px 24px;
+  place-items: center;
+  border: 2px dashed var(--action-primary);
+  border-radius: var(--radius-control);
+  color: var(--action-primary);
+  background: var(--surface-secondary);
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.shared-file-upload__zone:hover {
+  border-color: var(--action-hover);
+  background: #e7edff;
+}
+
+.shared-file-upload__zone:focus-within {
+  border-color: var(--action-hover);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.shared-file-upload__zone-content {
+  display: grid;
+  gap: 10px;
+  place-items: center;
+  color: var(--text-primary);
+  font-weight: 700;
+  text-align: center;
+}
+
+.shared-file-upload__zone-content svg {
+  color: var(--action-primary);
+}
+
+.shared-file-upload__zone-hint {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.shared-file-upload__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.shared-file-upload__selected-file,
+.shared-file-upload__progress-message {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.shared-file-upload__selected-file strong {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.shared-file-upload__progress-message {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.shared-file-upload__progress-bar {
+  width: min(320px, 100%);
+  height: 8px;
+  accent-color: var(--action-primary);
+}
+
+.shared-file-upload__progress-value {
+  min-width: 4ch;
+  color: var(--text-primary);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.shared-file-upload__loading {
+  display: inline-block;
+  animation: shared-file-upload-spin 900ms linear infinite;
+}
+
+.shared-file-upload__feedback {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-secondary);
+  animation: app-view-enter 240ms ease both;
+}
+
+.shared-file-upload__feedback--error {
+  border-color: rgba(223, 62, 85, 0.28);
+  color: var(--danger);
+  background: #fde9ed;
+}
+
+.shared-file-upload__feedback-message {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.shared-file-upload__feedback-polling-error {
+  color: var(--waiting);
+  font-size: 14px;
+}
+
+.shared-file-upload__feedback-id {
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+@keyframes shared-file-upload-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shared-table-row-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shared-table-row-push {
+  from {
+    opacity: 0.76;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.showcase-page {
   padding: 48px 0 72px;
 }
 
@@ -517,6 +765,12 @@ h3 {
   transform: translateY(-1px);
 }
 
+.shared-button:disabled,
+.shared-button:disabled:hover {
+  opacity: 0.6;
+  transform: none;
+}
+
 .shared-button--primary {
   color: #ffffff;
   background: var(--action-primary);
@@ -581,6 +835,11 @@ h3 {
   filter: brightness(0.98);
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(23, 35, 61, 0.08);
+}
+
+.shared-tag:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .shared-tag--neutral {
@@ -699,15 +958,27 @@ h3 {
   min-width: 0;
 }
 
+.shared-table__viewport {
+  width: 100%;
+  overflow: auto;
+}
+
 .shared-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   color: var(--text-primary);
   font-size: 14px;
   text-align: left;
 }
 
-.shared-table caption {
+.shared-table--framed {
+  border: 1px solid var(--table-outline);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.shared-table__caption {
   margin-bottom: 12px;
   color: var(--text-secondary);
   font-size: 13px;
@@ -718,14 +989,25 @@ h3 {
 .shared-table th,
 .shared-table td {
   padding: 14px 12px;
+  border-right: 1px solid var(--table-grid);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
 .shared-table th {
+  background: var(--table-header);
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 700;
+}
+
+.shared-table thead {
+  background: var(--table-header);
+}
+
+.shared-table th:last-child,
+.shared-table td:last-child {
+  border-right: 0;
 }
 
 .shared-table tbody tr:last-child td {
@@ -734,6 +1016,14 @@ h3 {
 
 .shared-table tbody tr:hover {
   background: #f8faff;
+}
+
+.shared-table__row--new {
+  animation: shared-table-row-enter 280ms ease both;
+}
+
+.shared-table__row--pushed {
+  animation: shared-table-row-push 280ms ease both;
 }
 
 .shared-table__sort-button {
@@ -752,19 +1042,68 @@ h3 {
   color: var(--action-primary);
 }
 
+.shared-table__pagination {
+  gap: 16px;
+  margin-top: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.shared-table__pagination-summary {
+  min-width: 0;
+}
+
+.shared-table__pagination-summary label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.shared-table__pagination-summary select {
+  min-height: 36px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
+.shared-table__pagination-controls .shared-button {
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+}
+
+@keyframes app-view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 760px) {
   .app-shell {
-    display: block;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .app-content {
-    padding: 0 14px 36px;
+    height: auto;
+    min-height: 0;
   }
 
   .app-sidebar {
-    position: static;
     min-height: auto;
+    height: auto;
     padding: 18px 14px 14px;
+    overflow: visible;
     border-right: 0;
     border-bottom: 1px solid var(--border);
   }
@@ -795,12 +1134,16 @@ h3 {
   }
 
   .app-header {
-    padding: 24px 0 18px;
+    padding: 24px 14px 18px;
   }
 
   .app-header__content {
     width: 100%;
     margin-left: 0;
+  }
+
+  .app-main {
+    padding: 0 14px 36px;
   }
 
   .shared-section__header {
@@ -814,7 +1157,11 @@ h3 {
   }
 
   .showcase-page {
-    width: 100%;
+    padding: 24px 0 48px;
+  }
+
+  .files-page,
+  .dashboard-page {
     padding: 24px 0 48px;
   }
 

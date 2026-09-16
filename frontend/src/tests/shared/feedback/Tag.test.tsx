@@ -30,4 +30,21 @@ describe('Tag', () => {
 
     expect(screen.getByText('Analyse en attente')).toHaveClass('shared-tag--warning');
   });
+
+  it('shows contextual details in a tooltip when provided', () => {
+    render(
+      <Tag
+        details="Service antivirus indisponible (CLAMAV_UNAVAILABLE)"
+        text="SCAN_FAILED"
+        tone="danger"
+      />,
+    );
+
+    const tag = screen.getByText('SCAN_FAILED');
+    const tooltip = screen.getByRole('tooltip');
+
+    expect(tag).toHaveAttribute('aria-describedby', tooltip.id);
+    expect(tag).toHaveAttribute('tabindex', '0');
+    expect(tooltip).toHaveTextContent('Service antivirus indisponible (CLAMAV_UNAVAILABLE)');
+  });
 });
