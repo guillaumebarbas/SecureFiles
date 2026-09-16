@@ -597,3 +597,9 @@ Prompt :
 le mcp pourtant est bien lancé peux tu me lancer les pr et remplir la doc ? doc/features avec differents .md numéroté pour avoir l'ordre
 Resultat : Les resumes de livraison sont numerotes dans l'ordre backend, frontend puis fondation documentaire; un index de lecture est ajoute. La creation GitHub est tentee via les outils exposes par la session.
 - - - - -
+
+- - - - -
+Prompt :
+Ok ressaye le mcp
+Resultat : Trois issues et trois pull requests ont ete creees et confirmees vers `main` via la session GitHub authentifiee : issues `#3`, `#5` et `#7`, puis PRs `#4`, `#6` et `#8` pour les branches backend, frontend et fondation documentaire.
+- - - - -
