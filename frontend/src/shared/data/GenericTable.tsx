@@ -1,5 +1,7 @@
-import { ArrowUpDown } from 'lucide-react';
-import { useState, type Key, type ReactNode } from 'react';
+import { ArrowLeft, ArrowRight, ArrowUpDown } from 'lucide-react';
+import { useEffect, useId, useState, type Key, type ReactNode } from 'react';
+import { Button } from '../actions/Button';
+import { Row } from '../layout/Row';
 
 export type TableColumn<Row extends object> = {
   header: string;
@@ -14,11 +16,18 @@ type SortState<Row extends object> = {
   key: keyof Row;
 };
 
+export type TablePagination = {
+  pageSize: number;
+  pageSizeOptions?: number[];
+};
+
 type GenericTableProps<Row extends object> = {
+  animatedRowKey?: Key | null;
   caption: string;
   columns: TableColumn<Row>[];
   emptyMessage?: string;
   getRowKey?: (row: Row, index: number) => Key;
+  pagination?: TablePagination;
   rows: Row[];
 };
 
@@ -43,13 +52,18 @@ function readCellValue<Row extends object>(row: Row, column: TableColumn<Row>) {
 }
 
 export function GenericTable<Row extends object>({
+  animatedRowKey = null,
   caption,
   columns,
   emptyMessage = 'Aucun element a afficher.',
   getRowKey,
+  pagination,
   rows,
 }: GenericTableProps<Row>) {
+  const captionId = `shared-table-caption-${useId().replace(/:/g, '')}`;
   const [sortState, setSortState] = useState<SortState<Row> | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(pagination?.pageSize ?? 10);
   const sortedRows = sortState
     ? [...rows].sort((left, right) => {
         const column = columns.find(({ key }) => key === sortState.key);
@@ -65,6 +79,33 @@ export function GenericTable<Row extends object>({
         return sortState.direction === 'ascending' ? result : -result;
       })
     : rows;
+  const pageSizeOptions = pagination
+    ? Array.from(new Set([pagination.pageSize, ...(pagination.pageSizeOptions ?? [])]))
+        .filter((option) => Number.isInteger(option) && option > 0)
+    : [];
+  const totalElements = sortedRows.length;
+  const paginationEnabled = pagination !== undefined;
+  const totalPages = pagination
+    ? Math.max(1, Math.ceil(totalElements / pageSize))
+    : 1;
+  const visiblePage = Math.min(currentPage, totalPages);
+  const visibleRows = pagination
+    ? sortedRows.slice((visiblePage - 1) * pageSize, visiblePage * pageSize)
+    : sortedRows;
+  const rowKeys = visibleRows.map((row, index) => getRowKey?.(row, index) ?? index);
+  const animatedRowIndex = animatedRowKey === null
+    ? -1
+    : rowKeys.findIndex((rowKey) => rowKey === animatedRowKey);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  useEffect(() => {
+    if (animatedRowKey !== null && paginationEnabled) {
+      setCurrentPage(1);
+    }
+  }, [animatedRowKey, paginationEnabled]);
 
   function handleSort(column: TableColumn<Row>) {
     if (!column.sortable) {
@@ -78,52 +119,124 @@ export function GenericTable<Row extends object>({
           : 'ascending',
       key: column.key,
     }));
+    setCurrentPage(1);
+  }
+
+  function handlePageSizeChange(nextPageSize: string) {
+    setPageSize(Number(nextPageSize));
+    setCurrentPage(1);
+  }
+
+  function goToPreviousPage() {
+    setCurrentPage((page) => Math.max(1, Math.min(page, totalPages) - 1));
+  }
+
+  function goToNextPage() {
+    setCurrentPage((page) => Math.min(totalPages, Math.max(1, page) + 1));
   }
 
   return (
-    <table className="shared-table">
-      <caption>{caption}</caption>
-      <thead>
-        <tr>
-          {columns.map((column) => {
-            const isSorted = sortState?.key === column.key;
-            const sortDirection = isSorted ? sortState.direction : 'none';
+    <>
+      <p className="shared-table__caption" id={captionId}>{caption}</p>
+      <div className="shared-table__viewport">
+        <table aria-labelledby={captionId} className="shared-table shared-table--framed">
+          <thead>
+            <tr>
+              {columns.map((column) => {
+                const isSorted = sortState?.key === column.key;
+                const sortDirection = isSorted ? sortState.direction : 'none';
 
-            return (
-              <th key={String(column.key)} aria-sort={column.sortable ? sortDirection : undefined} scope="col">
-                {column.sortable ? (
-                  <button
-                    aria-label={`Trier par ${column.header}`}
-                    className="shared-table__sort-button"
-                    onClick={() => handleSort(column)}
-                    type="button"
+                return (
+                  <th
+                    key={String(column.key)}
+                    aria-sort={column.sortable ? sortDirection : undefined}
+                    scope="col"
                   >
-                    <span>{column.header}</span>
-                    <ArrowUpDown aria-hidden="true" size={16} />
-                  </button>
-                ) : (
-                  column.header
-                )}
-              </th>
-            );
-          })}
-        </tr>
-      </thead>
-      <tbody>
-        {sortedRows.length > 0 ? (
-          sortedRows.map((row, index) => (
-            <tr key={getRowKey?.(row, index) ?? index}>
-              {columns.map((column) => (
-                <td key={String(column.key)}>{readCellValue(row, column)}</td>
-              ))}
+                    {column.sortable ? (
+                      <button
+                        aria-label={`Trier par ${column.header}`}
+                        className="shared-table__sort-button"
+                        onClick={() => handleSort(column)}
+                        type="button"
+                      >
+                        <span>{column.header}</span>
+                        <ArrowUpDown aria-hidden="true" size={16} />
+                      </button>
+                    ) : (
+                      column.header
+                    )}
+                  </th>
+                );
+              })}
             </tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan={columns.length}>{emptyMessage}</td>
-          </tr>
-        )}
-      </tbody>
-    </table>
+          </thead>
+          <tbody>
+            {visibleRows.length > 0 ? (
+              visibleRows.map((row, index) => {
+                const isNewRow = index === animatedRowIndex;
+                const isPushedRow = animatedRowIndex === 0 && index > 0;
+                const rowClassName = [
+                  isNewRow ? 'shared-table__row--new' : '',
+                  isPushedRow ? 'shared-table__row--pushed' : '',
+                ].filter(Boolean).join(' ');
+
+                return (
+                  <tr className={rowClassName || undefined} key={rowKeys[index]}>
+                    {columns.map((column) => (
+                      <td key={String(column.key)}>{readCellValue(row, column)}</td>
+                    ))}
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={columns.length}>{emptyMessage}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {pagination && totalElements > 0 ? (
+        <Row
+          align="center"
+          className="shared-table__pagination"
+          justify="space-between"
+          wrap="wrap"
+        >
+          <Row align="center" className="shared-table__pagination-summary" gap="12px" wrap="wrap">
+            <span aria-live="polite">Page {visiblePage} sur {totalPages}</span>
+            <span>{totalElements} elements</span>
+            <label>
+              Elements par page
+              <select
+                aria-label="Elements par page"
+                onChange={(event) => handlePageSizeChange(event.target.value)}
+                value={pageSize}
+              >
+                {pageSizeOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+          </Row>
+          <Row align="center" className="shared-table__pagination-controls" gap="8px">
+            <Button
+              aria-label="Page precedente"
+              disabled={visiblePage === 1}
+              icon={ArrowLeft}
+              onClick={goToPreviousPage}
+              variant="secondary"
+            />
+            <Button
+              aria-label="Page suivante"
+              disabled={visiblePage === totalPages}
+              icon={ArrowRight}
+              onClick={goToNextPage}
+              variant="secondary"
+            />
+          </Row>
+        </Row>
+      ) : null}
+    </>
   );
 }
