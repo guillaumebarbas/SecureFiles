@@ -19,7 +19,9 @@ description: Use when reviewing, refactoring, debugging, or assessing a SecureFi
 1. Identifier le port, le cas d'utilisation, l'adaptateur ou le composant qui decide directement le comportement.
 2. Lire le diff et le test voisin le plus discriminant avant de conclure.
 3. Verifier les invariants de securite : statut initial `PENDING_SCAN`, acces contenu reserve a `CLEAN`, echec antivirus ferme, flux non materialises et absence de donnees sensibles dans les logs.
-4. Verifier les limites d'architecture : domaine pur, orchestration dans `application`, dependances externes dans `infrastructure`, DTO uniquement dans `interfaces/rest`.
+4. Verifier les limites d'architecture : domaine pur, adaptateurs HTTP dans
+	`application/controller`, DTOs et conversions dans `application/dto` et
+	`application/mapper`, dependances externes dans `infrastructure`.
 5. Chercher les regressions de concurrence, de validation, de gestion d'erreur et de compatibilite HTTP.
 6. Verifier qu'un test reproduit chaque comportement a risque et que la validation ciblee a ete executee.
 

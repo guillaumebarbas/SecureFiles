@@ -2,7 +2,7 @@
 name: SecureFilesPlanner
 description: "Read-only SecureFiles planning specialist that traces the controlling code path, tests assumptions, and critiques implementation plans before approval."
 tools: [read, search]
-model: "GPT-5.4 (copilot)"
+model: "GPT-5.6 Luna (copilot)"
 reasoning-effort: high
 user-invocable: false
 disable-model-invocation: false
