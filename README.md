@@ -148,16 +148,58 @@ Chaque scenario verifie `202/PENDING_SCAN`, puis exige le statut terminal `INFEC
 Sans variable correspondante, le scenario est ignore; un chemin configure mais illisible
 fait echouer le test.
 
+### Test d'integration d'une limite ClamAV basse
+
+Le test `FileScanSizeLimitIntegrationTest` utilise uniquement de petits fichiers generes
+pendant le test. Il verifie qu'un fichier de `512 KiB` atteint `CLEAN`, puis qu'un fichier
+de `2 MiB` depassant la limite ClamAV de test reste bloque en `SCAN_FAILED` et ne peut pas
+etre telecharge.
+
+La limite basse est fournie uniquement par l'override Compose de test
+`docker-compose.integration-scan-limit.yml`. La configuration de production et
+`MAX_FILE_SIZE_BYTES` ne sont pas modifies par ce scenario : la limite d'upload reste
+superieure a la taille du fichier afin que le scan soit effectivement atteint.
+
+```bash
+docker compose \
+   -f docker-compose.yml \
+   -f docker-compose.integration-scan-limit.yml \
+   up -d --wait postgres minio rabbitmq clamav
+
+cd backend
+SECUREFILES_SCAN_LIMIT_INTEGRATION=true \
+mvn -Dtest=FileScanSizeLimitIntegrationTest test
+```
+
+L'override configure `StreamMaxLength` a `1 MiB` et conserve `MaxFileSize` ainsi que
+`MaxScanSize` a `4 MiB` afin d'isoler le depassement du flux ClamAV. Il ne doit pas etre
+utilise pour le lancement local normal.
+
 ### Politique de taille d'upload
 
-`MAX_FILE_SIZE` definit la taille maximale autorisee pour un fichier. Cette valeur aligne
-la limite multipart Spring et `securefiles.upload.maximum-size`, qui reste l'autorite du
-domaine pendant le transfert streame. La valeur par defaut est `1GB`.
+`MAX_FILE_SIZE_BYTES` definit, en octets, la taille maximale autorisee pour un fichier.
+Cette source de verite unique aligne la limite multipart Spring,
+`securefiles.upload.maximum-size` du domaine et les limites ClamAV `StreamMaxLength`,
+`MaxFileSize` et `MaxScanSize`. La valeur par defaut est `1073741824` (1 Gio). La console
+lit cette politique par `GET /api/v1/files/config` et ne duplique pas de limite locale.
 
-`MAX_REQUEST_SIZE` couvre la requete multipart complete et doit donc rester superieure a
-`MAX_FILE_SIZE`. Sa valeur par defaut est `1100MB`, ce qui laisse de la place a l'enveloppe
-multipart pour un fichier de `1GB`. Si `MAX_FILE_SIZE` est modifie, `MAX_REQUEST_SIZE` doit
-etre ajuste en consequence.
+Apres un changement de `MAX_FILE_SIZE_BYTES`, recreer le conteneur ClamAV pour que
+`clamd` recharge ses limites :
+
+```bash
+docker compose up -d --force-recreate --wait clamav
+```
+
+ClamAV est expose sur le port hote `3311` par defaut, configurable par
+`CLAMAV_HOST_PORT`. Le backend local utilise la meme valeur par `CLAMAV_PORT`; ce port
+separe evite de joindre par erreur un daemon ClamAV installe sur macOS qui ecouterait sur
+le port standard `3310`.
+
+`MAX_REQUEST_SIZE_BYTES` couvre la requete multipart complete et doit donc rester
+strictement superieure a `MAX_FILE_SIZE_BYTES`. Sa valeur par defaut est `1153433600`
+(1 100 Mio), ce qui laisse de la place a l'enveloppe multipart pour un fichier de 1 Gio.
+Si `MAX_FILE_SIZE_BYTES` est modifie, `MAX_REQUEST_SIZE_BYTES` doit etre ajuste en
+consequence.
 
 La console lit `GET /api/v1/files/config` avant l'envoi et affiche la taille maximale
 autorisee dans la zone de depot. Elle desactive l'action d'upload si la politique ne peut

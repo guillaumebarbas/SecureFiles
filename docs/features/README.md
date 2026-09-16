@@ -10,6 +10,7 @@ Merge the numbered feature branches in this order:
 2. `02-frontend-dashboard-upload.md` from `feat/frontend-dashboard-upload` adds the dashboard that consumes the backend contract.
 3. `03-securefiles-delivery-foundation.md` from `chore/securefiles-delivery-foundation` documents the final workflow, rules, and runtime guide.
 4. `04-frontend-ux-ui-fixes.md` from `feat/frontend-ux-ui-fixes` records the console shell, backend status, upload feedback, and navigation refinements.
+5. `05-large-file-antivirus-scan.md` from `fix/large-file-antivirus-scan` aligns the production size policy and adds the isolated ClamAV stream-limit integration scenario.
 
 The numbered summaries intentionally remain with the branch that delivers the
 corresponding implementation. After merging the branches in sequence, this
