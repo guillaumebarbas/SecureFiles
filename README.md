@@ -2,25 +2,29 @@
 
 Micro-service de depot et de distribution de fichiers securises, realise pour un exercice Java / Spring Boot / React / PostgreSQL.
 
-## Etat du scaffold
+## Etat actuel
 
-Le backend et le frontend ont ete volontairement remis a zero pour permettre une reconstruction manuelle :
+La reconstruction couvre maintenant le premier flux complet d'upload et de scan du backend :
 
-- `backend/src/` est vide ;
-- `frontend/src/` est vide ;
-- les manifestes, regles, skills, workflows et fichiers d'infrastructure sont conserves comme points de depart ;
-- aucune implementation metier ou entree d'application n'est actuellement presente.
+- le domaine contient le use case d'upload, ses ports et ses invariants de streaming ;
+- `application/dto` et `application/mapper` contiennent les conversions entre le domaine
+   et la couche applicative ;
+- `application/controller` contient le point d'entree `POST /api/v1/files` ;
+- les adaptateurs PostgreSQL/JPA, stockage objet MinIO, ClamAV et RabbitMQ/Outbox sont
+   presents et relies par la configuration Spring.
 
-Les commandes `mvn test`, `mvn spring-boot:run`, `npm run build` et `npm run dev` redeviendront executables apres l'ajout des premiers fichiers sources.
+La suite `mvn test` est executable sans dependance externe. Le demarrage Spring et le flux
+complet necessitent PostgreSQL, MinIO, RabbitMQ et ClamAV.
 
 ## Analyse du sujet
 
 Le risque principal n'est pas l'upload : c'est de laisser un chemin de telechargement contourner l'analyse antivirus. Le service applique donc une machine d'etats fermee :
 
 ```text
-PENDING_SCAN -> SCANNING -> CLEAN
+UPLOADING -> PENDING_SCAN -> SCANNING -> CLEAN
                          -> INFECTED
                          -> SCAN_FAILED
+UPLOADING -> REJECTED
 ```
 
 Un fichier nouvellement recu est depose dans un espace de quarantaine, puis analyse par ClamAV. Tant que le resultat n'est pas `CLEAN`, l'API de contenu renvoie `409 Conflict`. Les erreurs de connexion ou de protocole antivirus sont traitees comme un refus, jamais comme un fichier sain.
@@ -33,7 +37,7 @@ Les octets sont conserves sur un volume de fichiers et non dans PostgreSQL. Post
 SecureFiles/
 ├── backend/
 │   ├── pom.xml              # dependances et build Maven
-│   └── src/                 # a reconstruire
+│   └── src/                 # domaine, application et infrastructure
 ├── frontend/                # console React + Vite a reconstruire
 │   ├── package.json         # dependances et scripts npm
 │   └── src/                 # code applicatif et tests dans src/tests/
@@ -44,39 +48,60 @@ SecureFiles/
 ├── .github/prompts/         # prompts de workflow declenches a la demande
 ├── .github/instructions/    # instructions ciblees par type de fichier
 ├── .github/agents/          # agent VS Code SecureFilesAgent
-├── docker-compose.yml       # PostgreSQL et ClamAV locaux
+├── docker-compose.yml       # PostgreSQL, MinIO, RabbitMQ et ClamAV locaux
 └── README.md
 ```
 
 ## Contrat HTTP initial
 
-- `POST /api/v1/files` : recoit un champ multipart `file`, renvoie `202 Accepted` et les metadonnees en `PENDING_SCAN`.
-- `GET /api/v1/files` : liste les fichiers et leurs statuts.
-- `GET /api/v1/files/{id}` : lit les metadonnees d'un fichier.
+- `POST /api/v1/files` : recoit un champ multipart `file`, renvoie `202 Accepted` et les metadonnees en `PENDING_SCAN`. Une taille superieure a la politique serveur renvoie `413 Payload Too Large` avec le code stable `MAX_SIZE_EXCEEDED`.
+- `GET /api/v1/files/config` : expose la politique publique d'upload sous la forme `{ "maximumSizeBytes": <entier> }`. La reponse ne contient ni variable d'environnement ni configuration sensible.
+- `GET /api/v1/files` : liste les metadonnees des fichiers du proprietaire authentifie.
+   La reponse est un tableau trie par date de creation decroissante puis par identifiant ;
+   elle ne contient ni contenu, ni hash, ni cle MinIO. Chaque element peut exposer un
+   `failureCode` nullable et stable lorsqu'un traitement a echoue.
+- `GET /api/v1/files/{id}` : lit les metadonnees et le statut courant du fichier pour
+   son proprietaire, avec un `failureCode` nullable lorsqu'une erreur est connue. Un fichier
+   absent ou inaccessible renvoie `404`; cette reponse n'expose ni les octets ni la cle de
+   stockage.
 - `GET /api/v1/files/{id}/content` : streame le contenu uniquement si le statut est `CLEAN`.
 - `GET /actuator/health` : healthcheck technique.
 
-Le scan est declenche par un ordonnanceur Spring qui reserve les fichiers en base avant de les transmettre a ClamAV. La reservation conditionnelle limite les doubles scans lors d'une execution multi-instance ; une file de messages (SQS/RabbitMQ/Kafka) pourra remplacer l'ordonnanceur pour une charge plus importante.
+Le controller transmet l'upload au port entrant du domaine. Le stockage, la persistance,
+ClamAV et la publication RabbitMQ sont des adaptateurs separes ; une Outbox PostgreSQL est
+persistee avant toute publication RabbitMQ.
 
 ## Demarrage local
 
 Prerequis : Java 21+, Maven 3.9+, Node.js 22+, Docker Compose.
 
-Le scaffold actuel ne demarre pas encore d'API ou de console : il ne contient volontairement plus de code dans `backend/src` et `frontend/src`. Les commandes ci-dessous decrivent l'environnement cible une fois les points d'entree recréés.
+Sur Apple Silicon, le service ClamAV est execute en `linux/amd64` via l'emulation Docker
+Desktop, car l'image officielle utilisee ne publie pas de variante `linux/arm64`.
+
+Le backend possede son entree REST et le wiring des ports sortants. Les commandes
+ci-dessous demarrent l'environnement local necessaire au flux complet.
 
 1. Copier `.env.example` vers `.env` et adapter les secrets locaux.
 2. Demarrer les dependances :
 
    ```bash
-   docker compose up -d postgres clamav
+   docker compose up -d --wait postgres minio rabbitmq clamav
    ```
+
+   PostgreSQL reste sur le port `5432` dans le conteneur et est expose sur le port
+   hote `5433` par defaut afin d'eviter les collisions avec une instance PostgreSQL
+   deja installee sur macOS. Le port hote peut etre change avec `POSTGRES_HOST_PORT`,
+   en alignant alors `DATABASE_URL`.
 
 3. Lancer l'API :
 
    ```bash
-   cd backend
-   mvn spring-boot:run
+   SPRING_PROFILES_ACTIVE=local mvn -f backend/pom.xml spring-boot:run
    ```
+
+   Le profil `local` fournit une identite de developpement configurable avec
+   `LOCAL_OWNER_ID` afin de tester l'upload sans simuler une authentification de production.
+   Cette identite ne doit pas etre activee dans un environnement expose.
 
 4. Dans un autre terminal, lancer la console :
 
@@ -87,6 +112,58 @@ Le scaffold actuel ne demarre pas encore d'API ou de console : il ne contient vo
    ```
 
 La console est disponible sur `http://localhost:5173` et l'API sur `http://localhost:8080`.
+
+### Test d'integration du scan
+
+Le test `FileScanFlowIntegrationTest` demarre une API Spring sur un port aleatoire,
+envoie un fichier sans menace connue, puis attend un statut antivirus terminal. Il est
+desactive par defaut pour que `mvn test` reste autonome ; les dependances Docker doivent
+etre demarrees avant son execution :
+
+```bash
+cd backend
+SECUREFILES_INTEGRATION=true mvn -Dtest=FileScanFlowIntegrationTest test
+```
+
+En cas de timeout, le test affiche le statut du fichier, le lease, les tentatives de scan
+et l'etat de publication Outbox, sans afficher les octets du fichier.
+
+Le test execute aussi un flux de `19 553 061` octets, genere par blocs dans un fichier
+temporaire puis envoye comme multipart. Il couvre la branche multipart MinIO sans
+materialiser le contenu complet en memoire.
+
+Deux scenarios opt-in peuvent aussi verifier que ClamAV bloque un fichier EICAR texte
+et une archive EICAR. Les fichiers restent hors du depot et leurs chemins sont fournis
+uniquement a l'execution :
+
+```bash
+cd backend
+SECUREFILES_INTEGRATION=true \
+SECUREFILES_EICAR_TEXT_PATH=/chemin/vers/eicar.com.txt \
+SECUREFILES_EICAR_ZIP_PATH=/chemin/vers/eicar_com2.zip \
+mvn -Dtest=FileScanFlowIntegrationTest test
+```
+
+Chaque scenario verifie `202/PENDING_SCAN`, puis exige le statut terminal `INFECTED`.
+Sans variable correspondante, le scenario est ignore; un chemin configure mais illisible
+fait echouer le test.
+
+### Politique de taille d'upload
+
+`MAX_FILE_SIZE` definit la taille maximale autorisee pour un fichier. Cette valeur aligne
+la limite multipart Spring et `securefiles.upload.maximum-size`, qui reste l'autorite du
+domaine pendant le transfert streame. La valeur par defaut est `1GB`.
+
+`MAX_REQUEST_SIZE` couvre la requete multipart complete et doit donc rester superieure a
+`MAX_FILE_SIZE`. Sa valeur par defaut est `1100MB`, ce qui laisse de la place a l'enveloppe
+multipart pour un fichier de `1GB`. Si `MAX_FILE_SIZE` est modifie, `MAX_REQUEST_SIZE` doit
+etre ajuste en consequence.
+
+La console lit `GET /api/v1/files/config` avant l'envoi et affiche la taille maximale
+autorisee dans la zone de depot. Elle desactive l'action d'upload si la politique ne peut
+pas etre lue ou si le fichier la depasse, et propose une relance de lecture. Cette
+verification ameliore l'experience utilisateur; un client HTTP direct reste controle par
+Spring et par la verification streamee du domaine.
 
 ### Alias de lancement
 
@@ -113,17 +190,18 @@ Le dernier appel ne devient possible qu'apres le passage a `CLEAN`. Pour tester 
 
 - **Fail closed** : `PENDING_SCAN`, `SCANNING`, `INFECTED` et `SCAN_FAILED` sont tous non telechargeables.
 - **Flux** : l'upload, l'analyse ClamAV `INSTREAM` et le download utilisent des flux ; la limite multipart borne les abus HTTP.
-- **Integrite** : un SHA-256 est calcule au depot et expose dans la base pour preparer une verification d'integrite.
+- **Integrite** : un SHA-256 est calcule au depot et conserve en base pour verifier un objet avant scan. La taille et la version canonique MinIO sont relues apres l'ecriture; une divergence bloque le fichier avant `PENDING_SCAN`.
+- **Codes de defaillance** : les codes stables sont centralises dans le domaine et reproduits dans la console pour afficher un diagnostic securise sans exposer une exception brute.
 - **Noms** : le chemin fourni par le client est reduit a un nom de fichier, sans traversal.
 - **Observabilite** : Actuator expose le healthcheck ; les metriques de latence, taille, statut de scan et taux d'erreur sont a ajouter avant production.
 - **Acces** : cette premiere tranche ne branche pas encore l'authentification utilisateur. Un fournisseur OIDC/JWT et une autorisation par tenant sont obligatoires avant exposition publique.
 
 ## Suite recommandee
 
-1. Remplacer le volume local par un stockage objet prive avec URLs signees emises uniquement apres validation.
+1. Remplacer MinIO local par un stockage objet prive de production avec URLs signees emises uniquement apres validation.
 2. Ajouter authentification, quotas par tenant, rate limiting et antivirus redondant.
-3. Externaliser les scans vers une queue durable et ajouter une politique de retry avec dead-letter queue.
-4. Ajouter tests d'integration PostgreSQL/ClamAV avec Testcontainers et tests de charge sur gros fichiers.
+3. Durcir la politique de retry et de dead-letter avec une reconciliation et un nettoyage des objets orphelins.
+4. Completer l'authentification, l'observabilite et les contrats d'exploitation des adaptateurs ; aucune regle metier ne doit migrer dans ces composants.
 5. Ajouter retention, suppression, chiffrement au repos et audit des acces.
 
 ## Agent importe
