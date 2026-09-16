@@ -1,0 +1,4 @@
+securefiles:
+  local:
+    identity:
+      owner-id: ${LOCAL_OWNER_ID:local-development-user}

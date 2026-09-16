@@ -1,0 +1,1 @@
+SecureFiles integration test content.

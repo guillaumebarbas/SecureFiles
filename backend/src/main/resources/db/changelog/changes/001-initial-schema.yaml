@@ -1,0 +1,211 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-stored-file
+      author: securefiles
+      changes:
+        - createTable:
+            tableName: stored_file
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: owner_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: original_filename
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: client_content_type
+                  type: VARCHAR(255)
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: size_bytes
+                  type: BIGINT
+              - column:
+                  name: sha256
+                  type: VARCHAR(64)
+              - column:
+                  name: storage_key
+                  type: VARCHAR(512)
+              - column:
+                  name: storage_version
+                  type: VARCHAR(255)
+              - column:
+                  name: scan_attempt_count
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scan_lease_id
+                  type: UUID
+              - column:
+                  name: scan_lease_until
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: next_scan_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: failure_code
+                  type: VARCHAR(128)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entity_version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: stored_file
+            indexName: idx_stored_file_scan_claim
+            columns:
+              - column:
+                  name: status
+              - column:
+                  name: next_scan_at
+              - column:
+                  name: scan_lease_until
+
+  - changeSet:
+      id: 002-create-scan-attempt
+      author: securefiles
+      changes:
+        - createTable:
+            tableName: scan_attempt
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: file_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: attempt_number
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: verdict
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: failure_code
+                  type: VARCHAR(128)
+              - column:
+                  name: started_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: completed_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: scan_attempt
+            baseColumnNames: file_id
+            referencedTableName: stored_file
+            referencedColumnNames: id
+            constraintName: fk_scan_attempt_file
+            onDelete: CASCADE
+        - createIndex:
+            tableName: scan_attempt
+            indexName: idx_scan_attempt_file
+            columns:
+              - column:
+                  name: file_id
+              - column:
+                  name: attempt_number
+
+  - changeSet:
+      id: 003-create-outbox-event
+      author: securefiles
+      changes:
+        - createTable:
+            tableName: outbox_event
+            columns:
+              - column:
+                  name: event_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: file_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_type
+                  type: VARCHAR(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: size_bytes
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sha256
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: storage_key
+                  type: VARCHAR(512)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: storage_version
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: occurred_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: published_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: publish_attempts
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: outbox_event
+            indexName: idx_outbox_event_unpublished
+            columns:
+              - column:
+                  name: published_at
+              - column:
+                  name: occurred_at
