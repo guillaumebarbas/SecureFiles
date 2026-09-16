@@ -148,23 +148,38 @@ h3 {
   font-size: 30px;
 }
 
-.app-header__content {
-  align-items: flex-end;
-  max-width: 100%;
-  margin-left: auto;
-  gap: 12px;
-  color: var(--text-secondary);
+.app-header__heading {
+  min-width: 0;
+  flex-shrink: 0;
 }
 
-.app-main__view {
-  animation: app-view-enter 280ms ease both;
-}
-
-.app-header__route-label {
+.app-header__eyebrow {
   color: var(--action-primary);
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.app-header__content {
+  align-items: flex-end;
+  flex: 1 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  margin-left: auto;
+  justify-content: flex-end;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.app-header__description {
+  max-width: 65ch;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.app-main__view {
+  animation: app-view-enter 280ms ease both;
 }
 
 .app-sidebar {
@@ -408,16 +423,6 @@ h3 {
   gap: 18px;
 }
 
-.dashboard-page__hero {
-  display: grid;
-  gap: 14px;
-  padding: 8px 0 4px;
-}
-
-.dashboard-page__hero h2 {
-  max-width: 14ch;
-}
-
 .dashboard-page__description {
   max-width: 62ch;
   color: var(--text-secondary);
@@ -562,6 +567,24 @@ h3 {
   animation: app-view-enter 240ms ease both;
 }
 
+.shared-file-upload__feedback--accepted {
+  max-height: 480px;
+  overflow: hidden;
+  transition: max-height 320ms ease, margin-top 320ms ease, opacity 320ms ease, padding 320ms ease,
+    transform 320ms ease;
+}
+
+.shared-file-upload__feedback--hiding {
+  max-height: 0;
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+}
+
 .shared-file-upload__feedback--error {
   border-color: rgba(223, 62, 85, 0.28);
   color: var(--danger);
@@ -613,21 +636,6 @@ h3 {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.showcase-page {
-  padding: 48px 0 72px;
-}
-
-.showcase-intro {
-  display: grid;
-  gap: 14px;
-  margin-bottom: 24px;
-  padding: 12px 0 0;
-}
-
-.showcase-intro h2 {
-  max-width: 17ch;
 }
 
 .showcase-intro__description {
@@ -1140,6 +1148,8 @@ h3 {
   .app-header__content {
     width: 100%;
     margin-left: 0;
+    justify-content: flex-start;
+    text-align: left;
   }
 
   .app-main {
@@ -1163,10 +1173,6 @@ h3 {
   .files-page,
   .dashboard-page {
     padding: 24px 0 48px;
-  }
-
-  .showcase-intro {
-    padding: 4px 0 0;
   }
 
   h1 {

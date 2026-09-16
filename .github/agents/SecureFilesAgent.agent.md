@@ -57,7 +57,7 @@ Pour une tache transversale, charger au minimum `clean_code.md` et `strategy_tes
 
 ## Workflow planification puis implementation
 
-- Utiliser le [prompt plan-approve-implement](../prompts/plan-approve-implement.prompt.md) lorsqu'une demande necessite une analyse du code, un plan explicite, une relecture du plan et une validation utilisateur avant implementation.
+- Utiliser le [prompt plan-implement](../prompts/plan-implement.prompt.md) lorsqu'une demande necessite une analyse du code, un plan explicite, une relecture du plan et une validation utilisateur avant implementation. Il s'agit du nom court du workflow detaille [plan-approve-implement](../prompts/plan-approve-implement.prompt.md).
 - Pour une exploration multi-fichiers ou une frontiere d'architecture incertaine, deleguer la lecture au [SecureFilesPlanner](./SecureFilesPlanner.agent.md). Ce sous-agent est strictement en lecture seule et ne peut ni modifier ni executer de commande.
 - Toujours verifier les constats du planner dans le code local ; son avis ne remplace ni le contrat, ni les tests, ni la decision de l'agent principal.
 - Ne jamais commencer l'implementation avant une approbation explicite du plan final. Si le besoin ou le perimetre change apres approbation, repasser par une nouvelle analyse et une nouvelle validation.

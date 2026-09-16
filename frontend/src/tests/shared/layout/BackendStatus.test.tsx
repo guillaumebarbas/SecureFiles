@@ -6,7 +6,7 @@ describe('BackendStatus', () => {
   it('renders an accessible indicator for the current backend state', () => {
     render(<BackendStatus status="online" />);
 
-    const statusButton = screen.getByRole('button', { name: 'Backend disponible' });
+    const statusButton = screen.getByRole('button', { name: 'Service online' });
 
     expect(statusButton).toBeVisible();
     expect(statusButton).toHaveClass('backend-status--online');

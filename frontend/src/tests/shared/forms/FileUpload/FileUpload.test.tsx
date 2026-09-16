@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getFileMetadata,
   getUploadConfiguration,
@@ -23,6 +23,10 @@ describe('FileUpload', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedGetUploadConfiguration.mockResolvedValue({ maximumSizeBytes: 1024 });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders the upload action only after a file is selected', async () => {
@@ -140,6 +144,70 @@ describe('FileUpload', () => {
     expect(onAccepted).toHaveBeenCalledWith(pendingResponse);
     expect(await screen.findByText('CLEAN', {}, { timeout: 2000 })).toBeVisible();
     expect(onStatusChange).toHaveBeenCalledWith(cleanResponse);
+  });
+
+  it('clears the accepted file and invites a new selection', async () => {
+    const user = userEvent.setup();
+    const file = new File(['safe content'], 'document.txt', { type: 'text/plain' });
+    const response: UploadFileResponse = {
+      createdAt: '2026-09-15T10:00:00Z',
+      fileId: '11111111-1111-1111-1111-111111111111',
+      originalFilename: 'document.txt',
+      sizeBytes: file.size,
+      status: 'PENDING_SCAN',
+    };
+    mockedUploadFile.mockResolvedValue(response);
+    mockedGetFileMetadata.mockResolvedValue({ ...response, status: 'CLEAN' });
+
+    render(<FileUpload />);
+
+    const fileInput = screen.getByLabelText('Choisir un fichier') as HTMLInputElement;
+    await user.upload(fileInput, file);
+    await user.click(screen.getByRole('button', { name: 'Envoyer le fichier' }));
+
+    expect(await screen.findByText('Cliquez sur la zone pour choisir un nouveau fichier')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Envoyer le fichier' })).not.toBeInTheDocument();
+    expect(fileInput.files).toHaveLength(0);
+
+    await user.upload(fileInput, file);
+
+    expect(screen.getByRole('button', { name: 'Envoyer le fichier' })).toBeVisible();
+  });
+
+  it('dismisses the accepted summary after ten seconds with a smooth exit state', async () => {
+    vi.useFakeTimers();
+    const file = new File(['safe content'], 'document.txt', { type: 'text/plain' });
+    mockedUploadFile.mockResolvedValue({
+      createdAt: '2026-09-15T10:00:00Z',
+      fileId: '11111111-1111-1111-1111-111111111111',
+      originalFilename: 'document.txt',
+      sizeBytes: file.size,
+      status: 'CLEAN',
+    });
+
+    render(<FileUpload />);
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Choisir un fichier'), { target: { files: [file] } });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Envoyer le fichier' }));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('status')).toHaveClass('shared-file-upload__feedback--accepted');
+
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+
+    expect(screen.getByRole('status')).toHaveClass('shared-file-upload__feedback--hiding');
+
+    act(() => {
+      vi.advanceTimersByTime(320);
+    });
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('shows an actionable error when upload fails', async () => {

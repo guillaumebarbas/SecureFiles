@@ -154,7 +154,6 @@ export function DashboardPage() {
 
   return (
     <div className={dashboardPageClassNames.root}>
-      <DashboardIntroduction />
       <Section
         className={dashboardPageClassNames.uploadSection}
         description="Depose un fichier pour suivre son transfert et son analyse antivirus."
@@ -218,16 +217,4 @@ function readErrorMessage(error: unknown) {
   return error instanceof Error
     ? error.message
     : 'La liste des fichiers ne peut pas etre lue.';
-}
-
-function DashboardIntroduction() {
-  return (
-    <div className={dashboardPageClassNames.hero}>
-      <p className="eyebrow">SecureFiles / Vue d&apos;ensemble</p>
-      <h2>Dashboard</h2>
-      <p className={dashboardPageClassNames.description}>
-        Une vue d&apos;accueil pour suivre rapidement l&apos;etat du service et retrouver les zones de travail.
-      </p>
-    </div>
-  );
 }

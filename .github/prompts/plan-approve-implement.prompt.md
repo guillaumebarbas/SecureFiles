@@ -1,6 +1,6 @@
 ---
 name: plan-approve-implement
-description: "Use when a request needs repository analysis, an implementation plan, explicit user approval, and implementation only after approval."
+description: "Use when a request needs repository analysis, an implementation plan, explicit user approval, implementation only after approval, and a prompt/result entry in resume.md. Also available as /plan-implement."
 argument-hint: "Describe the feature, fix, or refactor to analyze and implement after approval"
 agent: "SecureFilesAgent"
 tools: [read, search, agent, edit, execute, todo]
@@ -59,5 +59,6 @@ Considerer comme approbation explicite une reponse telle que `approuve`, `go`, `
 4. Apres la premiere modification substantielle, lancer immediatement la validation executable la plus ciblee. Ne pas elargir la portee avant ce controle.
 5. Executer les validations prevues par le plan, puis verifier les risques restants et les fichiers effectivement modifies.
 6. Fournir un compte rendu final avec les marqueurs de contexte du projet, les changements, les validations executees, les risques restants et les ecarts eventuels par rapport au plan approuve.
+8. Avant de terminer l'invocation, ajouter un bloc a la fin de `resume.md` avec la demande utilisateur qui a declenche le workflow, copiee verbatim, et un resultat factuel correspondant a l'etat reel du plan, de l'implementation et des validations. Cette etape s'applique aussi si le workflow s'arrete sur la pause d'approbation ou sur un blocage ; le resultat doit alors l'indiquer clairement. Respecter la regle de redaction des secrets de `SecureFilesAgent.agent.md` et ne jamais reecrire les blocs precedents.
 
 Si une validation refute l'hypothese ou si le perimetre change, s'arreter, expliquer le nouveau constat et demander une nouvelle approbation avant d'elargir l'implementation.

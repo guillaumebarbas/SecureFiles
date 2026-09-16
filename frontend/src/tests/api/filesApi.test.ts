@@ -1,6 +1,12 @@
 import axios from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getFileMetadata, getUploadConfiguration, listFiles, uploadFile } from '../../api/filesApi';
+import {
+  checkBackendHealth,
+  getFileMetadata,
+  getUploadConfiguration,
+  listFiles,
+  uploadFile,
+} from '../../api/filesApi';
 
 vi.mock('axios', () => ({
   default: {
@@ -13,6 +19,26 @@ vi.mock('axios', () => ({
 describe('filesApi', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('reports the backend online when the actuator health is UP', async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: { status: 'UP' } } as never);
+
+    await expect(checkBackendHealth()).resolves.toBe('online');
+
+    expect(axios.get).toHaveBeenCalledWith('/actuator/health');
+  });
+
+  it('reports the backend offline when the actuator health is not UP', async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: { status: 'DOWN' } } as never);
+
+    await expect(checkBackendHealth()).resolves.toBe('offline');
+  });
+
+  it('reports the backend offline when the health request fails', async () => {
+    vi.mocked(axios.get).mockRejectedValue(new Error('Backend unavailable'));
+
+    await expect(checkBackendHealth()).resolves.toBe('offline');
   });
 
   it('posts the selected file as multipart form data', async () => {
