@@ -1,0 +1,6 @@
+services:
+  clamav:
+    environment:
+      CLAMD_CONF_StreamMaxLength: 1048576
+      CLAMD_CONF_MaxFileSize: 4194304
+      CLAMD_CONF_MaxScanSize: 4194304
