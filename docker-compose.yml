@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-securefiles}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-securefiles-local-only}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
     volumes:
       - securefiles-postgres:/var/lib/postgresql/data
     healthcheck:
@@ -17,11 +17,52 @@ services:
 
   clamav:
     image: clamav/clamav:1.4
+    platform: linux/amd64
     ports:
       - "3310:3310"
     volumes:
       - securefiles-clamav:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdscan", "--ping", "1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-06-13T22-53-53Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-securefiles}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-securefiles-local-only}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - securefiles-minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-securefiles}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-securefiles-local-only}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - securefiles-rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 volumes:
   securefiles-postgres:
   securefiles-clamav:
+  securefiles-minio:
+  securefiles-rabbitmq:

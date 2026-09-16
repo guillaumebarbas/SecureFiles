@@ -1,12 +1,28 @@
 spring:
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/securefiles}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/securefiles}
     username: ${DATABASE_USERNAME:securefiles}
     password: ${DATABASE_PASSWORD:securefiles-local-only}
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: ${LIQUIBASE_ENABLED:true}
   jpa:
     hibernate:
-      ddl-auto: ${DDL_AUTO:update}
+      ddl-auto: ${DDL_AUTO:validate}
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:1GB}
+      max-request-size: ${MAX_REQUEST_SIZE:1100MB}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:securefiles}
+    password: ${RABBITMQ_PASSWORD:securefiles-local-only}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -16,3 +32,32 @@ management:
     web:
       exposure:
         include: health,info
+
+securefiles:
+  upload:
+    maximum-size: ${MAX_FILE_SIZE:1GB}
+  storage:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:securefiles}
+    secret-key: ${MINIO_SECRET_KEY:securefiles-local-only}
+    bucket: ${MINIO_BUCKET:securefiles}
+    quarantine-prefix: ${MINIO_QUARANTINE_PREFIX:quarantine}
+  clamav:
+    host: ${CLAMAV_HOST:localhost}
+    port: ${CLAMAV_PORT:3310}
+    connect-timeout: ${CLAMAV_CONNECT_TIMEOUT:PT5S}
+    read-timeout: ${CLAMAV_READ_TIMEOUT:PT60S}
+    chunk-size: ${CLAMAV_CHUNK_SIZE:8192}
+  scan:
+    lease-duration: ${SCAN_LEASE_DURATION:PT5M}
+    maximum-attempts: ${SCAN_MAX_ATTEMPTS:3}
+    retry-delay: ${SCAN_RETRY_DELAY:PT1M}
+  rabbitmq:
+    exchange: ${RABBITMQ_EXCHANGE:securefiles.scan}
+    queue: ${RABBITMQ_QUEUE:securefiles.scan}
+    routing-key: ${RABBITMQ_ROUTING_KEY:file.scan.requested}
+    retry-queue: ${RABBITMQ_RETRY_QUEUE:securefiles.scan.retry}
+    dead-letter-queue: ${RABBITMQ_DEAD_LETTER_QUEUE:securefiles.scan.dlq}
+    prefetch: ${RABBITMQ_PREFETCH:1}
+    retry-delay-millis: ${RABBITMQ_RETRY_DELAY_MILLIS:60000}
+    relay-interval-millis: ${RABBITMQ_RELAY_INTERVAL_MILLIS:5000}
