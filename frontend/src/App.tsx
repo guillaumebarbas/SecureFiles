@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { FolderOpen, LayoutGrid } from 'lucide-react';
+import { startTransition, useEffect, useState } from 'react';
+import { FolderOpen, Home, LayoutGrid } from 'lucide-react';
+import { DashboardPage } from './pages/Dashboard/DashboardPage';
 import { FilesPage } from './pages/Files/FilesPage';
 import { SharedComponentsShowcasePage } from './pages/SharedComponentsShowcase/SharedComponentsShowcasePage';
 import { Header } from './shared/layout/Header/Header';
@@ -7,22 +8,44 @@ import { SideNavBar } from './shared/layout/SideNavBar/SideNavBar';
 import type { NavItemDefinition } from './shared/layout/NavItem/NavItem';
 import { appClassNames } from './app/style';
 
-export type AppRoute = '/' | '/files';
+export type AppRoute = '/' | '/components' | '/files';
 
 const applicationVersion = '0.1.0';
 
 const navigationItems: readonly NavItemDefinition[] = [
-  { href: '/', icon: LayoutGrid, label: 'Bibliotheque' },
+  { href: '/', icon: Home, label: 'Dashboard' },
+  { href: '/components', icon: LayoutGrid, label: 'Bibliotheque' },
   { href: '/files', icon: FolderOpen, label: 'Fichiers' },
 ];
 
 const routeLabels: Record<AppRoute, string> = {
-  '/': 'Bibliotheque de composants',
+  '/': 'Vue d\'ensemble',
+  '/components': 'Bibliotheque de composants',
   '/files': 'Registre des fichiers',
 };
 
 function routeFromPathname(pathname: string): AppRoute {
-  return pathname === '/files' ? '/files' : '/';
+  if (pathname === '/files') {
+    return '/files';
+  }
+
+  if (pathname === '/components') {
+    return '/components';
+  }
+
+  return '/';
+}
+
+function renderCurrentPage(route: AppRoute) {
+  if (route === '/') {
+    return <DashboardPage />;
+  }
+
+  if (route === '/components') {
+    return <SharedComponentsShowcasePage />;
+  }
+
+  return <FilesPage />;
 }
 
 export function App() {
@@ -30,7 +53,9 @@ export function App() {
 
   useEffect(() => {
     function handlePopState() {
-      setCurrentRoute(routeFromPathname(window.location.pathname));
+      startTransition(() => {
+        setCurrentRoute(routeFromPathname(window.location.pathname));
+      });
     }
 
     window.addEventListener('popstate', handlePopState);
@@ -46,7 +71,9 @@ export function App() {
     }
 
     window.history.pushState({}, '', nextRoute);
-    setCurrentRoute(nextRoute);
+    startTransition(() => {
+      setCurrentRoute(nextRoute);
+    });
   }
 
   return (
@@ -64,7 +91,9 @@ export function App() {
           <p className={appClassNames.routeLabel}>{routeLabels[currentRoute]}</p>
         </Header>
         <main className={appClassNames.main}>
-          {currentRoute === '/files' ? <FilesPage /> : <SharedComponentsShowcasePage />}
+          <div className={appClassNames.view} key={currentRoute}>
+            {renderCurrentPage(currentRoute)}
+          </div>
         </main>
       </div>
     </div>

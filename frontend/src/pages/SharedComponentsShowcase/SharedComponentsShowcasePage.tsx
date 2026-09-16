@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Clock3, Download, Info, Search, ShieldCheck, Upload } from 'lucide-react';
+import { Clock3, CloudUpload, Download, Info, Search, ShieldCheck, Upload } from 'lucide-react';
 import { Button } from '../../shared/actions/Button';
 import { GenericTable, type TableColumn } from '../../shared/data/GenericTable';
 import { Icon } from '../../shared/feedback/Icon';
 import { Tag } from '../../shared/feedback/Tag';
 import { Tooltip } from '../../shared/feedback/Tooltip';
+import { FileUpload } from '../../shared/forms/FileUpload/FileUpload';
 import { SearchBar } from '../../shared/forms/SearchBar';
 import { Column } from '../../shared/layout/Column';
 import { Row } from '../../shared/layout/Row';
@@ -77,6 +78,14 @@ export function SharedComponentsShowcasePage() {
           </Button>
           <Button variant="gradient">Action accentuee</Button>
         </Row>
+      </Section>
+
+      <Section
+        description="Une zone partagee pour selectionner un fichier et suivre son traitement."
+        icon={CloudUpload}
+        title="Upload de fichier"
+      >
+        <FileUpload />
       </Section>
 
       <Section

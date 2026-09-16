@@ -1,0 +1,18 @@
+export const fileUploadClassNames = {
+  feedback: 'shared-file-upload__feedback',
+  feedbackError: 'shared-file-upload__feedback--error',
+  feedbackId: 'shared-file-upload__feedback-id',
+  feedbackMessage: 'shared-file-upload__feedback-message',
+  feedbackPollingError: 'shared-file-upload__feedback-polling-error',
+  form: 'shared-file-upload__form',
+  input: 'shared-file-upload__input',
+  loading: 'shared-file-upload__loading',
+  progressBar: 'shared-file-upload__progress-bar',
+  progressMessage: 'shared-file-upload__progress-message',
+  progressValue: 'shared-file-upload__progress-value',
+  root: 'shared-file-upload',
+  selectedFile: 'shared-file-upload__selected-file',
+  zone: 'shared-file-upload__zone',
+  zoneContent: 'shared-file-upload__zone-content',
+  zoneHint: 'shared-file-upload__zone-hint',
+} as const;

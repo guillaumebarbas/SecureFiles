@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { FolderOpen, LayoutGrid } from 'lucide-react';
+import { FolderOpen, Home, LayoutGrid } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 import { SideNavBar } from '../../../shared/layout/SideNavBar/SideNavBar';
 
@@ -10,7 +10,8 @@ describe('SideNavBar', () => {
         activePath="/"
         backendStatus="unknown"
         items={[
-          { href: '/', icon: LayoutGrid, label: 'Bibliotheque' },
+          { href: '/', icon: Home, label: 'Dashboard' },
+          { href: '/components', icon: LayoutGrid, label: 'Bibliotheque' },
           { href: '/files', icon: FolderOpen, label: 'Fichiers' },
         ]}
         version="0.1.0"
@@ -20,7 +21,8 @@ describe('SideNavBar', () => {
     expect(screen.getByRole('complementary', { name: 'Navigation SecureFiles' })).toBeVisible();
     expect(container.querySelector('aside > .shared-column.app-sidebar__content')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'SecureFiles', level: 2 })).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Bibliotheque' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Bibliotheque' })).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('link', { name: 'Fichiers' })).not.toHaveAttribute('aria-current');
     expect(screen.getByText('Version 0.1.0')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Etat du backend inconnu' })).toBeVisible();
