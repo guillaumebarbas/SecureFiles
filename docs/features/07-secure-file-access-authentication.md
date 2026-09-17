@@ -56,3 +56,4 @@ Stable
 
 - [UserAuthenticationFlowIntegrationTest](../../backend/src/test/java/com/securefiles/integration/UserAuthenticationFlowIntegrationTest.java) is opt-in and requires a freshly initialized database. Its later local execution was blocked by a pre-existing `app_user` relation during Liquibase initialization.
 - Branch commits: `26b4088 feat(backend): add authenticated file access` and `357d420 feat(frontend): add authenticated file console`.
+- Delivery: [issue #15](https://github.com/guillaumebarbas/SecureFiles/issues/15) and [pull request #16](https://github.com/guillaumebarbas/SecureFiles/pull/16) target `main` from `feat/secure-file-access-authentication`.
