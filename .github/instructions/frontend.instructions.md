@@ -13,6 +13,7 @@ applyTo: "frontend/**/*.{ts,tsx,css,html}"
 - Pour toute icone, toujours utiliser le MCP Lucide configure dans `.vscode/mcp.json` pour rechercher et choisir l'icone, puis importer le composant correspondant depuis `lucide-react`.
 - Ne pas dessiner manuellement une icone SVG lorsqu'une icone Lucide adaptee existe ; justifier toute icone personnalisee necessaire.
 - Garder les etats de scan visibles et explicites.
+- Rediger tous les textes visibles en francais correct, avec les accents, l'orthographe et les accords grammaticaux necessaires ; ne jamais normaliser les codes techniques, les statuts API ou les identifiants.
 - Ne proposer une action de download que pour un fichier `CLEAN`.
 - Garder les styles web dans `frontend/src/styles.css` ; ne pas utiliser `StyleSheet`, reserve a React Native.
 - Placer tous les fichiers de test frontend sous `frontend/src/tests`, avec une arborescence miroir de `frontend/src` et des imports relatifs adaptes.

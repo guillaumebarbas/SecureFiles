@@ -857,3 +857,31 @@ Prompt :
 Il faudrait maintenant faire en sorte que la pagination du tableaux fichier récents soit une pagination back et non frontend. Pour optimiser lorsqu'on a beaucoup de fichier
 Resultat : Pagination backend ajoutee pour `GET /api/v1/files` avec metadonnees de page, tri stable, validation des parametres et index Liquibase. Le Dashboard utilise la pagination serveur et conserve la pagination locale de `GenericTable` pour les autres usages. Suites backend et frontend, build Vite, test de regression de changement de taille et controle `git diff --check` passes.
 - - - - -
+
+- - - - -
+Prompt :
+Follow instructions in #prompt:plan-approve-implement.prompt.md with these arguments: J'aimerai désormais améliorer ajouter des fonctionalités dans l'ux/ui.
+
+1)Possibilité d'ordonnés les données par colonne (nom,auteur,taille,ajoute le)
+2)Filtré les tags avec un mini bouton à coté du nom status avec icone qui au clique permet d'avoir une list de checkbox avec tout les status existant.
+
+Le but étant toujours de gardé une pagination valide selon les ordres, tries etc...
+
+3) Il manque tout les accents, ajoute dans les regles front que nous sommes en francais et que les accents doivent être présent, les phrases bien orthographiés et grammaticalement correct (fait une passe sur le front et corrige ce soucis)
+Resultat : Analyse en lecture seule terminee et PLAN FINAL prepare pour un tri et un filtrage backend compatibles avec la pagination serveur, une liste de statuts accessible et une passe de correction du francais frontend. Aucune implementation, aucun test et aucune validation d'implementation n'ont ete lances ; approbation explicite du plan attendue.
+- - - - -
+
+- - - - -
+Prompt :
+Follow instructions in #prompt:plan-approve-implement.prompt.md with these arguments: Je vois que tu as mit le status, les filtrre et sa gestion dans dashboard.tsx, il faut plutot le mettre dans le composant tableau.
+
+Analyse le fichier et regarde si des responsabilités ne sont pas au bonne endroit.
+Resultat : Analyse lecture seule terminee et PLAN FINAL prepare : extraire le controle de filtre de statut dans un composant de feature controle et reutilisable, conserver dans DashboardPage l'etat de requete, la pagination, le tri serveur et l'appel listFiles, et laisser GenericTable independant du domaine SecureFiles. Aucune implementation ni test de tranche n'a ete lance ; approbation explicite du plan attendue.
+- - - - -
+
+- - - - -
+Prompt :
+Fait une branch, commit, issue, pr
+Resultat :
+Branche créée et validations ciblées exécutées ; workflow de commit, issue et pull request lancé.
+- - - - -
