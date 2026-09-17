@@ -29,7 +29,7 @@ Start PostgreSQL, MinIO, RabbitMQ, and ClamAV with the local Compose configurati
 ## Tests & validation
 
 - [Domain tests](../../backend/src/test/java/com/securefiles/domain/file) cover lifecycle transitions, upload integrity, scan retries, metadata, and download authorization.
-- [Mapper tests](../../backend/src/test/java/com/securefiles/application/mapper) cover HTTP-to-domain conversions; [local identity coverage](../../backend/src/test/java/com/securefiles/config/LocalDevelopmentPrincipalFilterTest.java) covers the development principal.
+- [Mapper tests](../../backend/src/test/java/com/securefiles/application/mapper) cover HTTP-to-domain conversions; [authentication integration coverage](../../backend/src/test/java/com/securefiles/integration/UserAuthenticationFlowIntegrationTest.java) covers authenticated access and session revocation.
 - `mvn test` completed successfully on 2026-09-16: 54 tests passed with 4 integration tests skipped by default.
 - [FileScanFlowIntegrationTest](../../backend/src/test/java/com/securefiles/integration/FileScanFlowIntegrationTest.java) completed successfully on 2026-09-16 with local Docker dependencies and external EICAR fixtures: 4 tests passed, covering clean, multipart, EICAR text, and EICAR ZIP outcomes.
 

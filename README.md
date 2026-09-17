@@ -7,6 +7,8 @@ Micro-service de depot et de distribution de fichiers securises, realise pour un
 La reconstruction couvre maintenant le premier flux complet d'upload et de scan du backend :
 
 - le domaine contient le use case d'upload, ses ports et ses invariants de streaming ;
+- le domaine contient aussi la creation d'utilisateur, l'authentification par session et
+   la revocation des sessions ;
 - `application/dto` et `application/mapper` contiennent les conversions entre le domaine
    et la couche applicative ;
 - `application/controller` contient le point d'entree `POST /api/v1/files` ;
@@ -54,17 +56,32 @@ SecureFiles/
 
 ## Contrat HTTP initial
 
-- `POST /api/v1/files` : recoit un champ multipart `file`, renvoie `202 Accepted` et les metadonnees en `PENDING_SCAN`. Une taille superieure a la politique serveur renvoie `413 Payload Too Large` avec le code stable `MAX_SIZE_EXCEEDED`.
+- `POST /api/v1/files` : recoit un champ multipart `file`, renvoie `202 Accepted` et les metadonnees en `PENDING_SCAN`. Une taille superieure a la politique serveur renvoie `413 Payload Too Large` avec le code stable `MAX_SIZE_EXCEEDED`. La console demande une connexion avant d'ouvrir le selecteur de fichier et avant tout envoi.
 - `GET /api/v1/files/config` : expose la politique publique d'upload sous la forme `{ "maximumSizeBytes": <entier> }`. La reponse ne contient ni variable d'environnement ni configuration sensible.
-- `GET /api/v1/files` : liste les metadonnees des fichiers du proprietaire authentifie.
-   La reponse est un tableau trie par date de creation decroissante puis par identifiant ;
-   elle ne contient ni contenu, ni hash, ni cle MinIO. Chaque element peut exposer un
-   `failureCode` nullable et stable lorsqu'un traitement a echoue.
+- `GET /api/v1/files` : liste publiquement les metadonnees de tous les fichiers. La reponse
+   est un tableau trie par date de creation decroissante puis par
+   identifiant ; elle ne contient ni contenu, ni hash, ni cle MinIO. Chaque element expose
+   l'auteur resolu dans `author` et peut exposer un `failureCode` nullable et stable
+   lorsqu'un traitement a echoue. La consultation de la liste n'accorde pas le droit de
+   telecharger un fichier ou de lire ses metadonnees detaillees : ces acces restent
+   controles par le proprietaire.
 - `GET /api/v1/files/{id}` : lit les metadonnees et le statut courant du fichier pour
    son proprietaire, avec un `failureCode` nullable lorsqu'une erreur est connue. Un fichier
    absent ou inaccessible renvoie `404`; cette reponse n'expose ni les octets ni la cle de
    stockage.
 - `GET /api/v1/files/{id}/content` : streame le contenu uniquement si le statut est `CLEAN`.
+- `POST /api/v1/auth/register` : cree un compte public avec un ou plusieurs roles autorises
+   (`developpeur` et `utilisateur`) et renvoie le profil sans mot de passe ni token. Le mot
+   de passe doit contenir entre 8 et 255 caracteres ; une valeur hors limites renvoie
+   `400 Bad Request` avec le code `INVALID_PASSWORD`.
+- `POST /api/v1/auth/login` : ouvre une session de 30 jours, persiste son identifiant et
+   renvoie le profil. Le JWT est uniquement transmis dans le cookie HttpOnly
+   `SECUREFILES_AUTH` par defaut.
+- `GET /api/v1/users/me` : renvoie le profil de l'utilisateur authentifie. Sans session
+   valide, il renvoie `204 No Content` plutot que `401 Unauthorized`. Le JWT est verifie
+   cryptographiquement et la session doit encore etre active en base lorsqu'il est present.
+- `POST /api/v1/auth/logout` : revoque la session courante et efface le cookie HttpOnly.
+- `GET /api/v1/auth/csrf` : initialise le cookie CSRF lisible par le frontend en production.
 - `GET /actuator/health` : healthcheck technique.
 
 Le controller transmet l'upload au port entrant du domaine. Le stockage, la persistance,
@@ -99,9 +116,9 @@ ci-dessous demarrent l'environnement local necessaire au flux complet.
    SPRING_PROFILES_ACTIVE=local mvn -f backend/pom.xml spring-boot:run
    ```
 
-   Le profil `local` fournit une identite de developpement configurable avec
-   `LOCAL_OWNER_ID` afin de tester l'upload sans simuler une authentification de production.
-   Cette identite ne doit pas etre activee dans un environnement expose.
+   Le profil `local` conserve uniquement les reglages de developpement de l'authentification
+   (cookie non securise et cle ephemere). Toute route protegee exige une session JWT active ;
+   il faut donc creer un compte et se connecter avant d'utiliser les fichiers.
 
 4. Dans un autre terminal, lancer la console :
 
@@ -113,6 +130,24 @@ ci-dessous demarrent l'environnement local necessaire au flux complet.
 
 La console est disponible sur `http://localhost:5173` et l'API sur `http://localhost:8080`.
 
+### Authentification locale et production
+
+Les sessions durent exactement 30 jours (`JWT_TOKEN_LIFETIME=PT720H`). La cle de signature
+`JWT_SECRET` doit contenir au moins 32 octets et peut etre fournie en Base64 ou en texte
+UTF-8. En production, cette variable est obligatoire. Le profil `local` autorise une cle
+ephemere si `JWT_ALLOW_EPHEMERAL_KEY=true` via sa configuration locale ; cette cle est
+regenereree a chaque demarrage et invalide les sessions precedentes.
+
+Le cookie d'authentification est HttpOnly, limite au chemin `/` et utilise `SameSite=Lax`.
+`JWT_COOKIE_NAME` permet de changer son nom et `JWT_COOKIE_SECURE=true` doit etre conserve
+en HTTPS. Les roles publics sont configures par `securefiles.auth.registration-roles` et
+doivent rester limites a `developpeur` et `utilisateur`; le role `admin` n'est pas
+selectionnable par l'inscription publique.
+
+En production, les requetes mutantes sont protegees par CSRF. Le frontend appelle d'abord
+`GET /api/v1/auth/csrf`, puis envoie le cookie CSRF lisible par le navigateur avec la requete.
+Le profil local desactive cette protection uniquement pour faciliter le developpement local.
+
 ### Test d'integration du scan
 
 Le test `FileScanFlowIntegrationTest` demarre une API Spring sur un port aleatoire,
@@ -123,6 +158,19 @@ etre demarrees avant son execution :
 ```bash
 cd backend
 SECUREFILES_INTEGRATION=true mvn -Dtest=FileScanFlowIntegrationTest test
+```
+
+Si une variable `DATABASE_URL` existe deja dans le shell, elle peut cibler une autre base.
+Pour utiliser explicitement la base PostgreSQL du Compose, lancer le test avec :
+
+```bash
+cd backend
+DATABASE_URL=jdbc:postgresql://localhost:5433/securefiles \
+DATABASE_USERNAME=securefiles \
+DATABASE_PASSWORD=securefiles-local-only \
+JWT_SECRET= \
+SECUREFILES_INTEGRATION=true \
+mvn -Dtest=FileScanFlowIntegrationTest test
 ```
 
 En cas de timeout, le test affiche le statut du fichier, le lease, les tentatives de scan
@@ -221,12 +269,27 @@ make back
 ## Test rapide de l'API
 
 ```bash
-curl -F "file=@./document.pdf" http://localhost:8080/api/v1/files
-curl http://localhost:8080/api/v1/files
-curl -OJ http://localhost:8080/api/v1/files/<id>/content
+curl -c cookies.txt \
+   -H 'Content-Type: application/json' \
+   -d '{"name":"Alice Martin","password":"mot-de-passe","roles":["developpeur","utilisateur"]}' \
+   http://localhost:8080/api/v1/auth/register
+
+curl -c cookies.txt -b cookies.txt \
+   -H 'Content-Type: application/json' \
+   -d '{"name":"Alice Martin","password":"mot-de-passe"}' \
+   http://localhost:8080/api/v1/auth/login
+
+curl -b cookies.txt http://localhost:8080/api/v1/users/me
+curl -b cookies.txt -F "file=@./document.pdf" http://localhost:8080/api/v1/files
+curl -b cookies.txt http://localhost:8080/api/v1/files
+curl -b cookies.txt -OJ http://localhost:8080/api/v1/files/<id>/content
+curl -b cookies.txt -X POST http://localhost:8080/api/v1/auth/logout
 ```
 
-Le dernier appel ne devient possible qu'apres le passage a `CLEAN`. Pour tester un fichier detecte, utiliser le fichier EICAR de test dans un environnement isole, jamais un malware reel.
+En production, appeler d'abord `GET /api/v1/auth/csrf` et transmettre le cookie CSRF dans
+les requetes `POST`. Le telechargement ne devient possible qu'apres le passage a `CLEAN`.
+Pour tester un fichier detecte, utiliser le fichier EICAR de test dans un environnement
+isole, jamais un malware reel.
 
 ## Decisions de securite et de capacite
 
@@ -236,14 +299,17 @@ Le dernier appel ne devient possible qu'apres le passage a `CLEAN`. Pour tester 
 - **Codes de defaillance** : les codes stables sont centralises dans le domaine et reproduits dans la console pour afficher un diagnostic securise sans exposer une exception brute.
 - **Noms** : le chemin fourni par le client est reduit a un nom de fichier, sans traversal.
 - **Observabilite** : Actuator expose le healthcheck ; les metriques de latence, taille, statut de scan et taux d'erreur sont a ajouter avant production.
-- **Acces** : cette premiere tranche ne branche pas encore l'authentification utilisateur. Un fournisseur OIDC/JWT et une autorisation par tenant sont obligatoires avant exposition publique.
+- **Acces** : les sessions JWT sont liees a une session persistante et revoquees au logout ;
+   une autorisation par tenant, des quotas et un fournisseur d'identite externe restent a
+   evaluer avant exposition publique.
 
 ## Suite recommandee
 
 1. Remplacer MinIO local par un stockage objet prive de production avec URLs signees emises uniquement apres validation.
 2. Ajouter authentification, quotas par tenant, rate limiting et antivirus redondant.
 3. Durcir la politique de retry et de dead-letter avec une reconciliation et un nettoyage des objets orphelins.
-4. Completer l'authentification, l'observabilite et les contrats d'exploitation des adaptateurs ; aucune regle metier ne doit migrer dans ces composants.
+4. Ajouter quotas par tenant, rate limiting, observabilite et contrats d'exploitation des
+   adaptateurs ; aucune regle metier ne doit migrer dans ces composants.
 5. Ajouter retention, suppression, chiffrement au repos et audit des acces.
 
 ## Agent importe
