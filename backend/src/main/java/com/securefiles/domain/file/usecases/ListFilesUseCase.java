@@ -35,9 +35,9 @@ public final class ListFilesUseCase implements ListFiles {
         StoredFilePage storedFilePage = repository.findPage(command.listQuery());
         List<StoredFile> storedFiles = storedFilePage.content();
         Map<String, String> authors = findAuthors(storedFiles);
-        Map<UUID, String> preciseFailureCodes = findPreciseFailureCodes(storedFiles);
+        Map<UUID, String> preciseFailureCauses = findPreciseFailureCauses(storedFiles);
         List<GetFileMetadataResult> content = storedFiles.stream()
-                .map(storedFile -> toMetadataResult(storedFile, authors, preciseFailureCodes))
+            .map(storedFile -> toMetadataResult(storedFile, authors, preciseFailureCauses))
                 .toList();
         return toPageResult(command, storedFilePage, content);
     }
@@ -66,7 +66,7 @@ public final class ListFilesUseCase implements ListFiles {
             .collect(Collectors.toUnmodifiableMap(ownerId -> ownerId, this::resolveAuthor));
     }
 
-    private Map<UUID, String> findPreciseFailureCodes(List<StoredFile> storedFiles) {
+    private Map<UUID, String> findPreciseFailureCauses(List<StoredFile> storedFiles) {
         Set<UUID> failedFileIds = storedFiles.stream()
                 .filter(this::requiresPreciseFailureCode)
             .map(storedFile -> Objects.requireNonNull(storedFile, "storedFile must not be null").id())
@@ -80,7 +80,7 @@ public final class ListFilesUseCase implements ListFiles {
     private GetFileMetadataResult toMetadataResult(
             StoredFile storedFile,
             Map<String, String> authors,
-            Map<UUID, String> preciseFailureCodes) {
+            Map<UUID, String> preciseFailureCauses) {
         return new GetFileMetadataResult(
                 storedFile.id(),
                 storedFile.originalFilename(),
@@ -88,7 +88,8 @@ public final class ListFilesUseCase implements ListFiles {
                 storedFile.sizeBytes(),
                 storedFile.status(),
                 storedFile.createdAt(),
-                resolveFailureCode(storedFile, preciseFailureCodes));
+                storedFile.failureCode(),
+                resolveFailureCause(storedFile, preciseFailureCauses));
     }
 
     private String resolveAuthor(String ownerId) {
@@ -101,14 +102,14 @@ public final class ListFilesUseCase implements ListFiles {
         }
     }
 
-    private Optional<String> resolveFailureCode(
+    private Optional<String> resolveFailureCause(
             StoredFile storedFile,
-            Map<UUID, String> preciseFailureCodes) {
+            Map<UUID, String> preciseFailureCauses) {
         if (!requiresPreciseFailureCode(storedFile)) {
-            return storedFile.failureCode();
+            return Optional.empty();
         }
-        return Optional.ofNullable(preciseFailureCodes.get(storedFile.id()))
-                .or(storedFile::failureCode);
+        return Optional.ofNullable(preciseFailureCauses.get(storedFile.id()))
+                .filter(cause -> !FileFailureCodes.SCAN_ATTEMPTS_EXHAUSTED.equals(cause));
     }
 
     private boolean requiresPreciseFailureCode(StoredFile storedFile) {

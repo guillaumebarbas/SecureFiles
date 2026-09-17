@@ -60,7 +60,7 @@ class GetFileMetadataUseCaseTest {
     }
 
     @Test
-    void get_shouldReturnPreciseFailureCode_whenScanAttemptsAreExhausted() {
+    void get_shouldExposeAttemptsExhaustionAndPreciseCause_whenScanAttemptsAreExhausted() {
         when(repository.findById(FILE_ID)).thenReturn(Optional.of(createScanFailedFile()));
         when(repository.findLatestPreciseFailureCodesByFileIds(Set.of(FILE_ID)))
                 .thenReturn(Map.of(FILE_ID, "CLAMAV_UNAVAILABLE"));
@@ -68,7 +68,8 @@ class GetFileMetadataUseCaseTest {
         GetFileMetadataResult result = getFileMetadataUseCase.get(
                 new GetFileMetadataCommand(FILE_ID, "owner-1"));
 
-        assertThat(result.failureCode()).contains("CLAMAV_UNAVAILABLE");
+        assertThat(result.failureCode()).contains("SCAN_ATTEMPTS_EXHAUSTED");
+        assertThat(result.failureCause()).contains("CLAMAV_UNAVAILABLE");
     }
 
         @Test

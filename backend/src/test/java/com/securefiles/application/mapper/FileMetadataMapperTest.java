@@ -76,11 +76,13 @@ class FileMetadataMapperTest {
                                 Optional.of(42L),
                                 FileStatus.SCAN_FAILED,
                                 CREATED_AT,
+                                Optional.of("SCAN_ATTEMPTS_EXHAUSTED"),
                                 Optional.of("CLAMAV_UNAVAILABLE"));
 
                 FileMetadataResponseDto response = mapper.toResponse(result);
 
-                assertThat(response.failureCode()).isEqualTo("CLAMAV_UNAVAILABLE");
+                assertThat(response.failureCode()).isEqualTo("SCAN_ATTEMPTS_EXHAUSTED");
+                assertThat(response.failureCause()).isEqualTo("CLAMAV_UNAVAILABLE");
         }
 
     @Test
