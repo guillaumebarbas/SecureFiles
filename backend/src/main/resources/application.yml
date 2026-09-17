@@ -23,6 +23,8 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:securefiles}
     password: ${RABBITMQ_PASSWORD:securefiles-local-only}
+    publisher-confirm-type: correlated
+    publisher-returns: true
 
 server:
   port: ${SERVER_PORT:8080}
@@ -68,5 +70,5 @@ securefiles:
     retry-queue: ${RABBITMQ_RETRY_QUEUE:securefiles.scan.retry}
     dead-letter-queue: ${RABBITMQ_DEAD_LETTER_QUEUE:securefiles.scan.dlq}
     prefetch: ${RABBITMQ_PREFETCH:1}
-    retry-delay-millis: ${RABBITMQ_RETRY_DELAY_MILLIS:60000}
+    confirm-timeout-millis: ${RABBITMQ_CONFIRM_TIMEOUT_MILLIS:5000}
     relay-interval-millis: ${RABBITMQ_RELAY_INTERVAL_MILLIS:5000}
