@@ -41,6 +41,29 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('table', { name: 'Fichiers uploades' })).toBeVisible();
   });
 
+  it('loads recent files for an anonymous visitor', async () => {
+    mockedListFiles.mockResolvedValue([{
+      author: 'Alice Martin',
+      createdAt: '2026-09-15T10:00:00Z',
+      fileId: '11111111-1111-1111-1111-111111111111',
+      originalFilename: 'public-document.txt',
+      sizeBytes: 12,
+      status: 'CLEAN',
+    }]);
+
+    render(<DashboardPage isAuthenticated={false} />);
+
+    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    expect(await within(table).findByText('public-document.txt')).toBeVisible();
+    expect(mockedListFiles).toHaveBeenCalledWith({ signal: expect.anything() });
+  });
+
+  it('shows an author column in the recent files register', () => {
+    render(<DashboardPage />);
+
+    expect(screen.getByRole('columnheader', { name: 'Auteur' })).toBeVisible();
+  });
+
   it('hides the upload action until a file is selected', () => {
     render(<DashboardPage />);
 
@@ -49,6 +72,7 @@ describe('DashboardPage', () => {
 
   it('hydrates the recent files register from the backend', async () => {
     mockedListFiles.mockResolvedValue([{
+      author: 'Alice Martin',
       createdAt: '2026-09-15T10:00:00Z',
       fileId: '11111111-1111-1111-1111-111111111111',
       originalFilename: 'persisted-document.txt',
@@ -60,6 +84,7 @@ describe('DashboardPage', () => {
 
     const table = screen.getByRole('table', { name: 'Fichiers uploades' });
     expect(await within(table).findByText('persisted-document.txt')).toBeVisible();
+    expect(within(table).getByText('Alice Martin')).toBeVisible();
     expect(mockedListFiles).toHaveBeenCalledWith({ signal: expect.anything() });
   });
 

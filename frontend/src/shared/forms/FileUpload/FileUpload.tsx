@@ -1,4 +1,12 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type MouseEvent,
+} from 'react';
 import { Clock3, CloudUpload, LoaderCircle, ShieldAlert, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -32,6 +40,8 @@ type UploadConfigurationState =
 type AcceptedFeedbackVisibility = 'hidden' | 'hiding' | 'visible';
 
 export type FileUploadProps = {
+  isAuthenticated?: boolean;
+  onAuthenticationRequired?: () => void;
   onAccepted?: (response: FileMetadataResponse) => void;
   onStatusChange?: (response: FileMetadataResponse) => void;
 };
@@ -40,6 +50,7 @@ const METADATA_POLL_INTERVAL_MS = 250;
 const MAX_METADATA_POLL_RETRIES = 3;
 const ACCEPTED_FEEDBACK_DISMISS_DELAY_MS = 10_000;
 const ACCEPTED_FEEDBACK_EXIT_DURATION_MS = 320;
+const AUTHENTICATION_REQUIRED_MESSAGE = 'Vous devez etre connecte pour selectionner un fichier.';
 
 function statusIcon(status: ScanStatus): LucideIcon {
   if (status === 'CLEAN') {
@@ -114,7 +125,12 @@ function formatFileSize(sizeBytes: number) {
   return `${readableSize.toFixed(fractionDigits)} ${units[unitIndex]}`;
 }
 
-export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
+export function FileUpload({
+  isAuthenticated = true,
+  onAuthenticationRequired,
+  onAccepted,
+  onStatusChange,
+}: FileUploadProps) {
   const inputId = `shared-file-upload-input-${useId().replace(/:/g, '')}`;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -168,6 +184,18 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
     setFeedback({ kind: 'idle' });
   }
 
+  function requestAuthentication() {
+    setFeedback({ kind: 'error', message: AUTHENTICATION_REQUIRED_MESSAGE });
+    onAuthenticationRequired?.();
+  }
+
+  function handleFileSelectionClick(event: MouseEvent<HTMLLabelElement>) {
+    if (!isAuthenticated) {
+      event.preventDefault();
+      requestAuthentication();
+    }
+  }
+
   function handleUploadConfigurationRetry() {
     setUploadConfiguration({ kind: 'loading' });
     setUploadConfigurationRequestVersion((currentVersion) => currentVersion + 1);
@@ -183,6 +211,10 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedFile) {
+      return;
+    }
+    if (!isAuthenticated) {
+      requestAuthentication();
       return;
     }
     if (uploadConfiguration.kind !== 'available') {
@@ -341,7 +373,11 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
     <div className={fileUploadClassNames.root}>
       <form className={fileUploadClassNames.form} onSubmit={handleSubmit}>
         <Column gap="16px">
-          <label className={fileUploadClassNames.zone} htmlFor={inputId}>
+          <label
+            className={fileUploadClassNames.zone}
+            htmlFor={inputId}
+            onClick={handleFileSelectionClick}
+          >
             <span className={fileUploadClassNames.zoneContent}>
               <CloudUpload aria-hidden="true" size={34} />
               <span>Choisissez un fichier</span>
@@ -362,7 +398,7 @@ export function FileUpload({ onAccepted, onStatusChange }: FileUploadProps) {
             <input
               aria-label="Choisir un fichier"
               className={fileUploadClassNames.input}
-              disabled={isUploading}
+              disabled={isUploading || !isAuthenticated}
               id={inputId}
               onChange={handleFileChange}
               ref={fileInputRef}

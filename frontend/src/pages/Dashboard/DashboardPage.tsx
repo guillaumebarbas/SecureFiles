@@ -18,6 +18,13 @@ const dashboardFileColumns: TableColumn<FileMetadataResponse>[] = [
     sortable: true,
   },
   {
+    header: 'Auteur',
+    key: 'author',
+    render: (file) => file.author ?? 'Auteur inconnu',
+    sortable: true,
+    sortValue: (file) => file.author ?? '',
+  },
+  {
     header: 'Statut',
     key: 'status',
     render: (file) => (
@@ -94,7 +101,15 @@ function formatCreatedAt(createdAt: string) {
   }).format(new Date(createdAt));
 }
 
-export function DashboardPage() {
+export type DashboardPageProps = {
+  isAuthenticated?: boolean;
+  onAuthenticationRequired?: () => void;
+};
+
+export function DashboardPage({
+  isAuthenticated = true,
+  onAuthenticationRequired,
+}: DashboardPageProps = {}) {
   const [files, setFiles] = useState<FileMetadataResponse[]>([]);
   const [animatedFileId, setAnimatedFileId] = useState<string | null>(null);
   const [filesError, setFilesError] = useState<string | null>(null);
@@ -162,6 +177,8 @@ export function DashboardPage() {
       >
         <Row className={dashboardPageClassNames.uploadContent} justify="center" wrap="wrap">
           <FileUpload
+            isAuthenticated={isAuthenticated}
+            onAuthenticationRequired={onAuthenticationRequired}
             onAccepted={handleFileAccepted}
             onStatusChange={handleFileStatusChange}
           />

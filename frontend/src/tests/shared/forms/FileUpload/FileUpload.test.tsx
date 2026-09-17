@@ -44,6 +44,27 @@ describe('FileUpload', () => {
     expect(screen.getByRole('button', { name: 'Envoyer le fichier' })).toBeVisible();
   });
 
+  it('requests authentication before an anonymous visitor selects a file', async () => {
+    const user = userEvent.setup();
+    const onAuthenticationRequired = vi.fn();
+
+    render(
+      <FileUpload
+        isAuthenticated={false}
+        onAuthenticationRequired={onAuthenticationRequired}
+      />,
+    );
+
+    await user.click(screen.getByText('Choisissez un fichier'));
+
+    expect(screen.getByLabelText('Choisir un fichier')).toBeDisabled();
+    expect(onAuthenticationRequired).toHaveBeenCalledOnce();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Vous devez etre connecte pour selectionner un fichier.',
+    );
+    expect(mockedUploadFile).not.toHaveBeenCalled();
+  });
+
   it('displays the selected file size with a readable unit', async () => {
     const user = userEvent.setup();
     const file = new File(['safe content'], 'MicrosoftTeams.pkg', { type: 'application/octet-stream' });

@@ -18,6 +18,7 @@ export type UploadFileResponse = {
 };
 
 export type FileMetadataResponse = Omit<UploadFileResponse, 'sizeBytes'> & {
+  author?: string;
   failureCode?: string | null;
   sizeBytes: number | null;
 };
@@ -31,6 +32,23 @@ export type UploadConfiguration = {
 };
 
 export type BackendHealthStatus = 'online' | 'offline';
+
+export type UserRole = 'developpeur' | 'admin' | 'utilisateur';
+
+export type UserProfile = {
+  userId: string;
+  name: string;
+  roles: UserRole[];
+};
+
+export type UserCredentials = {
+  name: string;
+  password: string;
+};
+
+export type RegisterUserRequest = UserCredentials & {
+  roles: UserRole[];
+};
 
 type BackendHealthResponse = {
   status?: string;
@@ -167,6 +185,72 @@ export async function listFiles(
       error,
       'FILES_LIST_REQUEST_FAILED',
       'La liste des fichiers ne peut pas etre lue.',
+    );
+  }
+}
+
+export async function registerUser(request: RegisterUserRequest): Promise<UserProfile> {
+  await prepareAuthRequest();
+
+  try {
+    const response = await axios.post<UserProfile>('/api/v1/auth/register', request, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    throw normalizeApiError(error, 'REGISTRATION_REQUEST_FAILED', 'Le compte ne peut pas etre cree.');
+  }
+}
+
+export async function loginUser(credentials: UserCredentials): Promise<UserProfile> {
+  await prepareAuthRequest();
+
+  try {
+    const response = await axios.post<UserProfile>('/api/v1/auth/login', credentials, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    throw normalizeApiError(error, 'LOGIN_REQUEST_FAILED', 'La connexion ne peut pas etre effectuee.');
+  }
+}
+
+export async function getCurrentUser(): Promise<UserProfile | undefined> {
+  try {
+    const response = await axios.get<UserProfile>('/api/v1/users/me', {
+      withCredentials: true,
+    });
+    if (response.status === 204) {
+      return undefined;
+    }
+    return response.data;
+  } catch (error) {
+    throw normalizeApiError(
+      error,
+      'CURRENT_USER_REQUEST_FAILED',
+      'Le profil courant ne peut pas etre lu.',
+    );
+  }
+}
+
+export async function logoutUser(): Promise<void> {
+  await prepareAuthRequest();
+
+  try {
+    await axios.post('/api/v1/auth/logout', undefined, { withCredentials: true });
+  } catch (error) {
+    throw normalizeApiError(error, 'LOGOUT_REQUEST_FAILED', 'La deconnexion ne peut pas etre effectuee.');
+  }
+}
+
+async function prepareAuthRequest(): Promise<void> {
+  try {
+    await axios.get('/api/v1/auth/csrf', { withCredentials: true });
+  } catch (error) {
+    throw normalizeApiError(
+      error,
+      'CSRF_REQUEST_FAILED',
+      'La protection de la session ne peut pas etre initialisee.',
     );
   }
 }
