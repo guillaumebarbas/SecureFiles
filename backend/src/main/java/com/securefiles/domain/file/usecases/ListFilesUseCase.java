@@ -5,6 +5,8 @@ import com.securefiles.domain.file.model.StoredFile;
 import com.securefiles.domain.file.port.in.GetFileMetadataResult;
 import com.securefiles.domain.file.port.in.ListFiles;
 import com.securefiles.domain.file.port.in.ListFilesCommand;
+import com.securefiles.domain.file.port.in.ListFilesResult;
+import com.securefiles.domain.file.port.out.StoredFilePage;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
 import com.securefiles.domain.user.port.out.UserRepository;
 import java.util.List;
@@ -28,14 +30,33 @@ public final class ListFilesUseCase implements ListFiles {
     }
 
     @Override
-    public List<GetFileMetadataResult> list(ListFilesCommand command) {
+    public ListFilesResult list(ListFilesCommand command) {
         Objects.requireNonNull(command, "command must not be null");
-        List<StoredFile> storedFiles = repository.findAll();
+        StoredFilePage storedFilePage = repository.findPage(command.page(), command.size());
+        List<StoredFile> storedFiles = storedFilePage.content();
         Map<String, String> authors = findAuthors(storedFiles);
         Map<UUID, String> preciseFailureCodes = findPreciseFailureCodes(storedFiles);
-        return storedFiles.stream()
-            .map(storedFile -> toMetadataResult(storedFile, authors, preciseFailureCodes))
+        List<GetFileMetadataResult> content = storedFiles.stream()
+                .map(storedFile -> toMetadataResult(storedFile, authors, preciseFailureCodes))
                 .toList();
+        return toPageResult(command, storedFilePage, content);
+    }
+
+    private ListFilesResult toPageResult(
+            ListFilesCommand command,
+            StoredFilePage storedFilePage,
+            List<GetFileMetadataResult> content) {
+        long totalPages = storedFilePage.totalElements() == 0
+                ? 0
+                : ((storedFilePage.totalElements() - 1) / command.size()) + 1;
+        return new ListFilesResult(
+                content,
+                command.page(),
+                command.size(),
+                storedFilePage.totalElements(),
+                totalPages,
+                command.page() < totalPages,
+                command.page() > 1);
     }
 
     private Map<String, String> findAuthors(List<StoredFile> storedFiles) {

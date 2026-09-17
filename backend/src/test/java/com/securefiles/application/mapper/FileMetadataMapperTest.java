@@ -3,6 +3,7 @@ package com.securefiles.application.mapper;
 import com.securefiles.application.dto.FileMetadataResponseDto;
 import com.securefiles.domain.file.model.FileStatus;
 import com.securefiles.domain.file.port.in.GetFileMetadataResult;
+import com.securefiles.domain.file.port.in.ListFilesResult;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -81,4 +82,28 @@ class FileMetadataMapperTest {
 
                 assertThat(response.failureCode()).isEqualTo("CLAMAV_UNAVAILABLE");
         }
+
+    @Test
+    void toPageResponse_shouldMapContentAndPaginationMetadata() {
+        GetFileMetadataResult result = new GetFileMetadataResult(
+                FILE_ID,
+                "report.pdf",
+                "Alice Martin",
+                Optional.of(42L),
+                FileStatus.CLEAN,
+                CREATED_AT,
+                Optional.empty());
+
+        var response = mapper.toPageResponse(
+                new ListFilesResult(List.of(result), 2, 10, 11, 2, false, true));
+
+        assertThat(response.content()).hasSize(1);
+        assertThat(response.content().get(0).originalFilename()).isEqualTo("report.pdf");
+        assertThat(response.page()).isEqualTo(2);
+        assertThat(response.size()).isEqualTo(10);
+        assertThat(response.totalElements()).isEqualTo(11);
+        assertThat(response.totalPages()).isEqualTo(2);
+        assertThat(response.hasNext()).isFalse();
+        assertThat(response.hasPrevious()).isTrue();
+    }
 }

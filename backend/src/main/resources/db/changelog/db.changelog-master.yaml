@@ -5,3 +5,6 @@ databaseChangeLog:
   - include:
       file: changes/002-create-user-auth-schema.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/003-create-stored-file-list-index.yaml
+      relativeToChangelogFile: true

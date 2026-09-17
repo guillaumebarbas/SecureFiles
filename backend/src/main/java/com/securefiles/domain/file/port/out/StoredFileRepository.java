@@ -14,7 +14,7 @@ public interface StoredFileRepository {
 
     Optional<StoredFile> findById(UUID fileId);
 
-    List<StoredFile> findAll();
+    StoredFilePage findPage(int page, int size);
 
     List<StoredFile> findByOwnerId(String ownerId);
 

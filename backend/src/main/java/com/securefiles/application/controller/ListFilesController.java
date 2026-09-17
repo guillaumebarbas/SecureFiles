@@ -1,12 +1,14 @@
 package com.securefiles.application.controller;
 
-import com.securefiles.application.dto.FileMetadataResponseDto;
+import com.securefiles.application.dto.ListFilesResponseDto;
 import com.securefiles.application.mapper.FileMetadataMapper;
+import com.securefiles.domain.file.model.FileFailureCodes;
+import com.securefiles.domain.file.model.list.ListFilesException;
 import com.securefiles.domain.file.port.in.ListFiles;
 import com.securefiles.domain.file.port.in.ListFilesCommand;
-import java.util.List;
 import java.util.Objects;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,7 +27,28 @@ public final class ListFilesController {
     }
 
     @GetMapping
-    public List<FileMetadataResponseDto> list() {
-        return fileMetadataMapper.toResponses(listFiles.list(new ListFilesCommand()));
+    public ListFilesResponseDto list(
+            @RequestParam(defaultValue = "1") String page,
+            @RequestParam(defaultValue = "10") String size) {
+        return fileMetadataMapper.toPageResponse(listFiles.list(new ListFilesCommand(
+                parsePaginationParameter(page),
+                parsePaginationParameter(size))));
+    }
+
+    private int parsePaginationParameter(String value) {
+        if (value == null) {
+            throw invalidPagination();
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException exception) {
+            throw invalidPagination();
+        }
+    }
+
+    private ListFilesException invalidPagination() {
+        return new ListFilesException(
+                FileFailureCodes.INVALID_PAGINATION,
+                "The page or size parameter is invalid.");
     }
 }
