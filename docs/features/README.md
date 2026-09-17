@@ -13,6 +13,7 @@ Merge the numbered feature branches in this order:
 5. `05-large-file-antivirus-scan.md` from `fix/large-file-antivirus-scan` aligns the production size policy and adds the isolated ClamAV stream-limit integration scenario.
 6. `06-frontend-profile-login-ux.md` records the initial Profile and Login console interactions.
 7. `07-secure-file-access-authentication.md` from `feat/secure-file-access-authentication` adds persisted JWT sessions, authentication-aware uploads, and public recent-file metadata.
+8. `08-file-list-server-pagination.md` from `feat/file-list-server-pagination` replaces frontend-only recent-file pagination with backend pagination and controlled server navigation.
 
 The numbered summaries intentionally remain with the branch that delivers the
 corresponding implementation. After merging the branches in sequence, this

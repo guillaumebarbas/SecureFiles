@@ -109,19 +109,30 @@ describe('filesApi', () => {
   });
 
   it('gets the files visible to the current requester with an abort signal', async () => {
-    const response = [{
-      createdAt: '2026-09-15T10:00:00Z',
-      fileId: '11111111-1111-1111-1111-111111111111',
-      originalFilename: 'document.txt',
-      sizeBytes: 12,
-      status: 'PENDING_SCAN',
-    }];
+    const response = {
+      content: [{
+        createdAt: '2026-09-15T10:00:00Z',
+        fileId: '11111111-1111-1111-1111-111111111111',
+        originalFilename: 'document.txt',
+        sizeBytes: 12,
+        status: 'PENDING_SCAN',
+      }],
+      hasNext: true,
+      hasPrevious: false,
+      page: 2,
+      size: 10,
+      totalElements: 21,
+      totalPages: 3,
+    };
     const controller = new AbortController();
     vi.mocked(axios.get).mockResolvedValue({ data: response } as never);
 
-    await expect(listFiles({ signal: controller.signal })).resolves.toEqual(response);
+    await expect(listFiles({ page: 2, size: 10, signal: controller.signal })).resolves.toEqual(response);
 
-    expect(axios.get).toHaveBeenCalledWith('/api/v1/files', { signal: controller.signal });
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/files', {
+      params: { page: 2, size: 10 },
+      signal: controller.signal,
+    });
   });
 
   it('normalizes an API error without exposing the raw response', async () => {

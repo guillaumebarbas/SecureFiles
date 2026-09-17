@@ -23,6 +23,16 @@ export type FileMetadataResponse = Omit<UploadFileResponse, 'sizeBytes'> & {
   sizeBytes: number | null;
 };
 
+export type FilesPageResponse = {
+  content: FileMetadataResponse[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+};
+
 export type UploadFileOptions = {
   onProgress?: (progress: number) => void;
 };
@@ -59,6 +69,8 @@ export type GetFileMetadataOptions = {
 };
 
 export type ListFilesOptions = {
+  page?: number;
+  size?: number;
   signal?: AbortSignal;
 };
 
@@ -174,9 +186,13 @@ export async function getFileMetadata(
 
 export async function listFiles(
   options: ListFilesOptions = {},
-): Promise<FileMetadataResponse[]> {
+): Promise<FilesPageResponse> {
   try {
-    const response = await axios.get<FileMetadataResponse[]>('/api/v1/files', {
+    const response = await axios.get<FilesPageResponse>('/api/v1/files', {
+      params: {
+        page: options.page ?? 1,
+        size: options.size ?? 10,
+      },
       signal: options.signal,
     });
     return response.data;

@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GenericTable, type TableColumn } from '../../../shared/data/GenericTable';
 
 type FileRow = {
@@ -142,5 +142,44 @@ describe('GenericTable', () => {
 
     expect(screen.getByText('Page 1 sur 1')).toBeVisible();
     expect(within(table).getByText('middle.pdf')).toBeVisible();
+  });
+
+  it('delegates server pagination without slicing or sorting received rows', async () => {
+    const user = userEvent.setup();
+    const onPageChange = vi.fn();
+    const onPageSizeChange = vi.fn();
+
+    render(
+      <GenericTable
+        caption="Registre serveur"
+        columns={columns}
+        getRowKey={(row) => row.id}
+        rows={rows}
+        serverPagination={{
+          page: 1,
+          pageSize: 2,
+          pageSizeOptions: [2, 3],
+          totalElements: 3,
+          totalPages: 2,
+          hasNext: true,
+          hasPrevious: false,
+          onPageChange,
+          onPageSizeChange,
+        }}
+      />,
+    );
+
+    const table = screen.getByRole('table', { name: 'Registre serveur' });
+    expect(within(table).getByText('zulu.pdf')).toBeVisible();
+    expect(within(table).getByText('alpha.pdf')).toBeVisible();
+    expect(within(table).queryByRole('button', { name: 'Trier par Nom' })).not.toBeInTheDocument();
+    expect(screen.getByText('Page 1 sur 2')).toBeVisible();
+    expect(screen.getByText('3 elements')).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Page suivante' }));
+    expect(onPageChange).toHaveBeenCalledWith(2);
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Elements par page' }), '3');
+    expect(onPageSizeChange).toHaveBeenCalledWith(3);
   });
 });

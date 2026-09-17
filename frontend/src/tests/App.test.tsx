@@ -9,6 +9,7 @@ import {
   loginUser,
   logoutUser,
   registerUser,
+  type FilesPageResponse,
   type UserProfile,
 } from '../api/filesApi';
 import { App } from '../App';
@@ -31,13 +32,23 @@ const mockedLoginUser = vi.mocked(loginUser);
 const mockedLogoutUser = vi.mocked(logoutUser);
 const mockedRegisterUser = vi.mocked(registerUser);
 
+const emptyFilesPage: FilesPageResponse = {
+  content: [],
+  hasNext: false,
+  hasPrevious: false,
+  page: 1,
+  size: 10,
+  totalElements: 0,
+  totalPages: 0,
+};
+
 describe('App', () => {
   beforeEach(() => {
     window.history.replaceState({}, '', '/');
     mockedCheckBackendHealth.mockResolvedValue('online');
     mockedGetCurrentUser.mockRejectedValue(new Error('Not authenticated'));
     mockedGetUploadConfiguration.mockResolvedValue({ maximumSizeBytes: 1024 });
-    mockedListFiles.mockResolvedValue([]);
+    mockedListFiles.mockResolvedValue(emptyFilesPage);
   });
 
   afterEach(() => {
@@ -60,14 +71,22 @@ describe('App', () => {
 
   it('loads the recent files register when the visitor has no session', async () => {
     mockedGetCurrentUser.mockResolvedValue(undefined);
-    mockedListFiles.mockResolvedValue([{
-      author: 'Alice Martin',
-      createdAt: '2026-09-15T10:00:00Z',
-      fileId: '11111111-1111-1111-1111-111111111111',
-      originalFilename: 'public-document.txt',
-      sizeBytes: 12,
-      status: 'CLEAN',
-    }]);
+    mockedListFiles.mockResolvedValue({
+      content: [{
+        author: 'Alice Martin',
+        createdAt: '2026-09-15T10:00:00Z',
+        fileId: '11111111-1111-1111-1111-111111111111',
+        originalFilename: 'public-document.txt',
+        sizeBytes: 12,
+        status: 'CLEAN',
+      }],
+      hasNext: false,
+      hasPrevious: false,
+      page: 1,
+      size: 10,
+      totalElements: 1,
+      totalPages: 1,
+    });
 
     render(<App />);
 

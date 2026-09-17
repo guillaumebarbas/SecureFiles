@@ -3,6 +3,7 @@ package com.securefiles.application.controller;
 import com.securefiles.domain.file.model.upload.UploadException;
 import com.securefiles.domain.file.model.FileFailureCodes;
 import com.securefiles.domain.file.model.download.DownloadException;
+import com.securefiles.domain.file.model.list.ListFilesException;
 import com.securefiles.domain.file.model.metadata.FileMetadataException;
 import com.securefiles.domain.user.model.UserException;
 import java.io.IOException;
@@ -53,6 +54,12 @@ public final class UploadFileExceptionHandler {
     @ExceptionHandler(FileMetadataException.class)
     public ResponseEntity<ApiErrorResponse> handleFileMetadataException(FileMetadataException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiErrorResponse(exception.code(), exception.getMessage()));
+    }
+
+    @ExceptionHandler(ListFilesException.class)
+    public ResponseEntity<ApiErrorResponse> handleListFilesException(ListFilesException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiErrorResponse(exception.code(), exception.getMessage()));
     }
 

@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Clock3, CloudUpload, FolderOpen, RefreshCw, ShieldAlert, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { listFiles, type FileMetadataResponse, type ScanStatus } from '../../api/filesApi';
+import {
+  listFiles,
+  type FileMetadataResponse,
+  type FilesPageResponse,
+  type ScanStatus,
+} from '../../api/filesApi';
 import { Button } from '../../shared/actions/Button';
 import { GenericTable, type TableColumn } from '../../shared/data/GenericTable';
 import { FileUpload } from '../../shared/forms/FileUpload/FileUpload';
@@ -15,14 +20,11 @@ const dashboardFileColumns: TableColumn<FileMetadataResponse>[] = [
   {
     header: 'Nom',
     key: 'originalFilename',
-    sortable: true,
   },
   {
     header: 'Auteur',
     key: 'author',
     render: (file) => file.author ?? 'Auteur inconnu',
-    sortable: true,
-    sortValue: (file) => file.author ?? '',
   },
   {
     header: 'Statut',
@@ -40,15 +42,26 @@ const dashboardFileColumns: TableColumn<FileMetadataResponse>[] = [
     header: 'Taille',
     key: 'sizeBytes',
     render: (file) => formatFileSize(file.sizeBytes),
-    sortValue: (file) => file.sizeBytes ?? 0,
   },
   {
     header: 'Ajoute le',
     key: 'createdAt',
     render: (file) => formatCreatedAt(file.createdAt),
-    sortValue: (file) => file.createdAt,
   },
 ];
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [5, 10, 25];
+const EMPTY_FILES_PAGE: FilesPageResponse = {
+  content: [],
+  hasNext: false,
+  hasPrevious: false,
+  page: DEFAULT_PAGE,
+  size: DEFAULT_PAGE_SIZE,
+  totalElements: 0,
+  totalPages: 0,
+};
 
 function statusIcon(status: ScanStatus): LucideIcon {
   if (status === 'CLEAN') {
@@ -111,9 +124,12 @@ export function DashboardPage({
   onAuthenticationRequired,
 }: DashboardPageProps = {}) {
   const [files, setFiles] = useState<FileMetadataResponse[]>([]);
+  const [filesPagination, setFilesPagination] = useState<FilesPageResponse>(EMPTY_FILES_PAGE);
   const [animatedFileId, setAnimatedFileId] = useState<string | null>(null);
   const [filesError, setFilesError] = useState<string | null>(null);
   const [isLoadingFiles, setIsLoadingFiles] = useState(true);
+  const [page, setPage] = useState(DEFAULT_PAGE);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [refreshVersion, setRefreshVersion] = useState(0);
 
   useEffect(() => {
@@ -121,12 +137,13 @@ export function DashboardPage({
     let isActive = true;
 
     setIsLoadingFiles(true);
-    listFiles({ signal: controller.signal })
-      .then((serverFiles) => {
+    listFiles({ page, signal: controller.signal, size: pageSize })
+      .then((serverPage) => {
         if (!isActive) {
           return;
         }
-        setFiles((currentFiles) => mergeFiles(currentFiles, serverFiles));
+        setFiles(serverPage.content);
+        setFilesPagination(serverPage);
         setFilesError(null);
       })
       .catch((error: unknown) => {
@@ -145,15 +162,12 @@ export function DashboardPage({
       isActive = false;
       controller.abort();
     };
-  }, [refreshVersion]);
+  }, [page, pageSize, refreshVersion]);
 
   function handleFileAccepted(file: FileMetadataResponse) {
-    setFiles((currentFiles) => [
-      file,
-      ...currentFiles.filter((currentFile) => currentFile.fileId !== file.fileId),
-    ]);
     setAnimatedFileId(file.fileId);
     setFilesError(null);
+    setPage(DEFAULT_PAGE);
     setRefreshVersion((currentVersion) => currentVersion + 1);
   }
 
@@ -165,6 +179,11 @@ export function DashboardPage({
 
   function handleFilesRetry() {
     setRefreshVersion((currentVersion) => currentVersion + 1);
+  }
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize);
+    setPage(DEFAULT_PAGE);
   }
 
   return (
@@ -213,21 +232,22 @@ export function DashboardPage({
           columns={dashboardFileColumns}
           emptyMessage="Aucun fichier upload pour le moment."
           getRowKey={(file) => file.fileId}
-          pagination={{ pageSize: 10, pageSizeOptions: [5, 10, 25] }}
           rows={files}
+          serverPagination={{
+            page: filesPagination.page,
+            pageSize: filesPagination.size,
+            pageSizeOptions: PAGE_SIZE_OPTIONS,
+            totalElements: filesPagination.totalElements,
+            totalPages: filesPagination.totalPages,
+            hasNext: filesPagination.hasNext,
+            hasPrevious: filesPagination.hasPrevious,
+            onPageChange: setPage,
+            onPageSizeChange: handlePageSizeChange,
+          }}
         />
       </Section>
     </div>
   );
-}
-
-function mergeFiles(
-  currentFiles: FileMetadataResponse[],
-  serverFiles: FileMetadataResponse[],
-) {
-  const serverFileIds = new Set(serverFiles.map((file) => file.fileId));
-  const locallyAcceptedFiles = currentFiles.filter((file) => !serverFileIds.has(file.fileId));
-  return [...serverFiles, ...locallyAcceptedFiles];
 }
 
 function readErrorMessage(error: unknown) {

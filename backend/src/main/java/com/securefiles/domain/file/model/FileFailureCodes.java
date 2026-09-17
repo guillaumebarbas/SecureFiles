@@ -13,6 +13,7 @@ public final class FileFailureCodes {
     public static final String INVALID_CONTENT_TYPE = "INVALID_CONTENT_TYPE";
     public static final String INVALID_FIELD_PREFIX = "INVALID_";
     public static final String INVALID_FILENAME = "INVALID_FILENAME";
+    public static final String INVALID_PAGINATION = "INVALID_PAGINATION";
     public static final String MAX_SIZE_EXCEEDED = "MAX_SIZE_EXCEEDED";
     public static final String SCAN_ATTEMPTS_EXHAUSTED = "SCAN_ATTEMPTS_EXHAUSTED";
     public static final String SCAN_LEASE_EXPIRED = "SCAN_LEASE_EXPIRED";

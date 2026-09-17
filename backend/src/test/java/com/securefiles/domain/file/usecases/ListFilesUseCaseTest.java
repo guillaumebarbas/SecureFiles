@@ -3,8 +3,10 @@ package com.securefiles.domain.file.usecases;
 import com.securefiles.domain.file.model.FileStatus;
 import com.securefiles.domain.file.model.StorageReceipt;
 import com.securefiles.domain.file.model.StoredFile;
-import com.securefiles.domain.file.port.in.GetFileMetadataResult;
+import com.securefiles.domain.file.model.list.ListFilesException;
 import com.securefiles.domain.file.port.in.ListFilesCommand;
+import com.securefiles.domain.file.port.in.ListFilesResult;
+import com.securefiles.domain.file.port.out.StoredFilePage;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
 import com.securefiles.domain.user.model.User;
 import com.securefiles.domain.user.model.UserRole;
@@ -23,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,25 +69,64 @@ class ListFilesUseCaseTest {
                 OLDEST_SHA_256,
                 FileStatus.CLEAN,
                 OLDEST_CREATED_AT);
-        when(repository.findAll()).thenReturn(List.of(newestFile, oldestFile));
+        when(repository.findPage(1, 10)).thenReturn(new StoredFilePage(List.of(newestFile, oldestFile), 2));
 
-        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand());
+        ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
 
-        assertThat(result)
+        assertThat(result.content())
                 .extracting(metadata -> metadata.fileId())
                 .containsExactly(NEWEST_FILE_ID, OLDEST_FILE_ID);
-        assertThat(result.get(0).originalFilename()).isEqualTo("newest.pdf");
-        assertThat(result.get(0).sizeBytes()).contains(42L);
-        assertThat(result.get(0).status()).isEqualTo(FileStatus.PENDING_SCAN);
+        assertThat(result.content().get(0).originalFilename()).isEqualTo("newest.pdf");
+        assertThat(result.content().get(0).sizeBytes()).contains(42L);
+        assertThat(result.content().get(0).status()).isEqualTo(FileStatus.PENDING_SCAN);
     }
+
+        @Test
+        void list_shouldReturnPageMetadata_whenRepositoryProvidesRequestedPage() {
+                StoredFile oldestFile = createFile(
+                                OLDEST_FILE_ID,
+                                "oldest.pdf",
+                                12L,
+                                OLDEST_SHA_256,
+                                FileStatus.CLEAN,
+                                OLDEST_CREATED_AT);
+                when(repository.findPage(2, 10)).thenReturn(new StoredFilePage(List.of(oldestFile), 11));
+
+                ListFilesResult result = listFilesUseCase.list(new ListFilesCommand(2, 10));
+
+                assertThat(result.content()).extracting(metadata -> metadata.fileId())
+                                .containsExactly(OLDEST_FILE_ID);
+                assertThat(result.page()).isEqualTo(2);
+                assertThat(result.size()).isEqualTo(10);
+                assertThat(result.totalElements()).isEqualTo(11);
+                assertThat(result.totalPages()).isEqualTo(2);
+                assertThat(result.hasNext()).isFalse();
+                assertThat(result.hasPrevious()).isTrue();
+        }
+
+        @Test
+        void list_shouldRejectInvalidPageNumber() {
+                Throwable thrown = catchThrowable(() -> new ListFilesCommand(0, 10));
+
+                assertThat(thrown).isInstanceOf(ListFilesException.class);
+                assertThat(((ListFilesException) thrown).code()).isEqualTo("INVALID_PAGINATION");
+        }
+
+        @Test
+        void list_shouldRejectPageSizeAboveMaximum() {
+                Throwable thrown = catchThrowable(() -> new ListFilesCommand(1, 51));
+
+                assertThat(thrown).isInstanceOf(ListFilesException.class);
+                assertThat(((ListFilesException) thrown).code()).isEqualTo("INVALID_PAGINATION");
+        }
 
     @Test
     void list_shouldReturnEmptyMetadata_whenRequesterHasNoFiles() {
-        when(repository.findAll()).thenReturn(List.of());
+        when(repository.findPage(1, 10)).thenReturn(new StoredFilePage(List.of(), 0));
 
-        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand());
+        ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
 
-        assertThat(result).isEmpty();
+        assertThat(result.content()).isEmpty();
     }
 
     @Test
@@ -102,14 +144,14 @@ class ListFilesUseCaseTest {
                 OLDEST_SHA_256,
                 FileStatus.CLEAN,
                 OLDEST_CREATED_AT);
-        when(repository.findAll()).thenReturn(List.of(failedFile, cleanFile));
+        when(repository.findPage(1, 10)).thenReturn(new StoredFilePage(List.of(failedFile, cleanFile), 2));
         when(repository.findLatestPreciseFailureCodesByFileIds(Set.of(NEWEST_FILE_ID)))
                 .thenReturn(Map.of(NEWEST_FILE_ID, "CLAMAV_UNAVAILABLE"));
 
-        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand());
+        ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
 
-        assertThat(result.get(0).failureCode()).contains("CLAMAV_UNAVAILABLE");
-        assertThat(result.get(1).failureCode()).isEmpty();
+        assertThat(result.content().get(0).failureCode()).contains("CLAMAV_UNAVAILABLE");
+        assertThat(result.content().get(1).failureCode()).isEmpty();
     }
 
     @Test
@@ -130,15 +172,15 @@ class ListFilesUseCaseTest {
                 OLDEST_SHA_256,
                 FileStatus.CLEAN,
                 OLDEST_CREATED_AT);
-        when(repository.findAll()).thenReturn(List.of(firstOwnerFile, secondOwnerFile));
+        when(repository.findPage(1, 10)).thenReturn(new StoredFilePage(List.of(firstOwnerFile, secondOwnerFile), 2));
         when(userRepository.findById(FIRST_OWNER_ID)).thenReturn(Optional.of(createUser(FIRST_OWNER_ID, "Alice Martin")));
         when(userRepository.findById(SECOND_OWNER_ID)).thenReturn(Optional.of(createUser(SECOND_OWNER_ID, "Bob Dupont")));
 
-        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand());
+        ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
 
-        assertThat(result).extracting(metadata -> metadata.originalFilename())
+        assertThat(result.content()).extracting(metadata -> metadata.originalFilename())
                 .containsExactly("first-owner.pdf", "second-owner.pdf");
-        assertThat(result).extracting(metadata -> metadata.author())
+        assertThat(result.content()).extracting(metadata -> metadata.author())
                 .containsExactly("Alice Martin", "Bob Dupont");
     }
 
@@ -152,11 +194,11 @@ class ListFilesUseCaseTest {
                 NEWEST_SHA_256,
                 FileStatus.CLEAN,
                 NEWEST_CREATED_AT);
-        when(repository.findAll()).thenReturn(List.of(legacyFile));
+        when(repository.findPage(1, 10)).thenReturn(new StoredFilePage(List.of(legacyFile), 1));
 
-        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand());
+        ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
 
-        assertThat(result).singleElement()
+        assertThat(result.content()).singleElement()
                 .extracting(metadata -> metadata.author())
                 .isEqualTo("Auteur inconnu");
     }
