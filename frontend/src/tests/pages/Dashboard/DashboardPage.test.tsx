@@ -57,12 +57,12 @@ describe('DashboardPage', () => {
     render(<DashboardPage />);
 
     expect(screen.getByRole('heading', { name: 'Upload ton fichier' })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Fichiers recents' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Fichiers récents' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Upload ton fichier' }).closest('section'))
       .toHaveClass('dashboard-page__upload-section');
     expect(screen.queryByRole('heading', { name: 'Depot rapide' })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Espace de pilotage' })).not.toBeInTheDocument();
-    expect(screen.getByRole('table', { name: 'Fichiers uploades' })).toBeVisible();
+    expect(screen.getByRole('table', { name: 'Fichiers uploadés' })).toBeVisible();
   });
 
   it('loads recent files for an anonymous visitor', async () => {
@@ -77,9 +77,15 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage isAuthenticated={false} />);
 
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     expect(await within(table).findByText('public-document.txt')).toBeVisible();
-    expect(mockedListFiles).toHaveBeenCalledWith({ page: 1, size: 10, signal: expect.anything() });
+    expect(mockedListFiles).toHaveBeenCalledWith({
+      direction: 'desc',
+      page: 1,
+      signal: expect.anything(),
+      size: 10,
+      sort: 'createdAt',
+    });
   });
 
   it('shows an author column in the recent files register', () => {
@@ -106,10 +112,16 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />);
 
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     expect(await within(table).findByText('persisted-document.txt')).toBeVisible();
     expect(within(table).getByText('Alice Martin')).toBeVisible();
-    expect(mockedListFiles).toHaveBeenCalledWith({ page: 1, size: 10, signal: expect.anything() });
+    expect(mockedListFiles).toHaveBeenCalledWith({
+      direction: 'desc',
+      page: 1,
+      signal: expect.anything(),
+      size: 10,
+      sort: 'createdAt',
+    });
   });
 
   it('loads the next recent files page from the backend', async () => {
@@ -150,13 +162,19 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />);
 
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     expect(await within(table).findByText('first-page.txt')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Page suivante' }));
 
     expect(await within(table).findByText('second-page.txt')).toBeVisible();
     expect(within(table).queryByText('first-page.txt')).not.toBeInTheDocument();
-    expect(mockedListFiles).toHaveBeenLastCalledWith({ page: 2, size: 10, signal: expect.anything() });
+    expect(mockedListFiles).toHaveBeenLastCalledWith({
+      direction: 'desc',
+      page: 2,
+      signal: expect.anything(),
+      size: 10,
+      sort: 'createdAt',
+    });
   });
 
   it('requests the selected page size from the backend', async () => {
@@ -187,14 +205,45 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />);
 
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     await within(table).findByText('ten-per-page.txt');
-    const pageSizeSelect = screen.getByRole('combobox', { name: 'Elements par page' });
+    const pageSizeSelect = screen.getByRole('combobox', { name: 'Éléments par page' });
     await user.selectOptions(pageSizeSelect, '25');
 
     expect(pageSizeSelect).toHaveValue('25');
     expect(await within(table).findByText('twenty-five-per-page.txt')).toBeVisible();
-    expect(mockedListFiles).toHaveBeenLastCalledWith({ page: 1, size: 25, signal: expect.anything() });
+    expect(mockedListFiles).toHaveBeenLastCalledWith({
+      direction: 'desc',
+      page: 1,
+      signal: expect.anything(),
+      size: 25,
+      sort: 'createdAt',
+    });
+  });
+
+  it('filters recent files by several statuses and closes the filter panel with Escape', async () => {
+    const user = userEvent.setup();
+    render(<DashboardPage />);
+
+    const filterButton = screen.getByRole('button', { name: 'Filtrer par statut' });
+    await user.click(filterButton);
+
+    const filterPanel = screen.getByRole('dialog', { name: 'Filtrer les fichiers par statut' });
+    await user.click(within(filterPanel).getByRole('checkbox', { name: 'Sain' }));
+    await user.click(within(filterPanel).getByRole('checkbox', { name: 'Analyse échouée' }));
+
+    await waitFor(() => expect(mockedListFiles).toHaveBeenLastCalledWith({
+      direction: 'desc',
+      page: 1,
+      signal: expect.anything(),
+      size: 10,
+      sort: 'createdAt',
+      statuses: ['CLEAN', 'SCAN_FAILED'],
+    }));
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Filtrer les fichiers par statut' })).not.toBeInTheDocument();
+    expect(filterButton).toHaveFocus();
   });
 
   it('shows the scan failure code in the status tag tooltip', async () => {
@@ -209,7 +258,7 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />);
 
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     const tag = await within(table).findByText('SCAN_FAILED');
     const tooltip = screen.getByRole('tooltip', {
       name: 'Service antivirus indisponible (CLAMAV_UNAVAILABLE)',
@@ -231,17 +280,17 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />);
 
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     await within(table).findByText('large-video.mov');
     expect(screen.getByRole('tooltip', {
-      name: 'Taille du fichier incoherente (STORAGE_SIZE_MISMATCH)',
+      name: 'Taille du fichier incohérente (STORAGE_SIZE_MISMATCH)',
     })).toBeVisible();
   });
 
   it('shows a retry action when the recent files register cannot be loaded', async () => {
     const user = userEvent.setup();
     mockedListFiles
-      .mockRejectedValueOnce(new Error('La liste des fichiers ne peut pas etre lue.'))
+      .mockRejectedValueOnce(new Error('La liste des fichiers ne peut pas être lue.'))
       .mockResolvedValueOnce(createFilesPageResponse([{
         createdAt: '2026-09-15T10:00:00Z',
         fileId: '11111111-1111-1111-1111-111111111111',
@@ -253,11 +302,11 @@ describe('DashboardPage', () => {
     render(<DashboardPage />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'La liste des fichiers ne peut pas etre lue.',
+      'La liste des fichiers ne peut pas être lue.',
     );
-    await user.click(screen.getByRole('button', { name: 'Reessayer' }));
+    await user.click(screen.getByRole('button', { name: 'Réessayer' }));
 
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     expect(await within(table).findByText('retried-document.txt')).toBeVisible();
     expect(mockedListFiles).toHaveBeenCalledTimes(2);
   });
@@ -300,7 +349,7 @@ describe('DashboardPage', () => {
     );
     expect(await screen.findByRole('status')).toHaveTextContent('PENDING_SCAN');
     expect(screen.getAllByText('document.txt')).toHaveLength(2);
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     expect(within(table).getByText('document.txt')).toBeVisible();
     expect(within(table).getByText('PENDING_SCAN')).toBeVisible();
     expect(screen.queryByRole('link', { name: /telecharger/i })).not.toBeInTheDocument();
@@ -365,7 +414,7 @@ describe('DashboardPage', () => {
     await user.upload(screen.getByLabelText('Choisir un fichier'), file);
     await user.click(screen.getByRole('button', { name: 'Envoyer le fichier' }));
 
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     expect(await within(table).findByText('SCANNING')).toBeVisible();
     expect(await within(table).findByText('CLEAN', {}, { timeout: 2000 })).toBeVisible();
     expect(mockedGetFileMetadata).toHaveBeenCalledTimes(2);
@@ -392,9 +441,9 @@ describe('DashboardPage', () => {
     await user.upload(screen.getByLabelText('Choisir un fichier'), file);
     await user.click(screen.getByRole('button', { name: 'Envoyer le fichier' }));
 
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     expect(await within(table).findByText('INFECTED')).toBeVisible();
-    expect(screen.getByText('Fichier bloque : une menace a ete detectee.')).toBeVisible();
+    expect(screen.getByText('Fichier bloqué : une menace a été détectée.')).toBeVisible();
     await new Promise((resolve) => setTimeout(resolve, 350));
     expect(mockedGetFileMetadata).toHaveBeenCalledTimes(1);
   });
@@ -402,14 +451,14 @@ describe('DashboardPage', () => {
   it('displays an actionable error when the upload fails', async () => {
     const user = userEvent.setup();
     const file = new File(['invalid'], 'document.txt', { type: 'text/plain' });
-    mockedUploadFile.mockRejectedValue(new Error('Le fichier ne peut pas etre envoye.'));
+    mockedUploadFile.mockRejectedValue(new Error('Le fichier ne peut pas être envoyé.'));
 
     render(<DashboardPage />);
 
     await user.upload(screen.getByLabelText('Choisir un fichier'), file);
     await user.click(screen.getByRole('button', { name: 'Envoyer le fichier' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Le fichier ne peut pas etre envoye.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Le fichier ne peut pas être envoyé.');
     expect(screen.getByRole('button', { name: 'Envoyer le fichier' })).not.toBeDisabled();
   });
 });

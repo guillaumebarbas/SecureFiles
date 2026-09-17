@@ -11,7 +11,7 @@ describe('SideNavBar', () => {
         backendStatus="unknown"
         items={[
           { href: '/', icon: Home, label: 'Dashboard' },
-          { href: '/components', icon: LayoutGrid, label: 'Bibliotheque' },
+          { href: '/components', icon: LayoutGrid, label: 'Bibliothèque' },
           { href: '/files', icon: FolderOpen, label: 'Fichiers' },
         ]}
         version="0.1.0"
@@ -22,9 +22,9 @@ describe('SideNavBar', () => {
     expect(container.querySelector('aside > .shared-column.app-sidebar__content')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'SecureFiles', level: 2 })).toBeVisible();
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Bibliotheque' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('link', { name: 'Bibliothèque' })).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('link', { name: 'Fichiers' })).not.toHaveAttribute('aria-current');
     expect(screen.getByText('Version 0.1.0')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Verification du service...' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Vérification du service...' })).toBeVisible();
   });
 });

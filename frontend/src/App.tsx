@@ -26,7 +26,7 @@ const applicationVersion = '0.1.0';
 const navigationItems: readonly NavItemDefinition[] = [
   { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/profile', icon: CircleUserRound, label: 'Profil' },
-  { href: '/components', icon: LayoutGrid, label: 'Bibliotheque' },
+  { href: '/components', icon: LayoutGrid, label: 'Bibliothèque' },
 ];
 
 const routeMetadata: Record<AppRoute, { eyebrow: string; title: string }> = {
@@ -35,8 +35,8 @@ const routeMetadata: Record<AppRoute, { eyebrow: string; title: string }> = {
     title: 'Dashboard',
   },
   '/components': {
-    eyebrow: 'Bibliotheque partagee',
-    title: 'Composants reutilisables',
+    eyebrow: 'Bibliothèque partagée',
+    title: 'Composants réutilisables',
   },
   '/files': {
     eyebrow: 'Registre des fichiers',
@@ -156,7 +156,7 @@ export function App() {
       const user = await loginUser(credentials);
       setCurrentUser(user);
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'La connexion ne peut pas etre effectuee.');
+      setAuthError(error instanceof Error ? error.message : 'La connexion ne peut pas être effectuée.');
       throw error;
     }
   }
@@ -172,7 +172,7 @@ export function App() {
       const user = await loginUser({ name: credentials.name, password: credentials.password });
       setCurrentUser(user);
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Le compte ne peut pas etre cree.');
+      setAuthError(error instanceof Error ? error.message : 'Le compte ne peut pas être créé.');
       throw error;
     }
   }
@@ -183,7 +183,7 @@ export function App() {
       await logoutUser();
       setCurrentUser(undefined);
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'La deconnexion ne peut pas etre effectuee.');
+      setAuthError(error instanceof Error ? error.message : 'La déconnexion ne peut pas être effectuée.');
       throw error;
     }
   }

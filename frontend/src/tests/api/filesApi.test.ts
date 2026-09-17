@@ -135,6 +135,45 @@ describe('filesApi', () => {
     });
   });
 
+  it('gets a sorted and filtered files page with repeated status parameters', async () => {
+    const response = {
+      content: [],
+      hasNext: false,
+      hasPrevious: false,
+      page: 1,
+      size: 10,
+      totalElements: 0,
+      totalPages: 0,
+    };
+    const controller = new AbortController();
+    vi.mocked(axios.get).mockResolvedValue({ data: response } as never);
+
+    await listFiles({
+      direction: 'asc',
+      page: 1,
+      signal: controller.signal,
+      size: 10,
+      sort: 'name',
+      statuses: ['CLEAN', 'SCANNING'],
+    } as Parameters<typeof listFiles>[0] & {
+      direction: 'asc';
+      sort: 'name';
+      statuses: string[];
+    });
+
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/files', {
+      params: {
+        direction: 'asc',
+        page: 1,
+        size: 10,
+        sort: 'name',
+        status: ['CLEAN', 'SCANNING'],
+      },
+      paramsSerializer: { indexes: null },
+      signal: controller.signal,
+    });
+  });
+
   it('normalizes an API error without exposing the raw response', async () => {
     vi.mocked(axios.post).mockRejectedValue({
       isAxiosError: true,

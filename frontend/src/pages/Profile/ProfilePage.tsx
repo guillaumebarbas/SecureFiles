@@ -20,7 +20,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
           <Column gap="16px">
             <Column gap="4px">
               <dt>Nom</dt>
-              <dd>{user?.name ?? 'Aucun utilisateur connecte'}</dd>
+              <dd>{user?.name ?? 'Aucun utilisateur connecté'}</dd>
             </Column>
             <Column gap="4px">
               <dt>Rôle</dt>

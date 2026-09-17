@@ -18,7 +18,7 @@ type SideNavBarProps = {
 export function SideNavBar({
   activePath,
   backendStatus = 'unknown',
-  description = 'Console de depot securise',
+  description = 'Console de dépôt sécurisé',
   items,
   onNavigate,
   title = 'SecureFiles',

@@ -69,10 +69,16 @@ export type GetFileMetadataOptions = {
 };
 
 export type ListFilesOptions = {
+  direction?: SortDirection;
   page?: number;
   size?: number;
+  sort?: FileSortField;
+  statuses?: ScanStatus[];
   signal?: AbortSignal;
 };
+
+export type FileSortField = 'name' | 'author' | 'size' | 'createdAt';
+export type SortDirection = 'asc' | 'desc';
 
 type ApiErrorResponse = {
   code: string;
@@ -138,7 +144,7 @@ export async function uploadFile(
     options.onProgress?.(100);
     return response.data;
   } catch (error) {
-    throw normalizeApiError(error, 'UPLOAD_REQUEST_FAILED', 'Le fichier ne peut pas etre envoye.');
+    throw normalizeApiError(error, 'UPLOAD_REQUEST_FAILED', 'Le fichier ne peut pas être envoyé.');
   }
 }
 
@@ -149,7 +155,7 @@ export async function getUploadConfiguration(): Promise<UploadConfiguration> {
     if (!Number.isSafeInteger(maximumSizeBytes) || maximumSizeBytes <= 0) {
       throw new FilesApiError(
         'INVALID_UPLOAD_CONFIGURATION',
-        'La taille maximale autorisee est invalide.',
+        'La taille maximale autorisée est invalide.',
       );
     }
     return { maximumSizeBytes };
@@ -160,7 +166,7 @@ export async function getUploadConfiguration(): Promise<UploadConfiguration> {
     throw normalizeApiError(
       error,
       'UPLOAD_CONFIGURATION_REQUEST_FAILED',
-      'La taille maximale autorisee ne peut pas etre lue.',
+      'La taille maximale autorisée ne peut pas être lue.',
     );
   }
 }
@@ -179,7 +185,7 @@ export async function getFileMetadata(
     throw normalizeApiError(
       error,
       'FILE_METADATA_REQUEST_FAILED',
-      'Le statut du fichier ne peut pas etre lu.',
+      'Le statut du fichier ne peut pas être lu.',
     );
   }
 }
@@ -188,11 +194,23 @@ export async function listFiles(
   options: ListFilesOptions = {},
 ): Promise<FilesPageResponse> {
   try {
+    const params: Record<string, number | string | string[]> = {
+      page: options.page ?? 1,
+      size: options.size ?? 10,
+    };
+    if (options.sort) {
+      params.sort = options.sort;
+    }
+    if (options.direction) {
+      params.direction = options.direction;
+    }
+    if (options.statuses && options.statuses.length > 0) {
+      params.status = options.statuses;
+    }
+
     const response = await axios.get<FilesPageResponse>('/api/v1/files', {
-      params: {
-        page: options.page ?? 1,
-        size: options.size ?? 10,
-      },
+      params,
+      paramsSerializer: options.statuses?.length ? { indexes: null } : undefined,
       signal: options.signal,
     });
     return response.data;
@@ -200,7 +218,7 @@ export async function listFiles(
     throw normalizeApiError(
       error,
       'FILES_LIST_REQUEST_FAILED',
-      'La liste des fichiers ne peut pas etre lue.',
+      'La liste des fichiers ne peut pas être lue.',
     );
   }
 }
@@ -214,7 +232,7 @@ export async function registerUser(request: RegisterUserRequest): Promise<UserPr
     });
     return response.data;
   } catch (error) {
-    throw normalizeApiError(error, 'REGISTRATION_REQUEST_FAILED', 'Le compte ne peut pas etre cree.');
+    throw normalizeApiError(error, 'REGISTRATION_REQUEST_FAILED', 'Le compte ne peut pas être créé.');
   }
 }
 
@@ -227,7 +245,7 @@ export async function loginUser(credentials: UserCredentials): Promise<UserProfi
     });
     return response.data;
   } catch (error) {
-    throw normalizeApiError(error, 'LOGIN_REQUEST_FAILED', 'La connexion ne peut pas etre effectuee.');
+    throw normalizeApiError(error, 'LOGIN_REQUEST_FAILED', 'La connexion ne peut pas être effectuée.');
   }
 }
 
@@ -244,7 +262,7 @@ export async function getCurrentUser(): Promise<UserProfile | undefined> {
     throw normalizeApiError(
       error,
       'CURRENT_USER_REQUEST_FAILED',
-      'Le profil courant ne peut pas etre lu.',
+      'Le profil courant ne peut pas être lu.',
     );
   }
 }
@@ -255,7 +273,7 @@ export async function logoutUser(): Promise<void> {
   try {
     await axios.post('/api/v1/auth/logout', undefined, { withCredentials: true });
   } catch (error) {
-    throw normalizeApiError(error, 'LOGOUT_REQUEST_FAILED', 'La deconnexion ne peut pas etre effectuee.');
+    throw normalizeApiError(error, 'LOGOUT_REQUEST_FAILED', 'La déconnexion ne peut pas être effectuée.');
   }
 }
 
@@ -266,7 +284,7 @@ async function prepareAuthRequest(): Promise<void> {
     throw normalizeApiError(
       error,
       'CSRF_REQUEST_FAILED',
-      'La protection de la session ne peut pas etre initialisee.',
+      'La protection de la session ne peut pas être initialisée.',
     );
   }
 }

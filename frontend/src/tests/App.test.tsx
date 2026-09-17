@@ -90,7 +90,7 @@ describe('App', () => {
 
     render(<App />);
 
-    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     expect(await within(table).findByText('public-document.txt')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Se connecter' })).toBeVisible();
   });
@@ -103,7 +103,7 @@ describe('App', () => {
     await user.click(screen.getByText('Choisissez un fichier'));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Vous devez etre connecte pour selectionner un fichier.',
+      'Vous devez être connecté pour sélectionner un fichier.',
     );
     expect(await screen.findByRole('form', { name: 'Connexion' })).toBeVisible();
   });
@@ -115,20 +115,20 @@ describe('App', () => {
     expect(screen.getByRole('complementary', { name: 'Navigation SecureFiles' })).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Fichiers' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Bibliotheque' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Bibliothèque' })).toBeVisible();
   });
 
   it('opens the shared components library on its dedicated route', async () => {
     const user = userEvent.setup();
 
     render(<App />);
-    await user.click(screen.getByRole('link', { name: 'Bibliotheque' }));
+    await user.click(screen.getByRole('link', { name: 'Bibliothèque' }));
 
     expect(window.location.pathname).toBe('/components');
-    expect(screen.getByRole('link', { name: 'Bibliotheque' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('heading', { name: 'Composants reutilisables', level: 1 })).toBeVisible();
-    expect(screen.getByText('Bibliotheque partagee')).toHaveClass('app-header__eyebrow');
-    expect(screen.queryByText('SecureFiles / Bibliotheque partagee')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Bibliothèque' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('heading', { name: 'Composants réutilisables', level: 1 })).toBeVisible();
+    expect(screen.getByText('Bibliothèque partagée')).toHaveClass('app-header__eyebrow');
+    expect(screen.queryByText('SecureFiles / Bibliothèque partagée')).not.toBeInTheDocument();
   });
 
   it('opens the profile page from the primary navigation', async () => {

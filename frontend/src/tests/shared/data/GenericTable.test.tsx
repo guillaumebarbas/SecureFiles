@@ -125,7 +125,7 @@ describe('GenericTable', () => {
     expect(within(table).getByText('alpha.pdf')).toBeVisible();
     expect(within(table).queryByText('middle.pdf')).not.toBeInTheDocument();
     expect(screen.getByText('Page 1 sur 2')).toBeVisible();
-    expect(screen.getByText('3 elements')).toBeVisible();
+    expect(screen.getByText('3 éléments')).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Page suivante' }));
 
@@ -138,7 +138,7 @@ describe('GenericTable', () => {
     expect(screen.getByText('Page 1 sur 2')).toBeVisible();
     expect(within(table).getByText('alpha.pdf')).toBeVisible();
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Elements par page' }), '3');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Éléments par page' }), '3');
 
     expect(screen.getByText('Page 1 sur 1')).toBeVisible();
     expect(within(table).getByText('middle.pdf')).toBeVisible();
@@ -148,6 +148,7 @@ describe('GenericTable', () => {
     const user = userEvent.setup();
     const onPageChange = vi.fn();
     const onPageSizeChange = vi.fn();
+    const onSortChange = vi.fn();
 
     render(
       <GenericTable
@@ -159,12 +160,15 @@ describe('GenericTable', () => {
           page: 1,
           pageSize: 2,
           pageSizeOptions: [2, 3],
+          sortDirection: 'ascending',
+          sortKey: 'name',
           totalElements: 3,
           totalPages: 2,
           hasNext: true,
           hasPrevious: false,
           onPageChange,
           onPageSizeChange,
+          onSortChange,
         }}
       />,
     );
@@ -172,14 +176,17 @@ describe('GenericTable', () => {
     const table = screen.getByRole('table', { name: 'Registre serveur' });
     expect(within(table).getByText('zulu.pdf')).toBeVisible();
     expect(within(table).getByText('alpha.pdf')).toBeVisible();
-    expect(within(table).queryByRole('button', { name: 'Trier par Nom' })).not.toBeInTheDocument();
+    expect(within(table).getByRole('button', { name: 'Trier par Nom' })).toBeVisible();
     expect(screen.getByText('Page 1 sur 2')).toBeVisible();
-    expect(screen.getByText('3 elements')).toBeVisible();
+    expect(screen.getByText('3 éléments')).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Page suivante' }));
     expect(onPageChange).toHaveBeenCalledWith(2);
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Elements par page' }), '3');
+    await user.click(within(table).getByRole('button', { name: 'Trier par Nom' }));
+    expect(onSortChange).toHaveBeenCalledWith('name');
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Éléments par page' }), '3');
     expect(onPageSizeChange).toHaveBeenCalledWith(3);
   });
 });

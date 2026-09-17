@@ -50,7 +50,7 @@ const METADATA_POLL_INTERVAL_MS = 250;
 const MAX_METADATA_POLL_RETRIES = 3;
 const ACCEPTED_FEEDBACK_DISMISS_DELAY_MS = 10_000;
 const ACCEPTED_FEEDBACK_EXIT_DURATION_MS = 320;
-const AUTHENTICATION_REQUIRED_MESSAGE = 'Vous devez etre connecte pour selectionner un fichier.';
+const AUTHENTICATION_REQUIRED_MESSAGE = 'Vous devez être connecté pour sélectionner un fichier.';
 
 function statusIcon(status: ScanStatus): LucideIcon {
   if (status === 'CLEAN') {
@@ -97,19 +97,19 @@ function shouldRetryMetadataPolling(error: unknown) {
 function statusMessage(status: ScanStatus) {
   switch (status) {
     case 'CLEAN':
-      return 'Fichier sain. Le telechargement est autorise.';
+      return 'Fichier sain. Le téléchargement est autorisé.';
     case 'INFECTED':
-      return 'Fichier bloque : une menace a ete detectee.';
+      return 'Fichier bloqué : une menace a été détectée.';
     case 'SCAN_FAILED':
-      return "Fichier bloque : l'analyse antivirus a echoue.";
+      return "Fichier bloqué : l'analyse antivirus a échoué.";
     case 'REJECTED':
-      return 'Fichier rejete : il ne peut pas etre traite.';
+      return 'Fichier rejeté : il ne peut pas être traité.';
     case 'SCANNING':
-      return 'Transmission terminee. Analyse antivirus en cours...';
+      return 'Transmission terminée. Analyse antivirus en cours...';
     case 'UPLOADING':
       return 'Transmission du fichier en cours...';
     case 'PENDING_SCAN':
-      return 'Transmission terminee. Analyse antivirus en attente.';
+      return 'Transmission terminée. Analyse antivirus en attente.';
   }
 }
 
@@ -147,7 +147,7 @@ export function FileUpload({
   const uploadValidationMessage = uploadConfiguration.kind === 'error'
     ? uploadConfiguration.message
     : selectedFileExceedsMaximumSize
-      ? 'Le fichier depasse la taille maximale autorisee.'
+      ? 'Le fichier dépasse la taille maximale autorisée.'
       : null;
 
   const acceptedFeedbackDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -222,12 +222,12 @@ export function FileUpload({
         kind: 'error',
         message: uploadConfiguration.kind === 'error'
           ? uploadConfiguration.message
-          : 'La taille maximale autorisee est en cours de chargement.',
+          : 'La taille maximale autorisée est en cours de chargement.',
       });
       return;
     }
     if (selectedFileExceedsMaximumSize) {
-      setFeedback({ kind: 'error', message: 'Le fichier depasse la taille maximale autorisee.' });
+      setFeedback({ kind: 'error', message: 'Le fichier dépasse la taille maximale autorisée.' });
       return;
     }
 
@@ -247,7 +247,7 @@ export function FileUpload({
     } catch (error) {
       setFeedback({
         kind: 'error',
-        message: error instanceof Error ? error.message : 'Le fichier ne peut pas etre envoye.',
+        message: error instanceof Error ? error.message : 'Le fichier ne peut pas être envoyé.',
       });
     }
   }
@@ -272,7 +272,7 @@ export function FileUpload({
             kind: 'error',
             message: error instanceof Error
               ? error.message
-              : 'La taille maximale autorisee ne peut pas etre lue.',
+                : 'La taille maximale autorisée ne peut pas être lue.',
           });
         }
       });
@@ -343,7 +343,7 @@ export function FileUpload({
             pollingError: {
               message: error instanceof Error
                 ? error.message
-                : 'Le statut du fichier ne peut pas etre lu.',
+                : 'Le statut du fichier ne peut pas être lu.',
               retrying: willRetry,
             },
           };
@@ -386,10 +386,10 @@ export function FileUpload({
                   Cliquez sur la zone pour choisir un nouveau fichier
                 </span>
               ) : null}
-              <span className={fileUploadClassNames.zoneHint}>PDF, image ou archive securisee</span>
+              <span className={fileUploadClassNames.zoneHint}>PDF, image ou archive sécurisée</span>
               {uploadConfiguration.kind === 'available' ? (
                 <span className={fileUploadClassNames.zoneHint}>
-                  Taille maximale autorisee : {formatFileSize(
+                    Taille maximale autorisée : {formatFileSize(
                     uploadConfiguration.maximumSizeBytes,
                   )}
                 </span>
@@ -407,7 +407,7 @@ export function FileUpload({
           </label>
           {selectedFile ? (
             <p className={fileUploadClassNames.selectedFile}>
-              Fichier selectionne : <strong>{selectedFile.name}</strong> ({formatFileSize(selectedFile.size)})
+              Fichier sélectionné : <strong>{selectedFile.name}</strong> ({formatFileSize(selectedFile.size)})
             </p>
           ) : null}
           {selectedFile ? (
@@ -452,7 +452,7 @@ export function FileUpload({
             <span>{uploadValidationMessage}</span>
             {uploadConfiguration.kind === 'error' ? (
               <Button onClick={handleUploadConfigurationRetry} type="button" variant="secondary">
-                Reessayer la verification
+                Réessayer la vérification
               </Button>
             ) : null}
           </Row>
@@ -516,7 +516,7 @@ function UploadFeedbackView({
         <p className={fileUploadClassNames.feedbackPollingError} role="alert">
           {feedback.pollingError.retrying
             ? 'Suivi du traitement interrompu temporairement'
-            : 'Suivi du traitement arrete'}
+            : 'Suivi du traitement arrêté'}
           : {feedback.pollingError.message}
         </p>
       ) : null}
