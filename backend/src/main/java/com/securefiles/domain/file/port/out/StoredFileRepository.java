@@ -14,6 +14,8 @@ public interface StoredFileRepository {
 
     Optional<StoredFile> findById(UUID fileId);
 
+    List<StoredFile> findAll();
+
     List<StoredFile> findByOwnerId(String ownerId);
 
     Map<UUID, String> findLatestPreciseFailureCodesByFileIds(Set<UUID> fileIds);

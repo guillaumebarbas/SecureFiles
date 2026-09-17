@@ -7,6 +7,7 @@ import java.util.UUID;
 public record FileMetadataResponseDto(
         UUID fileId,
         String originalFilename,
+    String author,
         Long sizeBytes,
         String status,
         Instant createdAt,
@@ -15,6 +16,7 @@ public record FileMetadataResponseDto(
     public FileMetadataResponseDto {
         Objects.requireNonNull(fileId, "fileId must not be null");
         Objects.requireNonNull(originalFilename, "originalFilename must not be null");
+        Objects.requireNonNull(author, "author must not be null");
         if (sizeBytes != null && sizeBytes < 0) {
             throw new IllegalArgumentException("sizeBytes must not be negative");
         }

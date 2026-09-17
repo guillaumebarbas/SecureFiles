@@ -1,9 +1,14 @@
 import { CircleUserRound } from 'lucide-react';
+import type { UserProfile } from '../../api/filesApi';
 import { Column } from '../../shared/layout/Column';
 import { Section } from '../../shared/layout/Section/Section';
 import { profileClassNames } from './style';
 
-export function ProfilePage() {
+type ProfilePageProps = {
+  user?: UserProfile;
+};
+
+export function ProfilePage({ user }: ProfilePageProps) {
   return (
     <div className={profileClassNames.root}>
       <Section
@@ -15,11 +20,17 @@ export function ProfilePage() {
           <Column gap="16px">
             <Column gap="4px">
               <dt>Nom</dt>
-              <dd>Utilisateur local</dd>
+              <dd>{user?.name ?? 'Aucun utilisateur connecte'}</dd>
             </Column>
             <Column gap="4px">
               <dt>Rôle</dt>
-              <dd>utilisateur</dd>
+              <dd>
+                {user?.roles.length ? (
+                  <Column gap="4px">
+                    {user.roles.map((role) => <span key={role}>{role}</span>)}
+                  </Column>
+                ) : 'Aucun rôle disponible'}
+              </dd>
             </Column>
           </Column>
         </dl>

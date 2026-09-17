@@ -1,0 +1,69 @@
+package com.securefiles.infrastructure.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
+
+@Entity
+@Table(name = "auth_session")
+public class AuthenticationSessionEntity {
+
+    @Id
+    @Column(name = "id", nullable = false)
+    private UUID id;
+
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
+
+    @Column(name = "issued_at", nullable = false)
+    private Instant issuedAt;
+
+    @Column(name = "expires_at", nullable = false)
+    private Instant expiresAt;
+
+    @Column(name = "revoked_at")
+    private Instant revokedAt;
+
+    protected AuthenticationSessionEntity() {
+    }
+
+    public AuthenticationSessionEntity(
+            UUID id,
+            UUID userId,
+            Instant issuedAt,
+            Instant expiresAt,
+            Instant revokedAt) {
+        this.id = id;
+        this.userId = userId;
+        this.issuedAt = issuedAt;
+        this.expiresAt = expiresAt;
+        this.revokedAt = revokedAt;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public Instant getIssuedAt() {
+        return issuedAt;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
+    }
+
+    public Instant getRevokedAt() {
+        return revokedAt;
+    }
+
+    public void revoke(Instant revokedAt) {
+        this.revokedAt = revokedAt;
+    }
+}

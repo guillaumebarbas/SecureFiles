@@ -12,6 +12,7 @@ public final class FileMetadataMapper {
         return new FileMetadataResponseDto(
                 result.fileId(),
                 result.originalFilename(),
+                result.author(),
                 result.sizeBytes().orElse(null),
                 result.status().name(),
                 result.createdAt(),

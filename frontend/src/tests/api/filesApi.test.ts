@@ -1,10 +1,14 @@
 import axios from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  getCurrentUser,
   checkBackendHealth,
   getFileMetadata,
   getUploadConfiguration,
   listFiles,
+  loginUser,
+  logoutUser,
+  registerUser,
   uploadFile,
 } from '../../api/filesApi';
 
@@ -130,5 +134,74 @@ describe('filesApi', () => {
       code: 'INVALID_FILENAME',
       message: 'Le nom est invalide.',
     });
+  });
+
+  it('registers a user with cumulative roles after preparing the CSRF cookie', async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: undefined } as never);
+    const response = {
+      userId: '11111111-1111-1111-1111-111111111111',
+      name: 'Alice Martin',
+      roles: ['developpeur', 'utilisateur'],
+    };
+    vi.mocked(axios.post).mockResolvedValue({ data: response } as never);
+
+    await expect(registerUser({
+      name: 'Alice Martin',
+      password: 'mot-de-passe',
+      roles: ['developpeur', 'utilisateur'],
+    })).resolves.toEqual(response);
+
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/csrf', { withCredentials: true });
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/v1/auth/register',
+      {
+        name: 'Alice Martin',
+        password: 'mot-de-passe',
+        roles: ['developpeur', 'utilisateur'],
+      },
+      { withCredentials: true },
+    );
+  });
+
+  it('logs in and reads the current profile without exposing the JWT to JavaScript', async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: undefined } as never);
+    const response = {
+      userId: '11111111-1111-1111-1111-111111111111',
+      name: 'Alice Martin',
+      roles: ['utilisateur'],
+    };
+    vi.mocked(axios.post).mockResolvedValue({ data: response } as never);
+
+    await expect(loginUser({ name: 'Alice Martin', password: 'mot-de-passe' })).resolves.toEqual(response);
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/v1/auth/login',
+      { name: 'Alice Martin', password: 'mot-de-passe' },
+      { withCredentials: true },
+    );
+
+    vi.mocked(axios.get).mockResolvedValue({ data: response } as never);
+    await expect(getCurrentUser()).resolves.toEqual(response);
+    expect(axios.get).toHaveBeenLastCalledWith('/api/v1/users/me', { withCredentials: true });
+  });
+
+  it('treats an anonymous session response as no current user', async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: undefined, status: 204 } as never);
+
+    await expect(getCurrentUser()).resolves.toBeUndefined();
+
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/users/me', { withCredentials: true });
+  });
+
+  it('revokes the current session through the logout endpoint', async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: undefined } as never);
+    vi.mocked(axios.post).mockResolvedValue({ data: undefined } as never);
+
+    await expect(logoutUser()).resolves.toBeUndefined();
+
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/v1/auth/logout',
+      undefined,
+      { withCredentials: true },
+    );
   });
 });

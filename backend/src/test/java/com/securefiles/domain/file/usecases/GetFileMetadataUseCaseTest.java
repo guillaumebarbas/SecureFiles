@@ -7,6 +7,7 @@ import com.securefiles.domain.file.model.metadata.FileMetadataException;
 import com.securefiles.domain.file.port.in.GetFileMetadataCommand;
 import com.securefiles.domain.file.port.in.GetFileMetadataResult;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
+import com.securefiles.domain.user.port.out.UserRepository;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -34,11 +35,14 @@ class GetFileMetadataUseCaseTest {
     @Mock
     private StoredFileRepository repository;
 
+    @Mock
+    private UserRepository userRepository;
+
     private GetFileMetadataUseCase getFileMetadataUseCase;
 
     @BeforeEach
     void setUp() {
-        getFileMetadataUseCase = new GetFileMetadataUseCase(repository);
+        getFileMetadataUseCase = new GetFileMetadataUseCase(repository, userRepository);
     }
 
     @Test

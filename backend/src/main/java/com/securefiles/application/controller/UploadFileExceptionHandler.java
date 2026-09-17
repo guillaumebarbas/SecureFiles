@@ -4,6 +4,7 @@ import com.securefiles.domain.file.model.upload.UploadException;
 import com.securefiles.domain.file.model.FileFailureCodes;
 import com.securefiles.domain.file.model.download.DownloadException;
 import com.securefiles.domain.file.model.metadata.FileMetadataException;
+import com.securefiles.domain.user.model.UserException;
 import java.io.IOException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,6 +53,19 @@ public final class UploadFileExceptionHandler {
     @ExceptionHandler(FileMetadataException.class)
     public ResponseEntity<ApiErrorResponse> handleFileMetadataException(FileMetadataException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiErrorResponse(exception.code(), exception.getMessage()));
+    }
+
+    @ExceptionHandler(UserException.class)
+    public ResponseEntity<ApiErrorResponse> handleUserException(UserException exception) {
+        HttpStatus status = switch (exception.code()) {
+            case "INVALID_CREDENTIALS", "AUTHENTICATION_REQUIRED" -> HttpStatus.UNAUTHORIZED;
+            case "USER_NAME_ALREADY_EXISTS" -> HttpStatus.CONFLICT;
+            case "ROLE_NOT_ALLOWED" -> HttpStatus.FORBIDDEN;
+            case "USER_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+            default -> HttpStatus.BAD_REQUEST;
+        };
+        return ResponseEntity.status(status)
                 .body(new ApiErrorResponse(exception.code(), exception.getMessage()));
     }
 

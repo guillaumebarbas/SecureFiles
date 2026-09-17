@@ -1,4 +1,4 @@
 securefiles:
-  local:
-    identity:
-      owner-id: ${LOCAL_OWNER_ID:local-development-user}
+  auth:
+    secure-cookie: false
+    allow-ephemeral-key: true

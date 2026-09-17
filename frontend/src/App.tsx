@@ -1,7 +1,14 @@
 import { startTransition, useEffect, useState } from 'react';
 import { CircleUserRound, Home, LayoutGrid } from 'lucide-react';
-import { checkBackendHealth } from './api/filesApi';
-import { DashboardPage } from './pages/Dashboard/DashboardPage';
+import {
+  checkBackendHealth,
+  getCurrentUser,
+  loginUser,
+  logoutUser,
+  registerUser,
+  type UserProfile,
+} from './api/filesApi';
+import { DashboardPage, type DashboardPageProps } from './pages/Dashboard/DashboardPage';
 import { FilesPage } from './pages/Files/FilesPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 import { SharedComponentsShowcasePage } from './pages/SharedComponentsShowcase/SharedComponentsShowcasePage';
@@ -57,9 +64,9 @@ function routeFromPathname(pathname: string): AppRoute {
   return '/';
 }
 
-function renderCurrentPage(route: AppRoute) {
+function renderCurrentPage(route: AppRoute, dashboardProps: DashboardPageProps) {
   if (route === '/') {
-    return <DashboardPage />;
+    return <DashboardPage {...dashboardProps} />;
   }
 
   if (route === '/components') {
@@ -76,6 +83,9 @@ function renderCurrentPage(route: AppRoute) {
 export function App() {
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(() => routeFromPathname(window.location.pathname));
   const [backendStatus, setBackendStatus] = useState<BackendStatusValue>('unknown');
+  const [currentUser, setCurrentUser] = useState<UserProfile>();
+  const [authError, setAuthError] = useState<string>();
+  const [loginOpenRequest, setLoginOpenRequest] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -85,6 +95,26 @@ export function App() {
         setBackendStatus(status);
       }
     });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    getCurrentUser()
+      .then((user) => {
+        if (active) {
+          setCurrentUser(user);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setCurrentUser(undefined);
+        }
+      });
 
     return () => {
       active = false;
@@ -116,6 +146,48 @@ export function App() {
     });
   }
 
+  function handleAuthenticationRequired() {
+    setLoginOpenRequest((currentRequest) => currentRequest + 1);
+  }
+
+  async function handleLogin(credentials: { name: string; password: string }) {
+    setAuthError(undefined);
+    try {
+      const user = await loginUser(credentials);
+      setCurrentUser(user);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'La connexion ne peut pas etre effectuee.');
+      throw error;
+    }
+  }
+
+  async function handleRegister(credentials: {
+    name: string;
+    password: string;
+    roles: UserProfile['roles'];
+  }) {
+    setAuthError(undefined);
+    try {
+      await registerUser(credentials);
+      const user = await loginUser({ name: credentials.name, password: credentials.password });
+      setCurrentUser(user);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Le compte ne peut pas etre cree.');
+      throw error;
+    }
+  }
+
+  async function handleLogout() {
+    setAuthError(undefined);
+    try {
+      await logoutUser();
+      setCurrentUser(undefined);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'La deconnexion ne peut pas etre effectuee.');
+      throw error;
+    }
+  }
+
   const currentRouteMetadata = routeMetadata[currentRoute];
 
   return (
@@ -129,11 +201,23 @@ export function App() {
       />
       <div className={appClassNames.content}>
         <Header eyebrow={currentRouteMetadata.eyebrow} title={currentRouteMetadata.title}>
-          <Login />
+          <Login
+            error={authError}
+            openRequest={loginOpenRequest}
+            onLogin={handleLogin}
+            onLogout={handleLogout}
+            onRegister={handleRegister}
+            user={currentUser}
+          />
         </Header>
         <main className={appClassNames.main}>
           <div className={appClassNames.view} key={currentRoute}>
-            {renderCurrentPage(currentRoute)}
+            {currentRoute === '/profile'
+              ? <ProfilePage user={currentUser} />
+              : renderCurrentPage(currentRoute, {
+                isAuthenticated: currentUser !== undefined,
+                onAuthenticationRequired: handleAuthenticationRequired,
+              })}
           </div>
         </main>
       </div>
