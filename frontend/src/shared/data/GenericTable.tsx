@@ -9,6 +9,7 @@ export type TableColumn<Row extends object> = {
   render?: (row: Row) => ReactNode;
   sortable?: boolean;
   sortValue?: (row: Row) => number | string;
+  serverSortKey?: string;
 };
 
 type SortState<Row extends object> = {
@@ -21,16 +22,19 @@ export type TablePagination = {
   pageSizeOptions?: number[];
 };
 
-export type ServerTablePagination = {
+export type ServerTablePagination<Row extends object> = {
   page: number;
   pageSize: number;
   pageSizeOptions?: number[];
+  sortDirection?: SortState<Row>['direction'];
+  sortKey?: string;
   totalElements: number;
   totalPages: number;
   hasNext: boolean;
   hasPrevious: boolean;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
+  onSortChange?: (sortKey: string) => void;
 };
 
 type GenericTableProps<Row extends object> = {
@@ -40,7 +44,7 @@ type GenericTableProps<Row extends object> = {
   emptyMessage?: string;
   getRowKey?: (row: Row, index: number) => Key;
   pagination?: TablePagination;
-  serverPagination?: ServerTablePagination;
+  serverPagination?: ServerTablePagination<Row>;
   rows: Row[];
 };
 
@@ -68,7 +72,7 @@ export function GenericTable<Row extends object>({
   animatedRowKey = null,
   caption,
   columns,
-  emptyMessage = 'Aucun element a afficher.',
+  emptyMessage = 'Aucun élément à afficher.',
   getRowKey,
   pagination,
   rows,
@@ -132,7 +136,12 @@ export function GenericTable<Row extends object>({
   }, [animatedRowKey, localPaginationEnabled]);
 
   function handleSort(column: TableColumn<Row>) {
-    if (!column.sortable || serverPagination) {
+    if (!column.sortable) {
+      return;
+    }
+
+    if (serverPagination) {
+      serverPagination.onSortChange?.(column.serverSortKey ?? String(column.key));
       return;
     }
 
@@ -180,10 +189,15 @@ export function GenericTable<Row extends object>({
           <thead>
             <tr>
               {columns.map((column) => {
-                const sortingEnabled = serverPagination === undefined;
+                const sortingEnabled = serverPagination === undefined || serverPagination.onSortChange !== undefined;
                 const isSortable = column.sortable && sortingEnabled;
-                const isSorted = isSortable && sortState?.key === column.key;
-                const sortDirection = isSorted ? sortState.direction : 'none';
+                const serverSortKey = column.serverSortKey ?? String(column.key);
+                const isSorted = isSortable && serverPagination
+                  ? serverPagination.sortKey === serverSortKey
+                  : isSortable && sortState?.key === column.key;
+                const sortDirection = isSorted
+                  ? serverPagination?.sortDirection ?? sortState?.direction ?? 'none'
+                  : 'none';
 
                 return (
                   <th
@@ -244,11 +258,11 @@ export function GenericTable<Row extends object>({
         >
           <Row align="center" className="shared-table__pagination-summary" gap="12px" wrap="wrap">
             <span aria-live="polite">Page {visiblePage} sur {totalPages}</span>
-            <span>{totalElements} elements</span>
+            <span>{totalElements} éléments</span>
             <label>
-              Elements par page
+              Éléments par page
               <select
-                aria-label="Elements par page"
+                aria-label="Éléments par page"
                 onChange={(event) => handlePageSizeChange(event.target.value)}
                 value={serverPagination?.pageSize ?? pageSize}
               >
@@ -260,7 +274,7 @@ export function GenericTable<Row extends object>({
           </Row>
           <Row align="center" className="shared-table__pagination-controls" gap="8px">
             <Button
-              aria-label="Page precedente"
+              aria-label="Page précédente"
               disabled={serverPagination ? !serverPagination.hasPrevious : visiblePage === 1}
               icon={ArrowLeft}
               onClick={goToPreviousPage}

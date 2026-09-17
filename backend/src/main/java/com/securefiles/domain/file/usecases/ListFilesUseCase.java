@@ -32,7 +32,7 @@ public final class ListFilesUseCase implements ListFiles {
     @Override
     public ListFilesResult list(ListFilesCommand command) {
         Objects.requireNonNull(command, "command must not be null");
-        StoredFilePage storedFilePage = repository.findPage(command.page(), command.size());
+        StoredFilePage storedFilePage = repository.findPage(command.listQuery());
         List<StoredFile> storedFiles = storedFilePage.content();
         Map<String, String> authors = findAuthors(storedFiles);
         Map<UUID, String> preciseFailureCodes = findPreciseFailureCodes(storedFiles);

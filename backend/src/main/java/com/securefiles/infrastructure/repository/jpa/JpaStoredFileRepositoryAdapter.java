@@ -3,20 +3,22 @@ package com.securefiles.infrastructure.repository.jpa;
 import com.securefiles.domain.file.model.FileStatus;
 import com.securefiles.domain.file.model.ScanAttempt;
 import com.securefiles.domain.file.model.StoredFile;
+import com.securefiles.domain.file.model.list.FileListQuery;
 import com.securefiles.domain.file.port.out.StoredFilePage;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
 import com.securefiles.infrastructure.entity.StoredFileEntity;
 import com.securefiles.infrastructure.mapper.ScanAttemptEntityMapper;
 import com.securefiles.infrastructure.mapper.StoredFileEntityMapper;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,13 +55,24 @@ public class JpaStoredFileRepositoryAdapter implements StoredFileRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public StoredFilePage findPage(int page, int size) {
+    public StoredFilePage findPage(FileListQuery query) {
         Page<StoredFileEntity> storedFilePage = storedFileRepository
-                .findAllByOrderByCreatedAtDescIdDesc(PageRequest.of(page - 1, size));
+                .findPage(
+                        statusesForQuery(query),
+                        query.sort().name(),
+                        query.direction().name(),
+                        PageRequest.of(query.page() - 1, query.size()));
         List<StoredFile> content = storedFilePage.getContent().stream()
                 .map(storedFileMapper::toDomain)
                 .toList();
         return new StoredFilePage(content, storedFilePage.getTotalElements());
+    }
+
+    private Collection<String> statusesForQuery(FileListQuery query) {
+        if (query.statuses().isEmpty()) {
+            return java.util.Arrays.stream(FileStatus.values()).map(Enum::name).toList();
+        }
+        return query.statuses().stream().map(Enum::name).toList();
     }
 
     @Override

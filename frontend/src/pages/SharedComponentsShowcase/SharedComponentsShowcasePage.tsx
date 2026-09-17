@@ -64,7 +64,7 @@ export function SharedComponentsShowcasePage() {
       >
         <SearchBar onSubmit={setSubmittedSearch} />
         <p aria-live="polite" className="search-result">
-          {submittedSearch ? `Recherche envoyee : ${submittedSearch}` : 'Aucune recherche envoyee.'}
+          {submittedSearch ? `Recherche envoyée : ${submittedSearch}` : 'Aucune recherche envoyée.'}
         </p>
       </Section>
 
@@ -80,7 +80,7 @@ export function SharedComponentsShowcasePage() {
           <Button icon={Download} variant="secondary">
             Action secondaire
           </Button>
-          <Button variant="gradient">Action accentuee</Button>
+          <Button variant="gradient">Action accentuée</Button>
         </Row>
       </Section>
 
@@ -98,7 +98,7 @@ export function SharedComponentsShowcasePage() {
       </Section>
 
       <Section
-        description="Une zone partagee pour selectionner un fichier et suivre son traitement."
+        description="Une zone partagée pour sélectionner un fichier et suivre son traitement."
         icon={CloudUpload}
         title="Upload de fichier"
       >
@@ -106,15 +106,15 @@ export function SharedComponentsShowcasePage() {
       </Section>
 
       <Section
-        description="Les statuts combinent toujours un libelle, une icone et un contraste lisible."
+        description="Les statuts combinent toujours un libellé, une icône et un contraste lisible."
         icon={ShieldCheck}
         title="Tags et aide contextuelle"
       >
         <Row align="center" gap="10px" wrap="wrap">
           <Tag icon={ShieldCheck} text="CLEAN" tone="success" />
           <Tag icon={Clock3} text="PENDING_SCAN" tone="warning" />
-          <Tooltip content="Voir les details du composant">
-            <button aria-label="Voir les details" className="showcase-icon-button" type="button">
+          <Tooltip content="Voir les détails du composant">
+            <button aria-label="Voir les détails" className="showcase-icon-button" type="button">
               <Icon icon={Info} size={18} />
             </button>
           </Tooltip>
@@ -128,7 +128,7 @@ export function SharedComponentsShowcasePage() {
       >
         <Row className="layout-example" gap="16px" wrap="wrap">
           <Column className="layout-example__column" gap="4px">
-            <strong>Depot</strong>
+            <strong>Dépôt</strong>
             <span>Zone d&apos;action verticale</span>
           </Column>
           <Column className="layout-example__column" gap="4px">
@@ -140,7 +140,7 @@ export function SharedComponentsShowcasePage() {
 
       <Section
         className="showcase-section--table"
-        description="Un registre lisible, triable et pret a accueillir les statuts de scan."
+        description="Un registre lisible, triable et prêt à accueillir les statuts de scan."
         icon={Download}
         title="GenericTable"
       >

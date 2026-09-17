@@ -8,5 +8,5 @@ export const backendStatusClassNames = {
 export const backendStatusLabels: Record<BackendStatusValue, string> = {
   offline: 'Service offline',
   online: 'Service online',
-  unknown: 'Verification du service...',
+  unknown: 'Vérification du service...',
 };

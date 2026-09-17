@@ -60,7 +60,7 @@ describe('FileUpload', () => {
     expect(screen.getByLabelText('Choisir un fichier')).toBeDisabled();
     expect(onAuthenticationRequired).toHaveBeenCalledOnce();
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Vous devez etre connecte pour selectionner un fichier.',
+      'Vous devez être connecté pour sélectionner un fichier.',
     );
     expect(mockedUploadFile).not.toHaveBeenCalled();
   });
@@ -82,7 +82,7 @@ describe('FileUpload', () => {
 
     render(<FileUpload />);
 
-    expect(await screen.findByText('Taille maximale autorisee : 1 Go')).toBeVisible();
+    expect(await screen.findByText('Taille maximale autorisée : 1 Go')).toBeVisible();
   });
 
   it('blocks upload locally when selected file exceeds the configured maximum size', async () => {
@@ -95,7 +95,7 @@ describe('FileUpload', () => {
     await user.upload(screen.getByLabelText('Choisir un fichier'), file);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Le fichier depasse la taille maximale autorisee.',
+      'Le fichier dépasse la taille maximale autorisée.',
     );
     expect(screen.getByRole('button', { name: 'Envoyer le fichier' })).toBeDisabled();
     expect(mockedUploadFile).not.toHaveBeenCalled();
@@ -105,16 +105,16 @@ describe('FileUpload', () => {
     const user = userEvent.setup();
     const file = new File(['safe content'], 'document.txt', { type: 'text/plain' });
     mockedGetUploadConfiguration
-      .mockRejectedValueOnce(new Error('La taille maximale autorisee ne peut pas etre lue.'))
+      .mockRejectedValueOnce(new Error('La taille maximale autorisée ne peut pas être lue.'))
       .mockResolvedValueOnce({ maximumSizeBytes: 1024 });
 
     render(<FileUpload />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'La taille maximale autorisee ne peut pas etre lue.',
+      'La taille maximale autorisée ne peut pas être lue.',
     );
     expect(mockedUploadFile).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Reessayer la verification' }));
+    await user.click(screen.getByRole('button', { name: 'Réessayer la vérification' }));
     await waitFor(() => expect(mockedGetUploadConfiguration).toHaveBeenCalledTimes(2));
 
     await user.upload(screen.getByLabelText('Choisir un fichier'), file);
@@ -246,14 +246,14 @@ describe('FileUpload', () => {
   it('shows an actionable error when upload fails', async () => {
     const user = userEvent.setup();
     const file = new File(['invalid'], 'document.txt', { type: 'text/plain' });
-    mockedUploadFile.mockRejectedValue(new Error('Le fichier ne peut pas etre envoye.'));
+    mockedUploadFile.mockRejectedValue(new Error('Le fichier ne peut pas être envoyé.'));
 
     render(<FileUpload />);
 
     await user.upload(screen.getByLabelText('Choisir un fichier'), file);
     await user.click(screen.getByRole('button', { name: 'Envoyer le fichier' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Le fichier ne peut pas etre envoye.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Le fichier ne peut pas être envoyé.');
     expect(screen.getByRole('button', { name: 'Envoyer le fichier' })).not.toBeDisabled();
   });
 });

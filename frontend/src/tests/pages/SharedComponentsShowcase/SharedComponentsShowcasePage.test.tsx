@@ -23,7 +23,7 @@ describe('SharedComponentsShowcasePage', () => {
     await user.type(screen.getByRole('searchbox', { name: /rechercher/i }), 'rapport.pdf');
     await user.click(screen.getByRole('button', { name: /entrer/i }));
 
-    expect(screen.getByText('Recherche envoyee : rapport.pdf')).toBeVisible();
+    expect(screen.getByText('Recherche envoyée : rapport.pdf')).toBeVisible();
   });
 
   it('presents the reusable component examples', () => {

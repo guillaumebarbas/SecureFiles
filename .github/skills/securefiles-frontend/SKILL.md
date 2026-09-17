@@ -18,6 +18,7 @@ description: Use when changing the React/Vite console, file upload workflow, fil
 - Pour toute icone, toujours utiliser le MCP Lucide configure dans `.vscode/mcp.json` pour rechercher et choisir l'icone, puis utiliser le composant correspondant de `lucide-react`.
 - Ne pas dessiner manuellement une icone SVG lorsqu'une icone Lucide adaptee existe ; justifier toute exception.
 - Garder les statuts `PENDING_SCAN`, `SCANNING`, `CLEAN`, `INFECTED` et `SCAN_FAILED` visibles avec texte et icone.
+- Rediger tous les textes visibles en francais correct, avec les accents, l'orthographe et les accords grammaticaux necessaires ; conserver les codes techniques et les statuts API tels quels.
 - N'afficher une action de telechargement active que lorsque `getDownloadUrl` retourne une URL pour un fichier `CLEAN`.
 - Gerer explicitement chargement, liste vide, upload en cours, progression, erreur reseau et rafraichissement.
 - Utiliser des controles semantiques, des labels accessibles, un focus visible et des noms pour les boutons d'icone.

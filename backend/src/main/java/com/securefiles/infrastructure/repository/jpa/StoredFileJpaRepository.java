@@ -3,6 +3,7 @@ package com.securefiles.infrastructure.repository.jpa;
 import com.securefiles.domain.file.model.FileStatus;
 import com.securefiles.infrastructure.entity.StoredFileEntity;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -14,7 +15,40 @@ import org.springframework.data.repository.query.Param;
 
 public interface StoredFileJpaRepository extends JpaRepository<StoredFileEntity, UUID> {
 
-        Page<StoredFileEntity> findAllByOrderByCreatedAtDescIdDesc(Pageable pageable);
+    @Query(value = """
+            select file.*
+              from stored_file file
+              left join app_user app_user
+                on file.owner_id = cast(app_user.id as varchar(36))
+             where file.status in (:statuses)
+             order by
+                case when :sort = 'NAME' and :direction = 'ASC'
+                     then lower(file.original_filename) end asc nulls last,
+                case when :sort = 'NAME' and :direction = 'DESC'
+                     then lower(file.original_filename) end desc nulls last,
+                case when :sort = 'AUTHOR' and :direction = 'ASC'
+                     then lower(coalesce(app_user.name, 'Auteur inconnu')) end asc nulls last,
+                case when :sort = 'AUTHOR' and :direction = 'DESC'
+                     then lower(coalesce(app_user.name, 'Auteur inconnu')) end desc nulls last,
+                case when :sort = 'SIZE' and :direction = 'ASC'
+                     then file.size_bytes end asc nulls last,
+                case when :sort = 'SIZE' and :direction = 'DESC'
+                     then file.size_bytes end desc nulls last,
+                case when :sort = 'CREATED_AT' and :direction = 'ASC'
+                     then file.created_at end asc nulls last,
+                case when :sort = 'CREATED_AT' and :direction = 'DESC'
+                     then file.created_at end desc nulls last,
+                file.id desc
+            """, countQuery = """
+            select count(file.id)
+              from stored_file file
+             where file.status in (:statuses)
+            """, nativeQuery = true)
+    Page<StoredFileEntity> findPage(
+            @Param("statuses") Collection<String> statuses,
+            @Param("sort") String sort,
+            @Param("direction") String direction,
+            Pageable pageable);
 
         List<StoredFileEntity> findByOwnerIdOrderByCreatedAtDescIdDesc(String ownerId);
 

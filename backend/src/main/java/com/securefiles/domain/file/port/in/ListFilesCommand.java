@@ -1,30 +1,31 @@
 package com.securefiles.domain.file.port.in;
 
-import com.securefiles.domain.file.model.FileFailureCodes;
-import com.securefiles.domain.file.model.list.ListFilesException;
+import com.securefiles.domain.file.model.list.FileListQuery;
+import java.util.Objects;
 
-public record ListFilesCommand(int page, int size) {
-
-	public static final int DEFAULT_PAGE = 1;
-	public static final int DEFAULT_SIZE = 10;
-	public static final int MAX_SIZE = 50;
+public record ListFilesCommand(FileListQuery query) {
 
 	public ListFilesCommand() {
-		this(DEFAULT_PAGE, DEFAULT_SIZE);
+		this(new FileListQuery());
+	}
+
+	public ListFilesCommand(int page, int size) {
+		this(new FileListQuery(page, size));
 	}
 
 	public ListFilesCommand {
-		if (page < 1) {
-			throw invalidPagination();
-		}
-		if (size < 1 || size > MAX_SIZE) {
-			throw invalidPagination();
-		}
+		query = Objects.requireNonNull(query, "query must not be null");
 	}
 
-	private static ListFilesException invalidPagination() {
-		return new ListFilesException(
-				FileFailureCodes.INVALID_PAGINATION,
-				"The page or size parameter is invalid.");
+	public int page() {
+		return query.page();
+	}
+
+	public int size() {
+		return query.size();
+	}
+
+	public FileListQuery listQuery() {
+		return query;
 	}
 }
