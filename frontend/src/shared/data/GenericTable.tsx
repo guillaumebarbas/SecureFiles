@@ -21,6 +21,18 @@ export type TablePagination = {
   pageSizeOptions?: number[];
 };
 
+export type ServerTablePagination = {
+  page: number;
+  pageSize: number;
+  pageSizeOptions?: number[];
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+};
+
 type GenericTableProps<Row extends object> = {
   animatedRowKey?: Key | null;
   caption: string;
@@ -28,6 +40,7 @@ type GenericTableProps<Row extends object> = {
   emptyMessage?: string;
   getRowKey?: (row: Row, index: number) => Key;
   pagination?: TablePagination;
+  serverPagination?: ServerTablePagination;
   rows: Row[];
 };
 
@@ -59,12 +72,14 @@ export function GenericTable<Row extends object>({
   getRowKey,
   pagination,
   rows,
+  serverPagination,
 }: GenericTableProps<Row>) {
   const captionId = `shared-table-caption-${useId().replace(/:/g, '')}`;
   const [sortState, setSortState] = useState<SortState<Row> | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(pagination?.pageSize ?? 10);
-  const sortedRows = sortState
+  const localPaginationEnabled = pagination !== undefined && serverPagination === undefined;
+  const sortedRows = !serverPagination && sortState
     ? [...rows].sort((left, right) => {
         const column = columns.find(({ key }) => key === sortState.key);
 
@@ -79,17 +94,23 @@ export function GenericTable<Row extends object>({
         return sortState.direction === 'ascending' ? result : -result;
       })
     : rows;
-  const pageSizeOptions = pagination
-    ? Array.from(new Set([pagination.pageSize, ...(pagination.pageSizeOptions ?? [])]))
+  const paginationOptions = pagination ?? serverPagination;
+  const pageSizeOptions = paginationOptions
+    ? Array.from(new Set([paginationOptions.pageSize, ...(paginationOptions.pageSizeOptions ?? [])]))
         .filter((option) => Number.isInteger(option) && option > 0)
     : [];
-  const totalElements = sortedRows.length;
-  const paginationEnabled = pagination !== undefined;
-  const totalPages = pagination
+  const totalElements = serverPagination?.totalElements ?? sortedRows.length;
+  const totalPages = serverPagination
+    ? serverPagination.totalPages
+    : pagination
     ? Math.max(1, Math.ceil(totalElements / pageSize))
     : 1;
-  const visiblePage = Math.min(currentPage, totalPages);
-  const visibleRows = pagination
+  const visiblePage = serverPagination?.page ?? (pagination
+    ? Math.min(currentPage, totalPages)
+    : 1);
+  const visibleRows = serverPagination
+    ? rows
+    : pagination
     ? sortedRows.slice((visiblePage - 1) * pageSize, visiblePage * pageSize)
     : sortedRows;
   const rowKeys = visibleRows.map((row, index) => getRowKey?.(row, index) ?? index);
@@ -98,17 +119,20 @@ export function GenericTable<Row extends object>({
     : rowKeys.findIndex((rowKey) => rowKey === animatedRowKey);
 
   useEffect(() => {
+    if (!localPaginationEnabled) {
+      return;
+    }
     setCurrentPage((page) => Math.min(page, totalPages));
-  }, [totalPages]);
+  }, [localPaginationEnabled, totalPages]);
 
   useEffect(() => {
-    if (animatedRowKey !== null && paginationEnabled) {
+    if (animatedRowKey !== null && localPaginationEnabled) {
       setCurrentPage(1);
     }
-  }, [animatedRowKey, paginationEnabled]);
+  }, [animatedRowKey, localPaginationEnabled]);
 
   function handleSort(column: TableColumn<Row>) {
-    if (!column.sortable) {
+    if (!column.sortable || serverPagination) {
       return;
     }
 
@@ -123,15 +147,28 @@ export function GenericTable<Row extends object>({
   }
 
   function handlePageSizeChange(nextPageSize: string) {
-    setPageSize(Number(nextPageSize));
+    const nextPageSizeNumber = Number(nextPageSize);
+    if (serverPagination) {
+      serverPagination.onPageSizeChange(nextPageSizeNumber);
+      return;
+    }
+    setPageSize(nextPageSizeNumber);
     setCurrentPage(1);
   }
 
   function goToPreviousPage() {
+    if (serverPagination) {
+      serverPagination.onPageChange(Math.max(1, visiblePage - 1));
+      return;
+    }
     setCurrentPage((page) => Math.max(1, Math.min(page, totalPages) - 1));
   }
 
   function goToNextPage() {
+    if (serverPagination) {
+      serverPagination.onPageChange(Math.min(totalPages, visiblePage + 1));
+      return;
+    }
     setCurrentPage((page) => Math.min(totalPages, Math.max(1, page) + 1));
   }
 
@@ -143,16 +180,18 @@ export function GenericTable<Row extends object>({
           <thead>
             <tr>
               {columns.map((column) => {
-                const isSorted = sortState?.key === column.key;
+                const sortingEnabled = serverPagination === undefined;
+                const isSortable = column.sortable && sortingEnabled;
+                const isSorted = isSortable && sortState?.key === column.key;
                 const sortDirection = isSorted ? sortState.direction : 'none';
 
                 return (
                   <th
                     key={String(column.key)}
-                    aria-sort={column.sortable ? sortDirection : undefined}
+                    aria-sort={isSortable ? sortDirection : undefined}
                     scope="col"
                   >
-                    {column.sortable ? (
+                    {isSortable ? (
                       <button
                         aria-label={`Trier par ${column.header}`}
                         className="shared-table__sort-button"
@@ -196,7 +235,7 @@ export function GenericTable<Row extends object>({
           </tbody>
         </table>
       </div>
-      {pagination && totalElements > 0 ? (
+      {paginationOptions && totalElements > 0 ? (
         <Row
           align="center"
           className="shared-table__pagination"
@@ -211,7 +250,7 @@ export function GenericTable<Row extends object>({
               <select
                 aria-label="Elements par page"
                 onChange={(event) => handlePageSizeChange(event.target.value)}
-                value={pageSize}
+                value={serverPagination?.pageSize ?? pageSize}
               >
                 {pageSizeOptions.map((option) => (
                   <option key={option} value={option}>{option}</option>
@@ -222,14 +261,14 @@ export function GenericTable<Row extends object>({
           <Row align="center" className="shared-table__pagination-controls" gap="8px">
             <Button
               aria-label="Page precedente"
-              disabled={visiblePage === 1}
+              disabled={serverPagination ? !serverPagination.hasPrevious : visiblePage === 1}
               icon={ArrowLeft}
               onClick={goToPreviousPage}
               variant="secondary"
             />
             <Button
               aria-label="Page suivante"
-              disabled={visiblePage === totalPages}
+              disabled={serverPagination ? !serverPagination.hasNext : visiblePage === totalPages}
               icon={ArrowRight}
               onClick={goToNextPage}
               variant="secondary"

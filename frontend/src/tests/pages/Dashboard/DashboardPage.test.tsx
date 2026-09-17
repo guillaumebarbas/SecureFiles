@@ -8,6 +8,8 @@ import {
   getUploadConfiguration,
   listFiles,
   uploadFile,
+  type FileMetadataResponse,
+  type FilesPageResponse,
 } from '../../../api/filesApi';
 
 vi.mock('../../../api/filesApi', () => ({
@@ -22,11 +24,33 @@ const mockedGetFileMetadata = vi.mocked(getFileMetadata);
 const mockedGetUploadConfiguration = vi.mocked(getUploadConfiguration);
 const mockedListFiles = vi.mocked(listFiles);
 
+const emptyFilesPage: FilesPageResponse = {
+  content: [],
+  hasNext: false,
+  hasPrevious: false,
+  page: 1,
+  size: 10,
+  totalElements: 0,
+  totalPages: 0,
+};
+
+function createFilesPageResponse(content: FileMetadataResponse[]): FilesPageResponse {
+  return {
+    content,
+    hasNext: false,
+    hasPrevious: false,
+    page: 1,
+    size: 10,
+    totalElements: content.length,
+    totalPages: content.length > 0 ? 1 : 0,
+  };
+}
+
 describe('DashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedGetUploadConfiguration.mockResolvedValue({ maximumSizeBytes: 1024 });
-    mockedListFiles.mockResolvedValue([]);
+    mockedListFiles.mockResolvedValue(emptyFilesPage);
   });
 
   it('renders the upload section and the recent files register', () => {
@@ -42,20 +66,20 @@ describe('DashboardPage', () => {
   });
 
   it('loads recent files for an anonymous visitor', async () => {
-    mockedListFiles.mockResolvedValue([{
+    mockedListFiles.mockResolvedValue(createFilesPageResponse([{
       author: 'Alice Martin',
       createdAt: '2026-09-15T10:00:00Z',
       fileId: '11111111-1111-1111-1111-111111111111',
       originalFilename: 'public-document.txt',
       sizeBytes: 12,
       status: 'CLEAN',
-    }]);
+    }]));
 
     render(<DashboardPage isAuthenticated={false} />);
 
     const table = screen.getByRole('table', { name: 'Fichiers uploades' });
     expect(await within(table).findByText('public-document.txt')).toBeVisible();
-    expect(mockedListFiles).toHaveBeenCalledWith({ signal: expect.anything() });
+    expect(mockedListFiles).toHaveBeenCalledWith({ page: 1, size: 10, signal: expect.anything() });
   });
 
   it('shows an author column in the recent files register', () => {
@@ -71,32 +95,117 @@ describe('DashboardPage', () => {
   });
 
   it('hydrates the recent files register from the backend', async () => {
-    mockedListFiles.mockResolvedValue([{
+    mockedListFiles.mockResolvedValue(createFilesPageResponse([{
       author: 'Alice Martin',
       createdAt: '2026-09-15T10:00:00Z',
       fileId: '11111111-1111-1111-1111-111111111111',
       originalFilename: 'persisted-document.txt',
       sizeBytes: 12,
       status: 'CLEAN',
-    }]);
+    }]));
 
     render(<DashboardPage />);
 
     const table = screen.getByRole('table', { name: 'Fichiers uploades' });
     expect(await within(table).findByText('persisted-document.txt')).toBeVisible();
     expect(within(table).getByText('Alice Martin')).toBeVisible();
-    expect(mockedListFiles).toHaveBeenCalledWith({ signal: expect.anything() });
+    expect(mockedListFiles).toHaveBeenCalledWith({ page: 1, size: 10, signal: expect.anything() });
+  });
+
+  it('loads the next recent files page from the backend', async () => {
+    const user = userEvent.setup();
+    mockedListFiles
+      .mockResolvedValueOnce({
+        content: [{
+          author: 'Alice Martin',
+          createdAt: '2026-09-15T10:00:00Z',
+          fileId: '11111111-1111-1111-1111-111111111111',
+          originalFilename: 'first-page.txt',
+          sizeBytes: 12,
+          status: 'CLEAN',
+        }],
+        hasNext: true,
+        hasPrevious: false,
+        page: 1,
+        size: 10,
+        totalElements: 11,
+        totalPages: 2,
+      })
+      .mockResolvedValueOnce({
+        content: [{
+          author: 'Bob Dupont',
+          createdAt: '2026-09-14T10:00:00Z',
+          fileId: '22222222-2222-2222-2222-222222222222',
+          originalFilename: 'second-page.txt',
+          sizeBytes: 24,
+          status: 'CLEAN',
+        }],
+        hasNext: false,
+        hasPrevious: true,
+        page: 2,
+        size: 10,
+        totalElements: 11,
+        totalPages: 2,
+      });
+
+    render(<DashboardPage />);
+
+    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    expect(await within(table).findByText('first-page.txt')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Page suivante' }));
+
+    expect(await within(table).findByText('second-page.txt')).toBeVisible();
+    expect(within(table).queryByText('first-page.txt')).not.toBeInTheDocument();
+    expect(mockedListFiles).toHaveBeenLastCalledWith({ page: 2, size: 10, signal: expect.anything() });
+  });
+
+  it('requests the selected page size from the backend', async () => {
+    const user = userEvent.setup();
+    mockedListFiles
+      .mockResolvedValueOnce(createFilesPageResponse([{
+        createdAt: '2026-09-15T10:00:00Z',
+        fileId: '11111111-1111-1111-1111-111111111111',
+        originalFilename: 'ten-per-page.txt',
+        sizeBytes: 12,
+        status: 'CLEAN',
+      }]))
+      .mockResolvedValueOnce({
+        content: [{
+          createdAt: '2026-09-15T10:00:00Z',
+          fileId: '22222222-2222-2222-2222-222222222222',
+          originalFilename: 'twenty-five-per-page.txt',
+          sizeBytes: 24,
+          status: 'CLEAN',
+        }],
+        hasNext: false,
+        hasPrevious: false,
+        page: 1,
+        size: 25,
+        totalElements: 1,
+        totalPages: 1,
+      });
+
+    render(<DashboardPage />);
+
+    const table = screen.getByRole('table', { name: 'Fichiers uploades' });
+    await within(table).findByText('ten-per-page.txt');
+    const pageSizeSelect = screen.getByRole('combobox', { name: 'Elements par page' });
+    await user.selectOptions(pageSizeSelect, '25');
+
+    expect(pageSizeSelect).toHaveValue('25');
+    expect(await within(table).findByText('twenty-five-per-page.txt')).toBeVisible();
+    expect(mockedListFiles).toHaveBeenLastCalledWith({ page: 1, size: 25, signal: expect.anything() });
   });
 
   it('shows the scan failure code in the status tag tooltip', async () => {
-    mockedListFiles.mockResolvedValue([{
+    mockedListFiles.mockResolvedValue(createFilesPageResponse([{
       createdAt: '2026-09-15T10:00:00Z',
       failureCode: 'CLAMAV_UNAVAILABLE',
       fileId: '11111111-1111-1111-1111-111111111111',
       originalFilename: 'MicrosoftTeams.pkg',
       sizeBytes: 42,
       status: 'SCAN_FAILED',
-    }]);
+    }]));
 
     render(<DashboardPage />);
 
@@ -111,14 +220,14 @@ describe('DashboardPage', () => {
   });
 
   it('shows a precise storage failure description in the status tag tooltip', async () => {
-    mockedListFiles.mockResolvedValue([{
+    mockedListFiles.mockResolvedValue(createFilesPageResponse([{
       createdAt: '2026-09-15T10:00:00Z',
       failureCode: 'STORAGE_SIZE_MISMATCH',
       fileId: '11111111-1111-1111-1111-111111111111',
       originalFilename: 'large-video.mov',
       sizeBytes: 19_553_061,
       status: 'SCAN_FAILED',
-    }]);
+    }]));
 
     render(<DashboardPage />);
 
@@ -133,13 +242,13 @@ describe('DashboardPage', () => {
     const user = userEvent.setup();
     mockedListFiles
       .mockRejectedValueOnce(new Error('La liste des fichiers ne peut pas etre lue.'))
-      .mockResolvedValueOnce([{
+      .mockResolvedValueOnce(createFilesPageResponse([{
         createdAt: '2026-09-15T10:00:00Z',
         fileId: '11111111-1111-1111-1111-111111111111',
         originalFilename: 'retried-document.txt',
         sizeBytes: 12,
         status: 'CLEAN',
-      }]);
+      }]));
 
     render(<DashboardPage />);
 
@@ -170,6 +279,15 @@ describe('DashboardPage', () => {
       sizeBytes: file.size,
       status: 'PENDING_SCAN',
     });
+    mockedListFiles
+      .mockResolvedValueOnce(emptyFilesPage)
+      .mockResolvedValueOnce(createFilesPageResponse([{
+        createdAt: '2026-09-15T10:00:00Z',
+        fileId: '11111111-1111-1111-1111-111111111111',
+        originalFilename: 'document.txt',
+        sizeBytes: file.size,
+        status: 'PENDING_SCAN',
+      }]));
 
     render(<DashboardPage />);
 
@@ -238,6 +356,9 @@ describe('DashboardPage', () => {
     mockedGetFileMetadata
       .mockResolvedValueOnce({ ...response, status: 'SCANNING' })
       .mockResolvedValueOnce({ ...response, status: 'CLEAN' });
+    mockedListFiles
+      .mockResolvedValueOnce(emptyFilesPage)
+      .mockResolvedValueOnce(createFilesPageResponse([response]));
 
     render(<DashboardPage />);
 
@@ -262,6 +383,9 @@ describe('DashboardPage', () => {
     };
     mockedUploadFile.mockResolvedValue(response);
     mockedGetFileMetadata.mockResolvedValue({ ...response, status: 'INFECTED' });
+    mockedListFiles
+      .mockResolvedValueOnce(emptyFilesPage)
+      .mockResolvedValueOnce(createFilesPageResponse([response]));
 
     render(<DashboardPage />);
 
