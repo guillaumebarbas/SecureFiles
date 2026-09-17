@@ -58,17 +58,28 @@ SecureFiles/
 
 - `POST /api/v1/files` : recoit un champ multipart `file`, renvoie `202 Accepted` et les metadonnees en `PENDING_SCAN`. Une taille superieure a la politique serveur renvoie `413 Payload Too Large` avec le code stable `MAX_SIZE_EXCEEDED`. La console demande une connexion avant d'ouvrir le selecteur de fichier et avant tout envoi.
 - `GET /api/v1/files/config` : expose la politique publique d'upload sous la forme `{ "maximumSizeBytes": <entier> }`. La reponse ne contient ni variable d'environnement ni configuration sensible.
-- `GET /api/v1/files?page=1&size=10` : liste publiquement une page de metadonnees de fichiers.
-   `page` commence a `1`, `size` vaut `10` par defaut et est limite a `50`. La reponse est
-   une enveloppe `{ "content": [], "page": 1, "size": 10, "totalElements": 0,
-   "totalPages": 0, "hasNext": false, "hasPrevious": false }`. Le contenu est trie par
-   date de creation decroissante puis par identifiant decroissant ; seuls les fichiers de
-   la page demandee sont charges et enrichis. La reponse ne contient ni contenu, ni hash,
-   ni cle MinIO. Chaque element expose l'auteur resolu dans `author` et peut exposer un
-   `failureCode` nullable et stable lorsqu'un traitement a echoue. Une page hors limite
-   renvoie une enveloppe vide avec le statut `200`. La consultation de la liste n'accorde
-   pas le droit de telecharger un fichier ou de lire ses metadonnees detaillees : ces acces
-   restent controles par le proprietaire.
+- `GET /api/v1/files?page=1&size=10&sort=createdAt&direction=desc` : liste publiquement
+   une page de metadonnees de fichiers. `page` commence a `1`, `size` vaut `10` par defaut
+   et est limite a `50`. Les valeurs de `sort` sont limitees a `name`, `author`, `size` et
+   `createdAt`. `direction` accepte `asc` ou `desc`. Chaque requete ajoute `id DESC` comme
+   departage deterministe, quel que soit le tri choisi.
+   Le filtre `status` peut etre repete, par exemple
+   `status=CLEAN&status=SCAN_FAILED` ; les valeurs sont combinees avec OR. Sans filtre,
+   les sept statuts canoniques sont inclus. Le tri et le filtrage sont executes en base
+   avant le comptage et la pagination, afin que `totalElements`, `totalPages`, `hasNext`
+   et `hasPrevious` correspondent aux criteres demandes. Le tri par auteur repose sur la
+   jointure infrastructurelle avec `app_user` et conserve `Auteur inconnu` pour les
+   proprietaires non resolus.
+   La reponse est une enveloppe `{ "content": [], "page": 1, "size": 10,
+   "totalElements": 0, "totalPages": 0, "hasNext": false, "hasPrevious": false }`.
+   Seuls les fichiers de la page demandee sont charges et enrichis. La reponse ne contient
+   ni contenu, ni hash, ni cle MinIO. Chaque element expose l'auteur resolu dans `author`
+   et peut exposer un `failureCode` nullable et stable lorsqu'un traitement a echoue. Une
+   page hors limite renvoie une enveloppe vide avec le statut `200`. Une pagination invalide
+   renvoie `INVALID_PAGINATION`; un tri, une direction ou un statut invalide renvoie
+   `INVALID_LIST_QUERY`, dans les deux cas avec le statut `400`. La consultation de la
+   liste n'accorde pas le droit de telecharger un fichier ou de lire ses metadonnees
+   detaillees : ces acces restent controles par le proprietaire.
 - `GET /api/v1/files/{id}` : lit les metadonnees et le statut courant du fichier pour
    son proprietaire, avec un `failureCode` nullable lorsqu'une erreur est connue. Un fichier
    absent ou inaccessible renvoie `404`; cette reponse n'expose ni les octets ni la cle de
