@@ -58,13 +58,17 @@ SecureFiles/
 
 - `POST /api/v1/files` : recoit un champ multipart `file`, renvoie `202 Accepted` et les metadonnees en `PENDING_SCAN`. Une taille superieure a la politique serveur renvoie `413 Payload Too Large` avec le code stable `MAX_SIZE_EXCEEDED`. La console demande une connexion avant d'ouvrir le selecteur de fichier et avant tout envoi.
 - `GET /api/v1/files/config` : expose la politique publique d'upload sous la forme `{ "maximumSizeBytes": <entier> }`. La reponse ne contient ni variable d'environnement ni configuration sensible.
-- `GET /api/v1/files` : liste publiquement les metadonnees de tous les fichiers. La reponse
-   est un tableau trie par date de creation decroissante puis par
-   identifiant ; elle ne contient ni contenu, ni hash, ni cle MinIO. Chaque element expose
-   l'auteur resolu dans `author` et peut exposer un `failureCode` nullable et stable
-   lorsqu'un traitement a echoue. La consultation de la liste n'accorde pas le droit de
-   telecharger un fichier ou de lire ses metadonnees detaillees : ces acces restent
-   controles par le proprietaire.
+- `GET /api/v1/files?page=1&size=10` : liste publiquement une page de metadonnees de fichiers.
+   `page` commence a `1`, `size` vaut `10` par defaut et est limite a `50`. La reponse est
+   une enveloppe `{ "content": [], "page": 1, "size": 10, "totalElements": 0,
+   "totalPages": 0, "hasNext": false, "hasPrevious": false }`. Le contenu est trie par
+   date de creation decroissante puis par identifiant decroissant ; seuls les fichiers de
+   la page demandee sont charges et enrichis. La reponse ne contient ni contenu, ni hash,
+   ni cle MinIO. Chaque element expose l'auteur resolu dans `author` et peut exposer un
+   `failureCode` nullable et stable lorsqu'un traitement a echoue. Une page hors limite
+   renvoie une enveloppe vide avec le statut `200`. La consultation de la liste n'accorde
+   pas le droit de telecharger un fichier ou de lire ses metadonnees detaillees : ces acces
+   restent controles par le proprietaire.
 - `GET /api/v1/files/{id}` : lit les metadonnees et le statut courant du fichier pour
    son proprietaire, avec un `failureCode` nullable lorsqu'une erreur est connue. Un fichier
    absent ou inaccessible renvoie `404`; cette reponse n'expose ni les octets ni la cle de
