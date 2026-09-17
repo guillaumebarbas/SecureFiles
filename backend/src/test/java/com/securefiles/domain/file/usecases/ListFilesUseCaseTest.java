@@ -3,7 +3,10 @@ package com.securefiles.domain.file.usecases;
 import com.securefiles.domain.file.model.FileStatus;
 import com.securefiles.domain.file.model.StorageReceipt;
 import com.securefiles.domain.file.model.StoredFile;
+import com.securefiles.domain.file.model.list.FileListQuery;
+import com.securefiles.domain.file.model.list.FileSortField;
 import com.securefiles.domain.file.model.list.ListFilesException;
+import com.securefiles.domain.file.model.list.SortDirection;
 import com.securefiles.domain.file.port.in.ListFilesCommand;
 import com.securefiles.domain.file.port.in.ListFilesResult;
 import com.securefiles.domain.file.port.out.StoredFilePage;
@@ -69,7 +72,7 @@ class ListFilesUseCaseTest {
                 OLDEST_SHA_256,
                 FileStatus.CLEAN,
                 OLDEST_CREATED_AT);
-        when(repository.findPage(1, 10)).thenReturn(new StoredFilePage(List.of(newestFile, oldestFile), 2));
+        when(repository.findPage(new FileListQuery())).thenReturn(new StoredFilePage(List.of(newestFile, oldestFile), 2));
 
         ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
 
@@ -90,7 +93,7 @@ class ListFilesUseCaseTest {
                                 OLDEST_SHA_256,
                                 FileStatus.CLEAN,
                                 OLDEST_CREATED_AT);
-                when(repository.findPage(2, 10)).thenReturn(new StoredFilePage(List.of(oldestFile), 11));
+                when(repository.findPage(new FileListQuery(2, 10))).thenReturn(new StoredFilePage(List.of(oldestFile), 11));
 
                 ListFilesResult result = listFilesUseCase.list(new ListFilesCommand(2, 10));
 
@@ -102,6 +105,30 @@ class ListFilesUseCaseTest {
                 assertThat(result.totalPages()).isEqualTo(2);
                 assertThat(result.hasNext()).isFalse();
                 assertThat(result.hasPrevious()).isTrue();
+        }
+
+        @Test
+        void list_shouldRequestTheSortedAndFilteredPage() {
+                FileListQuery query = new FileListQuery(
+                                1,
+                                10,
+                                FileSortField.NAME,
+                                SortDirection.ASC,
+                                Set.of(FileStatus.CLEAN, FileStatus.SCANNING));
+                StoredFile cleanFile = createFile(
+                                NEWEST_FILE_ID,
+                                "clean.pdf",
+                                12L,
+                                NEWEST_SHA_256,
+                                FileStatus.CLEAN,
+                                NEWEST_CREATED_AT);
+                when(repository.findPage(query)).thenReturn(new StoredFilePage(List.of(cleanFile), 1));
+
+                ListFilesResult result = listFilesUseCase.list(new ListFilesCommand(query));
+
+                assertThat(result.content()).singleElement()
+                                .extracting(metadata -> metadata.originalFilename())
+                                .isEqualTo("clean.pdf");
         }
 
         @Test
@@ -122,7 +149,7 @@ class ListFilesUseCaseTest {
 
     @Test
     void list_shouldReturnEmptyMetadata_whenRequesterHasNoFiles() {
-        when(repository.findPage(1, 10)).thenReturn(new StoredFilePage(List.of(), 0));
+        when(repository.findPage(new FileListQuery())).thenReturn(new StoredFilePage(List.of(), 0));
 
         ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
 
@@ -144,7 +171,7 @@ class ListFilesUseCaseTest {
                 OLDEST_SHA_256,
                 FileStatus.CLEAN,
                 OLDEST_CREATED_AT);
-        when(repository.findPage(1, 10)).thenReturn(new StoredFilePage(List.of(failedFile, cleanFile), 2));
+        when(repository.findPage(new FileListQuery())).thenReturn(new StoredFilePage(List.of(failedFile, cleanFile), 2));
         when(repository.findLatestPreciseFailureCodesByFileIds(Set.of(NEWEST_FILE_ID)))
                 .thenReturn(Map.of(NEWEST_FILE_ID, "CLAMAV_UNAVAILABLE"));
 
@@ -172,7 +199,7 @@ class ListFilesUseCaseTest {
                 OLDEST_SHA_256,
                 FileStatus.CLEAN,
                 OLDEST_CREATED_AT);
-        when(repository.findPage(1, 10)).thenReturn(new StoredFilePage(List.of(firstOwnerFile, secondOwnerFile), 2));
+        when(repository.findPage(new FileListQuery())).thenReturn(new StoredFilePage(List.of(firstOwnerFile, secondOwnerFile), 2));
         when(userRepository.findById(FIRST_OWNER_ID)).thenReturn(Optional.of(createUser(FIRST_OWNER_ID, "Alice Martin")));
         when(userRepository.findById(SECOND_OWNER_ID)).thenReturn(Optional.of(createUser(SECOND_OWNER_ID, "Bob Dupont")));
 
@@ -194,7 +221,7 @@ class ListFilesUseCaseTest {
                 NEWEST_SHA_256,
                 FileStatus.CLEAN,
                 NEWEST_CREATED_AT);
-        when(repository.findPage(1, 10)).thenReturn(new StoredFilePage(List.of(legacyFile), 1));
+        when(repository.findPage(new FileListQuery())).thenReturn(new StoredFilePage(List.of(legacyFile), 1));
 
         ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
 

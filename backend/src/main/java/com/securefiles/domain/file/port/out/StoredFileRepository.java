@@ -1,6 +1,7 @@
 package com.securefiles.domain.file.port.out;
 
 import com.securefiles.domain.file.model.StoredFile;
+import com.securefiles.domain.file.model.list.FileListQuery;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +15,7 @@ public interface StoredFileRepository {
 
     Optional<StoredFile> findById(UUID fileId);
 
-    StoredFilePage findPage(int page, int size);
+    StoredFilePage findPage(FileListQuery query);
 
     List<StoredFile> findByOwnerId(String ownerId);
 
