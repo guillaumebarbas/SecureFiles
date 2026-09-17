@@ -50,6 +50,14 @@ public class JpaStoredFileRepositoryAdapter implements StoredFileRepository {
 
     @Override
     @Transactional(readOnly = true)
+    public List<StoredFile> findAll() {
+        return storedFileRepository.findAllByOrderByCreatedAtDescIdDesc().stream()
+                .map(storedFileMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<StoredFile> findByOwnerId(String ownerId) {
         return storedFileRepository.findByOwnerIdOrderByCreatedAtDescIdDesc(ownerId).stream()
                 .map(storedFileMapper::toDomain)

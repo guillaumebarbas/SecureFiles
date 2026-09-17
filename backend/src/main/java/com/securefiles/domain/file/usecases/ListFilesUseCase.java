@@ -6,6 +6,7 @@ import com.securefiles.domain.file.port.in.GetFileMetadataResult;
 import com.securefiles.domain.file.port.in.ListFiles;
 import com.securefiles.domain.file.port.in.ListFilesCommand;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
+import com.securefiles.domain.user.port.out.UserRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -16,20 +17,32 @@ import java.util.stream.Collectors;
 
 public final class ListFilesUseCase implements ListFiles {
 
-    private final StoredFileRepository repository;
+    private static final String UNKNOWN_AUTHOR = "Auteur inconnu";
 
-    public ListFilesUseCase(StoredFileRepository repository) {
+    private final StoredFileRepository repository;
+    private final UserRepository userRepository;
+
+    public ListFilesUseCase(StoredFileRepository repository, UserRepository userRepository) {
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
+        this.userRepository = Objects.requireNonNull(userRepository, "userRepository must not be null");
     }
 
     @Override
     public List<GetFileMetadataResult> list(ListFilesCommand command) {
         Objects.requireNonNull(command, "command must not be null");
-        List<StoredFile> storedFiles = repository.findByOwnerId(command.requesterId());
+        List<StoredFile> storedFiles = repository.findAll();
+        Map<String, String> authors = findAuthors(storedFiles);
         Map<UUID, String> preciseFailureCodes = findPreciseFailureCodes(storedFiles);
         return storedFiles.stream()
-                .map(storedFile -> toMetadataResult(storedFile, preciseFailureCodes))
+            .map(storedFile -> toMetadataResult(storedFile, authors, preciseFailureCodes))
                 .toList();
+    }
+
+    private Map<String, String> findAuthors(List<StoredFile> storedFiles) {
+        return storedFiles.stream()
+            .map(storedFile -> Objects.requireNonNull(storedFile, "storedFile must not be null").ownerId())
+            .distinct()
+            .collect(Collectors.toUnmodifiableMap(ownerId -> ownerId, this::resolveAuthor));
     }
 
     private Map<UUID, String> findPreciseFailureCodes(List<StoredFile> storedFiles) {
@@ -45,14 +58,26 @@ public final class ListFilesUseCase implements ListFiles {
 
     private GetFileMetadataResult toMetadataResult(
             StoredFile storedFile,
+            Map<String, String> authors,
             Map<UUID, String> preciseFailureCodes) {
         return new GetFileMetadataResult(
                 storedFile.id(),
                 storedFile.originalFilename(),
+                authors.getOrDefault(storedFile.ownerId(), UNKNOWN_AUTHOR),
                 storedFile.sizeBytes(),
                 storedFile.status(),
                 storedFile.createdAt(),
                 resolveFailureCode(storedFile, preciseFailureCodes));
+    }
+
+    private String resolveAuthor(String ownerId) {
+        try {
+            return userRepository.findById(UUID.fromString(ownerId))
+                    .map(user -> Objects.requireNonNull(user, "user must not be null").name())
+                    .orElse(UNKNOWN_AUTHOR);
+        } catch (IllegalArgumentException exception) {
+            return UNKNOWN_AUTHOR;
+        }
     }
 
     private Optional<String> resolveFailureCode(

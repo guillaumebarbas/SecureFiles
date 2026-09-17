@@ -6,10 +6,14 @@ import com.securefiles.domain.file.model.StoredFile;
 import com.securefiles.domain.file.port.in.GetFileMetadataResult;
 import com.securefiles.domain.file.port.in.ListFilesCommand;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
+import com.securefiles.domain.user.model.User;
+import com.securefiles.domain.user.model.UserRole;
+import com.securefiles.domain.user.port.out.UserRepository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,15 +34,20 @@ class ListFilesUseCaseTest {
     private static final Instant OLDEST_CREATED_AT = Instant.parse("2026-09-14T10:00:00Z");
     private static final String NEWEST_SHA_256 = "99d5e9e0dc50e56ad7c9ecd0a0feea56fcb81d0ba7a27b7fa1e971c5dadd452b";
     private static final String OLDEST_SHA_256 = "88d5e9e0dc50e56ad7c9ecd0a0feea56fcb81d0ba7a27b7fa1e971c5dadd452b";
+        private static final UUID FIRST_OWNER_ID = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        private static final UUID SECOND_OWNER_ID = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
     @Mock
     private StoredFileRepository repository;
+
+        @Mock
+        private UserRepository userRepository;
 
     private ListFilesUseCase listFilesUseCase;
 
     @BeforeEach
     void setUp() {
-        listFilesUseCase = new ListFilesUseCase(repository);
+                listFilesUseCase = new ListFilesUseCase(repository, userRepository);
     }
 
     @Test
@@ -57,9 +66,9 @@ class ListFilesUseCaseTest {
                 OLDEST_SHA_256,
                 FileStatus.CLEAN,
                 OLDEST_CREATED_AT);
-        when(repository.findByOwnerId("owner-1")).thenReturn(List.of(newestFile, oldestFile));
+        when(repository.findAll()).thenReturn(List.of(newestFile, oldestFile));
 
-        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand("owner-1"));
+        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand());
 
         assertThat(result)
                 .extracting(metadata -> metadata.fileId())
@@ -71,9 +80,9 @@ class ListFilesUseCaseTest {
 
     @Test
     void list_shouldReturnEmptyMetadata_whenRequesterHasNoFiles() {
-        when(repository.findByOwnerId("owner-1")).thenReturn(List.of());
+        when(repository.findAll()).thenReturn(List.of());
 
-        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand("owner-1"));
+        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand());
 
         assertThat(result).isEmpty();
     }
@@ -93,14 +102,63 @@ class ListFilesUseCaseTest {
                 OLDEST_SHA_256,
                 FileStatus.CLEAN,
                 OLDEST_CREATED_AT);
-        when(repository.findByOwnerId("owner-1")).thenReturn(List.of(failedFile, cleanFile));
+        when(repository.findAll()).thenReturn(List.of(failedFile, cleanFile));
         when(repository.findLatestPreciseFailureCodesByFileIds(Set.of(NEWEST_FILE_ID)))
                 .thenReturn(Map.of(NEWEST_FILE_ID, "CLAMAV_UNAVAILABLE"));
 
-        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand("owner-1"));
+        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand());
 
         assertThat(result.get(0).failureCode()).contains("CLAMAV_UNAVAILABLE");
         assertThat(result.get(1).failureCode()).isEmpty();
+    }
+
+    @Test
+    void list_shouldReturnAllFilesWithResolvedAuthors_whenFilesHaveDifferentOwners() {
+        StoredFile firstOwnerFile = createFileForOwner(
+                FIRST_OWNER_ID.toString(),
+                NEWEST_FILE_ID,
+                "first-owner.pdf",
+                42L,
+                NEWEST_SHA_256,
+                FileStatus.CLEAN,
+                NEWEST_CREATED_AT);
+        StoredFile secondOwnerFile = createFileForOwner(
+                SECOND_OWNER_ID.toString(),
+                OLDEST_FILE_ID,
+                "second-owner.pdf",
+                12L,
+                OLDEST_SHA_256,
+                FileStatus.CLEAN,
+                OLDEST_CREATED_AT);
+        when(repository.findAll()).thenReturn(List.of(firstOwnerFile, secondOwnerFile));
+        when(userRepository.findById(FIRST_OWNER_ID)).thenReturn(Optional.of(createUser(FIRST_OWNER_ID, "Alice Martin")));
+        when(userRepository.findById(SECOND_OWNER_ID)).thenReturn(Optional.of(createUser(SECOND_OWNER_ID, "Bob Dupont")));
+
+        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand());
+
+        assertThat(result).extracting(metadata -> metadata.originalFilename())
+                .containsExactly("first-owner.pdf", "second-owner.pdf");
+        assertThat(result).extracting(metadata -> metadata.author())
+                .containsExactly("Alice Martin", "Bob Dupont");
+    }
+
+    @Test
+    void list_shouldUseNeutralAuthor_whenOwnerCannotBeResolved() {
+        StoredFile legacyFile = createFileForOwner(
+                "legacy-owner-1",
+                NEWEST_FILE_ID,
+                "legacy.pdf",
+                42L,
+                NEWEST_SHA_256,
+                FileStatus.CLEAN,
+                NEWEST_CREATED_AT);
+        when(repository.findAll()).thenReturn(List.of(legacyFile));
+
+        List<GetFileMetadataResult> result = listFilesUseCase.list(new ListFilesCommand());
+
+        assertThat(result).singleElement()
+                .extracting(metadata -> metadata.author())
+                .isEqualTo("Auteur inconnu");
     }
 
     private StoredFile createFile(
@@ -136,6 +194,48 @@ class ListFilesUseCaseTest {
                         UUID.fromString("33333333-3333-3333-3333-333333333333"),
                         com.securefiles.domain.file.model.AntivirusScanResult.clean(),
                         createdAt.plus(1, ChronoUnit.MINUTES));
+    }
+
+    private StoredFile createFileForOwner(
+            String ownerId,
+            UUID fileId,
+            String filename,
+            long sizeBytes,
+            String sha256,
+            FileStatus status,
+            Instant createdAt) {
+        StoredFile uploadingFile = StoredFile.startUpload(
+                fileId,
+                ownerId,
+                filename,
+                "application/pdf",
+                createdAt);
+        StoredFile pendingScanFile = uploadingFile.completeUpload(
+                sizeBytes,
+                sha256,
+                new StorageReceipt("quarantine/" + fileId + "/payload", "version-1"),
+                createdAt);
+        if (status == FileStatus.PENDING_SCAN) {
+            return pendingScanFile;
+        }
+        UUID leaseId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        return pendingScanFile.claimForScan(
+                        leaseId,
+                        createdAt.plus(5, ChronoUnit.MINUTES),
+                        createdAt)
+                .completeScan(
+                        leaseId,
+                        com.securefiles.domain.file.model.AntivirusScanResult.clean(),
+                        createdAt.plus(1, ChronoUnit.MINUTES));
+    }
+
+    private User createUser(UUID userId, String name) {
+        return User.create(
+                userId,
+                name,
+                "password-hash",
+                Set.of(UserRole.UTILISATEUR),
+                NEWEST_CREATED_AT);
     }
 
     private StoredFile createFailedFile(

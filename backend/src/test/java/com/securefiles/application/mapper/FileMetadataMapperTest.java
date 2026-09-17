@@ -23,6 +23,7 @@ class FileMetadataMapperTest {
         GetFileMetadataResult result = new GetFileMetadataResult(
                 FILE_ID,
                 "report.pdf",
+                "Alice Martin",
                 Optional.of(42L),
                 FileStatus.SCANNING,
                 CREATED_AT,
@@ -32,6 +33,7 @@ class FileMetadataMapperTest {
 
         assertThat(response.fileId()).isEqualTo(FILE_ID);
         assertThat(response.originalFilename()).isEqualTo("report.pdf");
+        assertThat(response.author()).isEqualTo("Alice Martin");
         assertThat(response.sizeBytes()).isEqualTo(42L);
         assertThat(response.status()).isEqualTo("SCANNING");
         assertThat(response.createdAt()).isEqualTo(CREATED_AT);
@@ -42,6 +44,7 @@ class FileMetadataMapperTest {
         GetFileMetadataResult firstResult = new GetFileMetadataResult(
                 FILE_ID,
                 "report.pdf",
+                "Alice Martin",
                 Optional.of(42L),
                 FileStatus.PENDING_SCAN,
                 CREATED_AT,
@@ -49,6 +52,7 @@ class FileMetadataMapperTest {
         GetFileMetadataResult secondResult = new GetFileMetadataResult(
                 UUID.fromString("22222222-2222-2222-2222-222222222222"),
                 "image.png",
+                "Bob Dupont",
                 Optional.empty(),
                 FileStatus.UPLOADING,
                 CREATED_AT,
@@ -67,6 +71,7 @@ class FileMetadataMapperTest {
                 GetFileMetadataResult result = new GetFileMetadataResult(
                                 FILE_ID,
                                 "installer.pkg",
+                                "Alice Martin",
                                 Optional.of(42L),
                                 FileStatus.SCAN_FAILED,
                                 CREATED_AT,

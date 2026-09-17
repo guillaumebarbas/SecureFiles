@@ -12,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface StoredFileJpaRepository extends JpaRepository<StoredFileEntity, UUID> {
 
+        List<StoredFileEntity> findAllByOrderByCreatedAtDescIdDesc();
+
         List<StoredFileEntity> findByOwnerIdOrderByCreatedAtDescIdDesc(String ownerId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
