@@ -37,7 +37,7 @@ const dashboardFileColumns: TableColumn<FileMetadataResponse>[] = [
     key: 'status',
     render: (file) => (
       <Tag
-        details={fileFailureDetails(file.failureCode)}
+        details={fileFailureDetails(file.failureCode, file.failureCause)}
         icon={statusIcon(file.status)}
         text={file.status}
         tone={statusTone(file.status)}

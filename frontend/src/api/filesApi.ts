@@ -20,6 +20,7 @@ export type UploadFileResponse = {
 export type FileMetadataResponse = Omit<UploadFileResponse, 'sizeBytes'> & {
   author?: string;
   failureCode?: string | null;
+  failureCause?: string | null;
   sizeBytes: number | null;
 };
 

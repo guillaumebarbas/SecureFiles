@@ -246,10 +246,11 @@ describe('DashboardPage', () => {
     expect(filterButton).toHaveFocus();
   });
 
-  it('shows the scan failure code in the status tag tooltip', async () => {
+  it('shows the terminal failure and precise cause in the status tag tooltip', async () => {
     mockedListFiles.mockResolvedValue(createFilesPageResponse([{
       createdAt: '2026-09-15T10:00:00Z',
-      failureCode: 'CLAMAV_UNAVAILABLE',
+      failureCause: 'CLAMAV_UNAVAILABLE',
+      failureCode: 'SCAN_ATTEMPTS_EXHAUSTED',
       fileId: '11111111-1111-1111-1111-111111111111',
       originalFilename: 'MicrosoftTeams.pkg',
       sizeBytes: 42,
@@ -261,11 +262,13 @@ describe('DashboardPage', () => {
     const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     const tag = await within(table).findByText('SCAN_FAILED');
     const tooltip = screen.getByRole('tooltip', {
-      name: 'Service antivirus indisponible (CLAMAV_UNAVAILABLE)',
+      name: 'Nombre maximal de tentatives atteint (SCAN_ATTEMPTS_EXHAUSTED). Cause : Service antivirus indisponible (CLAMAV_UNAVAILABLE)',
     });
 
     expect(tag).toHaveAttribute('aria-describedby', tooltip.id);
-    expect(tooltip).toHaveTextContent('Service antivirus indisponible (CLAMAV_UNAVAILABLE)');
+    expect(tooltip).toHaveTextContent(
+      'Nombre maximal de tentatives atteint (SCAN_ATTEMPTS_EXHAUSTED). Cause : Service antivirus indisponible (CLAMAV_UNAVAILABLE)',
+    );
   });
 
   it('shows a precise storage failure description in the status tag tooltip', async () => {

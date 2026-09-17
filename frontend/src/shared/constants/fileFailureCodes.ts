@@ -48,10 +48,18 @@ const failureDescriptions: Record<string, string> = {
   [FILE_FAILURE_CODES.UPLOAD_READ_FAILED]: 'Lecture du fichier impossible',
 };
 
-export function fileFailureDetails(failureCode: string | null | undefined) {
+export function fileFailureDetails(
+  failureCode: string | null | undefined,
+  failureCause: string | null | undefined = null,
+) {
   if (!failureCode) {
     return undefined;
   }
   const description = failureDescriptions[failureCode] ?? 'Erreur de traitement du fichier';
-  return `${description} (${failureCode})`;
+  const details = `${description} (${failureCode})`;
+  if (!failureCause || failureCause === failureCode) {
+    return details;
+  }
+  const causeDescription = failureDescriptions[failureCause] ?? 'Erreur de traitement du fichier';
+  return `${details}. Cause : ${causeDescription} (${failureCause})`;
 }
