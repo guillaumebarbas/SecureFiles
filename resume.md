@@ -885,3 +885,22 @@ Fait une branch, commit, issue, pr
 Resultat :
 Branche créée et validations ciblées exécutées ; workflow de commit, issue et pull request lancé.
 - - - - -
+
+- - - - -
+Prompt :
+Peux tu analyser le code, pour voir pourquoi une fois sur deux j'arrive à pending_scan, sans aucune relance ou erreur (il devrait avoir un cas où juste on abandonne au bout d'un certain nombre de retry avec ces informations àjouté a l'erreur)
+Resultat : Analyse du flux Outbox/RabbitMQ et du cas d'utilisation de scan : le retry métier existe, mais un message non réservable peut être acquitté et perdu, les délais de retry sont découplés, la récupération de lease n'est pas branchée et les erreurs de transport sont silencieuses. Les tests unitaires ciblés passent.
+- - - - -
+
+- - - - -
+Prompt :
+go
+Resultat : Les messages de scan non réservables restent en retry, les leases `SCANNING` expirées sont récupérées avant redélivrance, le TTL RabbitMQ est aligné sur le délai métier, et l'Outbox attend une confirmation broker avant `published_at`. Après épuisement, l'API conserve `SCAN_ATTEMPTS_EXHAUSTED` et expose la cause précise ; le frontend l'affiche. Suite backend : 79 tests passés ; frontend : 89 tests passés et build réussi.
+- - - - -
+
+- - - - -
+Prompt :
+Follow instructions in #prompt:SKILL.md with these arguments: créer une branch puis fait les commit , issues, pr
+Resultat :
+Branche `fix/scan-retry-reliability` créée, corrections de fiabilité du scan regroupées en commits Conventional Commits, puis préparation du résumé, de l'issue et de la pull request vers `main`.
+- - - - -
