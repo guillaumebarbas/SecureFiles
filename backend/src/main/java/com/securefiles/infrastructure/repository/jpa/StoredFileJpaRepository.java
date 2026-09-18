@@ -94,4 +94,5 @@ public interface StoredFileJpaRepository extends JpaRepository<StoredFileEntity,
             @Param("nextScanAt") Instant nextScanAt,
             @Param("pendingStatus") FileStatus pendingStatus,
             @Param("scanningStatus") FileStatus scanningStatus);
+
 }

@@ -116,6 +116,34 @@ class ScanFileUseCaseTest {
     }
 
     @Test
+    void scan_shouldReturnPendingStatus_whenRetryIsNotDue() {
+        StoredFile pendingScanFile = createPendingScanFile()
+                .claimForScan(
+                        LEASE_ID,
+                        STARTED_AT.plusSeconds(30),
+                        STARTED_AT)
+                .completeScan(
+                        LEASE_ID,
+                        AntivirusScanResult.retryableFailure("CLAMAV_UNAVAILABLE"),
+                        STARTED_AT,
+                        STARTED_AT.plusSeconds(60));
+        when(repository.claimPendingScan(
+                eq(FILE_ID),
+                eq(LEASE_ID),
+                eq(STARTED_AT),
+                eq(STARTED_AT.plusSeconds(30))))
+                .thenReturn(Optional.empty());
+        when(repository.findById(FILE_ID)).thenReturn(Optional.of(pendingScanFile));
+
+        ScanFileResult result = scanFileUseCase.scan(new ScanFileCommand(FILE_ID));
+
+        assertThat(result.claimed()).isFalse();
+        assertThat(result.status()).contains(FileStatus.PENDING_SCAN);
+        verifyNoInteractions(contentStorage, antivirusScanner);
+        verify(repository, never()).completeScan(any(), any());
+    }
+
+    @Test
     void scan_shouldReturnToPendingScan_whenAntivirusFailsBeforeAttemptsAreExhausted() throws Exception {
         StoredFile scanningFile = createPendingScanFile().claimForScan(
                 LEASE_ID,

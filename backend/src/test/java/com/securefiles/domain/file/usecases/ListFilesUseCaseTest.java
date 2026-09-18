@@ -157,7 +157,7 @@ class ListFilesUseCaseTest {
     }
 
     @Test
-    void list_shouldReturnPreciseFailureCode_whenScanAttemptsAreExhausted() {
+        void list_shouldExposeAttemptsExhaustionAndPreciseCause_whenScanAttemptsAreExhausted() {
         StoredFile failedFile = createFailedFile(
                 NEWEST_FILE_ID,
                 "failed.pkg",
@@ -177,7 +177,8 @@ class ListFilesUseCaseTest {
 
         ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
 
-        assertThat(result.content().get(0).failureCode()).contains("CLAMAV_UNAVAILABLE");
+        assertThat(result.content().get(0).failureCode()).contains("SCAN_ATTEMPTS_EXHAUSTED");
+        assertThat(result.content().get(0).failureCause()).contains("CLAMAV_UNAVAILABLE");
         assertThat(result.content().get(1).failureCode()).isEmpty();
     }
 

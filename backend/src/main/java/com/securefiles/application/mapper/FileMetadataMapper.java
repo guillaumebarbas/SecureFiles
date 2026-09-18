@@ -18,7 +18,8 @@ public final class FileMetadataMapper {
                 result.sizeBytes().orElse(null),
                 result.status().name(),
                 result.createdAt(),
-                result.failureCode().orElse(null));
+                result.failureCode().orElse(null),
+                result.failureCause().orElse(null));
     }
 
     public List<FileMetadataResponseDto> toResponses(List<GetFileMetadataResult> results) {

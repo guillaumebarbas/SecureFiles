@@ -13,7 +13,19 @@ public record GetFileMetadataResult(
         Optional<Long> sizeBytes,
         FileStatus status,
         Instant createdAt,
-        Optional<String> failureCode) {
+        Optional<String> failureCode,
+        Optional<String> failureCause) {
+
+    public GetFileMetadataResult(
+            UUID fileId,
+            String originalFilename,
+            String author,
+            Optional<Long> sizeBytes,
+            FileStatus status,
+            Instant createdAt,
+            Optional<String> failureCode) {
+        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, Optional.empty());
+    }
 
     public GetFileMetadataResult {
         Objects.requireNonNull(fileId, "fileId must not be null");
@@ -31,6 +43,12 @@ public record GetFileMetadataResult(
         failureCode.ifPresent(code -> {
             if (code.isBlank()) {
                 throw new IllegalArgumentException("failureCode must not be blank");
+            }
+        });
+        Objects.requireNonNull(failureCause, "failureCause must not be null");
+        failureCause.ifPresent(cause -> {
+            if (cause.isBlank()) {
+                throw new IllegalArgumentException("failureCause must not be blank");
             }
         });
     }

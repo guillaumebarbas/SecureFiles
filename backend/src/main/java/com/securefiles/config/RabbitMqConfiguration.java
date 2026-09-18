@@ -34,9 +34,9 @@ public class RabbitMqConfiguration {
     }
 
     @Bean
-    public Queue retryQueue(RabbitMqProperties properties) {
+    public Queue retryQueue(RabbitMqProperties properties, ScanProperties scanProperties) {
         return QueueBuilder.durable(properties.retryQueue())
-                .withArgument("x-message-ttl", properties.retryDelayMillis())
+                .withArgument("x-message-ttl", scanProperties.retryDelay().toMillis())
                 .deadLetterExchange(properties.exchange())
                 .deadLetterRoutingKey(properties.routingKey())
                 .build();
@@ -82,6 +82,7 @@ public class RabbitMqConfiguration {
             MessageConverter messageConverter) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(messageConverter);
+        rabbitTemplate.setMandatory(true);
         return rabbitTemplate;
     }
 

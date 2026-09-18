@@ -41,17 +41,17 @@ public final class GetFileMetadataUseCase implements GetFileMetadata {
                 storedFile.sizeBytes(),
                 storedFile.status(),
                 storedFile.createdAt(),
-                resolveFailureCode(storedFile));
+                storedFile.failureCode(),
+                resolveFailureCause(storedFile));
     }
 
-    private Optional<String> resolveFailureCode(StoredFile storedFile) {
-        Optional<String> storedFailureCode = storedFile.failureCode();
-        if (storedFailureCode.filter(FileFailureCodes.SCAN_ATTEMPTS_EXHAUSTED::equals).isEmpty()) {
-            return storedFailureCode;
+    private Optional<String> resolveFailureCause(StoredFile storedFile) {
+        if (storedFile.failureCode().filter(FileFailureCodes.SCAN_ATTEMPTS_EXHAUSTED::equals).isEmpty()) {
+            return Optional.empty();
         }
         return Optional.ofNullable(repository.findLatestPreciseFailureCodesByFileIds(Set.of(storedFile.id()))
                 .get(storedFile.id()))
-                .or(() -> storedFailureCode);
+                .filter(cause -> !FileFailureCodes.SCAN_ATTEMPTS_EXHAUSTED.equals(cause));
     }
 
     private String resolveAuthor(String ownerId) {

@@ -74,14 +74,17 @@ SecureFiles/
    "totalElements": 0, "totalPages": 0, "hasNext": false, "hasPrevious": false }`.
    Seuls les fichiers de la page demandee sont charges et enrichis. La reponse ne contient
    ni contenu, ni hash, ni cle MinIO. Chaque element expose l'auteur resolu dans `author`
-   et peut exposer un `failureCode` nullable et stable lorsqu'un traitement a echoue. Une
+   et peut exposer un `failureCode` nullable et stable lorsqu'un traitement a echoue. Lorsque
+   `failureCode` vaut `SCAN_ATTEMPTS_EXHAUSTED`, `failureCause` contient la derniere cause precise
+   enregistree, par exemple `CLAMAV_UNAVAILABLE`. Une
    page hors limite renvoie une enveloppe vide avec le statut `200`. Une pagination invalide
    renvoie `INVALID_PAGINATION`; un tri, une direction ou un statut invalide renvoie
    `INVALID_LIST_QUERY`, dans les deux cas avec le statut `400`. La consultation de la
    liste n'accorde pas le droit de telecharger un fichier ou de lire ses metadonnees
    detaillees : ces acces restent controles par le proprietaire.
 - `GET /api/v1/files/{id}` : lit les metadonnees et le statut courant du fichier pour
-   son proprietaire, avec un `failureCode` nullable lorsqu'une erreur est connue. Un fichier
+   son proprietaire, avec un `failureCode` nullable lorsqu'une erreur est connue. Si les tentatives
+   de scan sont epuisees, `failureCause` expose en plus la derniere cause precise. Un fichier
    absent ou inaccessible renvoie `404`; cette reponse n'expose ni les octets ni la cle de
    stockage.
 - `GET /api/v1/files/{id}/content` : streame le contenu uniquement si le statut est `CLEAN`.
@@ -101,7 +104,7 @@ SecureFiles/
 
 Le controller transmet l'upload au port entrant du domaine. Le stockage, la persistance,
 ClamAV et la publication RabbitMQ sont des adaptateurs separes ; une Outbox PostgreSQL est
-persistee avant toute publication RabbitMQ.
+persistee avant toute publication RabbitMQ et n'est marquee publiee qu'apres confirmation du broker.
 
 ## Demarrage local
 

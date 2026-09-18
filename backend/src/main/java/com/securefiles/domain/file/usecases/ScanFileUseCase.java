@@ -69,7 +69,7 @@ public final class ScanFileUseCase implements ScanFile {
                 scanStartedAt,
                 leaseUntil);
         if (claimedFile.isEmpty()) {
-            return new ScanFileResult(command.fileId(), false, Optional.empty());
+            return scanNotClaimed(command.fileId());
         }
 
         StoredFile scanningFile = claimedFile.orElseThrow();
@@ -91,6 +91,12 @@ public final class ScanFileUseCase implements ScanFile {
                         scanStartedAt,
                         completedAt));
         return new ScanFileResult(completedFile.id(), true, Optional.of(completedFile.status()));
+    }
+
+    private ScanFileResult scanNotClaimed(UUID fileId) {
+        return repository.findById(fileId)
+                .map(file -> new ScanFileResult(fileId, false, Optional.of(file.status())))
+                .orElseGet(() -> new ScanFileResult(fileId, false, Optional.empty()));
     }
 
     private AntivirusScanResult scanContent(ScanFileCommand command, StoredFile scanningFile) {

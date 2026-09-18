@@ -2,6 +2,8 @@ package com.securefiles.infrastructure.rabbitmq;
 
 import com.securefiles.domain.file.port.in.ScanFile;
 import com.securefiles.domain.file.port.in.ScanFileCommand;
+import com.securefiles.domain.file.port.in.RecoverExpiredScan;
+import com.securefiles.domain.file.port.in.RecoverExpiredScanCommand;
 import com.rabbitmq.client.Channel;
 import com.securefiles.domain.file.model.FileStatus;
 import java.io.IOException;
@@ -15,9 +17,13 @@ import org.springframework.stereotype.Component;
 public final class RabbitMqScanListener {
 
     private final ScanFile scanFile;
+    private final RecoverExpiredScan recoverExpiredScan;
 
-    public RabbitMqScanListener(ScanFile scanFile) {
+    public RabbitMqScanListener(ScanFile scanFile, RecoverExpiredScan recoverExpiredScan) {
         this.scanFile = Objects.requireNonNull(scanFile, "scanFile must not be null");
+        this.recoverExpiredScan = Objects.requireNonNull(
+                recoverExpiredScan,
+                "recoverExpiredScan must not be null");
     }
 
     @RabbitListener(
@@ -35,13 +41,27 @@ public final class RabbitMqScanListener {
                     message.sha256(),
                     message.storageKey(),
                     message.storageVersion()));
-            if (result.status().orElse(null) == FileStatus.PENDING_SCAN) {
-                channel.basicNack(deliveryTag, false, false);
-            } else {
-                channel.basicAck(deliveryTag, false);
-            }
+            acknowledgeOrRetry(message.fileId(), result, channel, deliveryTag);
         } catch (RuntimeException exception) {
             channel.basicNack(deliveryTag, false, false);
         }
+    }
+
+    private void acknowledgeOrRetry(
+            java.util.UUID fileId,
+            com.securefiles.domain.file.port.in.ScanFileResult result,
+            Channel channel,
+            long deliveryTag) throws IOException {
+        FileStatus status = result.status().orElse(null);
+        if (status == FileStatus.PENDING_SCAN) {
+            channel.basicNack(deliveryTag, false, false);
+            return;
+        }
+        if (status == FileStatus.SCANNING) {
+            recoverExpiredScan.recover(new RecoverExpiredScanCommand(fileId));
+            channel.basicNack(deliveryTag, false, false);
+            return;
+        }
+        channel.basicAck(deliveryTag, false);
     }
 }

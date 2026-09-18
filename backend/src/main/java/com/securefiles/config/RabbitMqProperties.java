@@ -10,6 +10,6 @@ public record RabbitMqProperties(
         String retryQueue,
         String deadLetterQueue,
         int prefetch,
-        long retryDelayMillis,
+        long confirmTimeoutMillis,
         long relayIntervalMillis) {
 }
