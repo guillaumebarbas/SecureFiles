@@ -79,15 +79,28 @@ SecureFiles/
    enregistree, par exemple `CLAMAV_UNAVAILABLE`. Une
    page hors limite renvoie une enveloppe vide avec le statut `200`. Une pagination invalide
    renvoie `INVALID_PAGINATION`; un tri, une direction ou un statut invalide renvoie
-   `INVALID_LIST_QUERY`, dans les deux cas avec le statut `400`. La consultation de la
-   liste n'accorde pas le droit de telecharger un fichier ou de lire ses metadonnees
-   detaillees : ces acces restent controles par le proprietaire.
+   `INVALID_LIST_QUERY`, dans les deux cas avec le statut `400`. Chaque element expose aussi
+   `canDownload` et `canDelete`. Ces capacites sont calculees par le backend pour le demandeur
+   courant : `canDownload` vaut `true` uniquement pour le proprietaire authentifie d'un fichier
+   `CLEAN`, et `canDelete` vaut `true` pour son proprietaire ou un administrateur, sauf lorsque le
+   fichier est `UPLOADING` ou `SCANNING`. Ces indicateurs servent a construire l'interface ; les
+   controles d'acces restent appliques par les use cases des endpoints.
+- `DELETE /api/v1/files/{id}` : supprime le contenu prive, les metadonnees et les evenements Outbox
+   associes pour le proprietaire authentifie ou un administrateur (`ROLE_ADMIN`). La reponse est
+   `204 No Content`. Un fichier absent ou inaccessible renvoie `404 Not Found` avec `FILE_NOT_FOUND`.
+   Une suppression pendant `UPLOADING` ou `SCANNING` renvoie `409 Conflict` avec
+   `FILE_NOT_AVAILABLE`. Une erreur de stockage ou de persistance renvoie `500 Internal Server Error`
+   avec `FILE_DELETE_FAILED`. Le backend reste la source d'autorite : les capacites de la liste ne
+   remplacent pas l'autorisation de cette route.
 - `GET /api/v1/files/{id}` : lit les metadonnees et le statut courant du fichier pour
    son proprietaire, avec un `failureCode` nullable lorsqu'une erreur est connue. Si les tentatives
    de scan sont epuisees, `failureCause` expose en plus la derniere cause precise. Un fichier
    absent ou inaccessible renvoie `404`; cette reponse n'expose ni les octets ni la cle de
    stockage.
-- `GET /api/v1/files/{id}/content` : streame le contenu uniquement si le statut est `CLEAN`.
+- `GET /api/v1/files/{id}/content` : streame le contenu uniquement pour son proprietaire
+   authentifie lorsque le statut est `CLEAN`. Un fichier absent ou inaccessible renvoie `404`, et un
+   fichier dont le statut n'est pas `CLEAN` renvoie `409 Conflict`. Le flux est emis directement par
+   le backend, sans charger le fichier complet en memoire dans la console.
 - `POST /api/v1/auth/register` : cree un compte public avec un ou plusieurs roles autorises
    (`developpeur` et `utilisateur`) et renvoie le profil sans mot de passe ni token. Le mot
    de passe doit contenir entre 8 et 255 caracteres ; une valeur hors limites renvoie
@@ -301,11 +314,13 @@ curl -b cookies.txt http://localhost:8080/api/v1/users/me
 curl -b cookies.txt -F "file=@./document.pdf" http://localhost:8080/api/v1/files
 curl -b cookies.txt http://localhost:8080/api/v1/files
 curl -b cookies.txt -OJ http://localhost:8080/api/v1/files/<id>/content
+curl -b cookies.txt -X DELETE http://localhost:8080/api/v1/files/<id>
 curl -b cookies.txt -X POST http://localhost:8080/api/v1/auth/logout
 ```
 
 En production, appeler d'abord `GET /api/v1/auth/csrf` et transmettre le cookie CSRF dans
-les requetes `POST`. Le telechargement ne devient possible qu'apres le passage a `CLEAN`.
+les requetes mutantes (`POST` et `DELETE`). Le telechargement ne devient possible qu'apres le passage
+a `CLEAN`.
 Pour tester un fichier detecte, utiliser le fichier EICAR de test dans un environnement
 isole, jamais un malware reel.
 
