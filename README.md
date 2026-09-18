@@ -43,6 +43,7 @@ SecureFiles/
 ├── frontend/                # console React + Vite a reconstruire
 │   ├── package.json         # dependances et scripts npm
 │   └── src/                 # code applicatif et tests dans src/tests/
+├── docs/diagrams/           # sources draw.io natives et apercus PNG
 ├── Makefile                 # alias de lancement du frontend et du backend
 ├── rules/                   # regles partagees de code, tests et UX/UI
 ├── resume.md                # journal resume des prompts traites
@@ -53,6 +54,17 @@ SecureFiles/
 ├── docker-compose.yml       # PostgreSQL, MinIO, RabbitMQ et ClamAV locaux
 └── README.md
 ```
+
+## Diagrammes
+
+Les diagrammes editables sont des sources XML draw.io rangees par categorie. Chaque vue detaillee possede une vue `-simplified` correspondante ; Mermaid et Excalidraw sont conserves uniquement comme brouillons ou archives.
+
+| Sujet | Apercu simplified | Source editable |
+| --- | --- | --- |
+| Upload secure file | [![Upload file sequence simplified](docs/diagrams/sequence/renders/upload-file-sequence-simplified.png)](docs/diagrams/sequence/upload-file-sequence-simplified.drawio) | [draw.io](docs/diagrams/sequence/upload-file-sequence-simplified.drawio) |
+| Upload use case | [![Upload use case simplified](docs/diagrams/use_case/renders/upload-file-simplified.png)](docs/diagrams/use_case/upload-file-simplified.drawio) | [draw.io](docs/diagrams/use_case/upload-file-simplified.drawio) |
+
+Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis lancer `DRAWIO_BIN=/path/to/drawio make diagrams-export`. Ajouter `DIAGRAM_EXPORT_JPG=1` pour produire aussi les JPG.
 
 ## Contrat HTTP initial
 

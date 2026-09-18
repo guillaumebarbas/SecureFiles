@@ -9,8 +9,13 @@ Ces skills sont des guides locaux, adaptes au domaine de SecureFiles. Ils repren
 - `tdd` : imposer la boucle red-green-refactor pour toute implementation frontend ou backend.
 - `securefiles-security` : verifier upload, quarantaine, ClamAV, download, flux et logs.
 - `securefiles-frontend` : modifier la console React en respectant l'UX/UI de reference et le contrat API.
+- `securefiles-diagrams` : analyser le code SecureFiles et produire des paires natives `.drawio` detaillees/simplifiees d'architecture, de sequence, de cas d'utilisation ou de flux, avec apercus PNG optionnels.
 - `write-feature-resume` : documenter une feature a partir des commits, changements locaux et fichiers non suivis de la branche.
 - `feature-issue-pr` : analyser tous les commits d'une branche, appeler `write-feature-resume`, puis creer une issue et une pull request vers `main`.
+
+Le prompt `/create-securefiles-diagrams` declenche ce workflow avec un sujet, un type de diagramme et une categorie/slug optionnels. Chaque demande doit produire un fichier `.drawio` detaille et son compagnon `-simplified.drawio`; Mermaid et Excalidraw restent des formats de brouillon ou d'archive.
+
+Les diagrammes sont ranges sous `docs/diagrams/<category>/` (`use_case`, `sequence`, `architecture`, `component`, `data_flow` ou `deployment`). `make diagrams-check` valide les sources natives et leurs paires. `make diagrams-export` produit les apercus PNG avec un binaire draw.io configure par `DRAWIO_BIN`; `DIAGRAM_EXPORT_JPG=1` ajoute les JPG.
 
 Chaque skill renvoie vers les regles partagees dans `rules/`. Charger uniquement les skills utiles a la tache, et charger `securefiles-security` pour tout changement qui touche le contenu ou le statut d'un fichier.
 
