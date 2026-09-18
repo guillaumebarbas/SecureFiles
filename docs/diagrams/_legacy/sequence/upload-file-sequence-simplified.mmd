@@ -1,0 +1,30 @@
+sequenceDiagram
+    actor User as User
+    participant API as UploadFileController
+    participant Upload as UploadFileUseCase
+    participant Storage as MinIO
+    participant DB as PostgreSQL / Outbox
+    participant MQ as RabbitMQ
+    participant Scan as ScanFileUseCase
+    participant AV as ClamAV
+
+    User->>API: POST /api/v1/files
+    API->>Upload: upload(file stream)
+    Upload->>Storage: Stream file to quarantine
+    Storage-->>Upload: Stored
+    Upload->>DB: Save PENDING_SCAN + scan request
+    DB-->>Upload: Commit
+    Upload-->>API: PENDING_SCAN
+    API-->>User: 202 Accepted
+
+    Note over DB,MQ: Outbox relay publishes after the upload transaction.
+    DB->>MQ: Publish scan request
+    MQ-->>Scan: Deliver scan request
+    Scan->>Storage: Read file stream
+    Storage-->>Scan: Stream bytes
+    Scan->>AV: INSTREAM bytes
+    AV-->>Scan: OK
+    Scan->>DB: Save CLEAN
+    Scan->>MQ: ACK
+
+    Note over User,AV: Nominal path only: upload accepted, scan OK, file CLEAN.

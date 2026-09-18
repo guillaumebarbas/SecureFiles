@@ -1,0 +1,108 @@
+sequenceDiagram
+    autonumber
+    actor User as Authenticated user
+    participant API as UploadFileController
+    participant Upload as UploadFileUseCase
+    participant Storage as MinIO private quarantine
+    participant Persistence as JPA persistence adapters
+    participant DB as PostgreSQL
+    participant Acceptance as JpaFileAcceptanceAdapter
+    participant Relay as OutboxRabbitMqRelay
+    participant MQ as RabbitMQ exchange / queues
+    participant Listener as RabbitMqScanListener
+    participant Scan as ScanFileUseCase
+    participant AV as ClamAV clamd
+
+    User->>API: POST /api/v1/files multipart file
+    API->>API: Authenticate and validate HTTP boundary
+    API->>Upload: upload(UploadFileCommand, InputStream)
+    Note over API,Upload: The domain receives a command and stream, never MultipartFile.
+
+    Upload->>Persistence: save StoredFile(UPLOADING)
+    Persistence->>DB: INSERT file metadata with UPLOADING
+    DB-->>Persistence: persisted
+    Persistence-->>Upload: saved
+
+    Upload->>Storage: store(fileId, measured stream)
+    Note over Upload,Storage: Bytes are streamed to an opaque quarantine key. Size and SHA-256 are measured in flight.
+    Storage-->>Upload: StorageReceipt(storageKey, storageVersion)
+    Upload->>Storage: head(fileId)
+    Storage-->>Upload: canonical size and version/ETag
+    Upload->>Upload: Verify complete stream, declared size, stored size and version
+    Upload->>Upload: completeUpload(...) -> PENDING_SCAN
+
+    Upload->>Acceptance: accept(PENDING_SCAN, FILE_SCAN_REQUESTED)
+    Acceptance->>DB: Save file metadata and Outbox event in one transaction
+    Note over Acceptance,DB: FILE_SCAN_REQUESTED contains metadata only: id, size, SHA-256, storage key and version.
+    DB-->>Acceptance: transaction committed
+    Acceptance-->>Upload: accepted
+    Upload-->>API: UploadFileResult(PENDING_SCAN)
+    API-->>User: 202 Accepted with metadata only
+
+    Note over Relay,MQ: The upload use case does not publish directly to RabbitMQ.
+    loop Scheduled Outbox relay
+        Relay->>DB: Find unpublished Outbox events
+        DB-->>Relay: FILE_SCAN_REQUESTED event
+        Relay->>MQ: Publish RabbitMqScanMessage
+        MQ-->>Relay: Publisher confirm
+        alt Broker confirmation succeeds
+            Relay->>DB: Mark Outbox event as published
+        else Confirmation fails or times out
+            Relay->>Relay: Keep event unpublished for a later attempt
+        end
+    end
+
+    MQ-->>Listener: Deliver message from scan queue
+    Listener->>Scan: scan(ScanFileCommand with expected metadata)
+    Scan->>Persistence: claimPendingScan(fileId, lease)
+    Persistence->>DB: Conditional PENDING_SCAN -> SCANNING with lease
+    alt Claim is not available
+        DB-->>Persistence: No row updated
+        Persistence-->>Scan: Empty claim
+        Scan->>Persistence: findById(fileId)
+        Persistence->>DB: Read current status
+        DB-->>Persistence: Current status
+        Persistence-->>Scan: Unclaimed result
+        Scan-->>Listener: Current status
+    else Claim succeeds
+        DB-->>Persistence: SCANNING with lease
+        Persistence-->>Scan: Claimed file
+        Scan->>Scan: Verify message metadata against stored metadata
+        Scan->>Storage: head(fileId)
+        Storage-->>Scan: size and storage version
+        Scan->>Storage: openStream(fileId)
+        Storage-->>Scan: Private content stream
+        Scan->>AV: INSTREAM chunks
+        AV-->>Scan: OK, FOUND, invalid response or I/O error
+
+        alt Explicit clean verdict
+            Scan->>Persistence: completeScan(CLEAN, ScanAttempt)
+        else Threat detected
+            Scan->>Persistence: completeScan(INFECTED, ScanAttempt)
+        else Retryable failure before attempt limit
+            Scan->>Persistence: completeScan(PENDING_SCAN, ScanAttempt)
+        else Terminal failure or attempts exhausted
+            Scan->>Persistence: completeScan(SCAN_FAILED, ScanAttempt)
+        end
+        Persistence->>DB: Persist status, lease release and scan attempt
+        DB-->>Persistence: committed
+        Persistence-->>Scan: Completed status
+        Scan-->>Listener: ScanFileResult(status)
+    end
+
+    alt CLEAN, INFECTED or SCAN_FAILED
+        Listener->>MQ: basicAck after persistence
+    else PENDING_SCAN
+        Listener->>MQ: basicNack(requeue=false)
+        MQ-->>MQ: Dead-letter to retry queue, TTL, then route back to scan queue
+    else SCANNING result / expired lease path
+        Listener->>Scan: recoverExpiredScan(fileId)
+        Scan->>Persistence: recover SCANNING lease to PENDING_SCAN
+        Persistence->>DB: Conditional lease recovery
+        Listener->>MQ: basicNack(requeue=false)
+    end
+
+    Note over Upload,DB: UPLOADING is never accepted, scanned or downloadable. A complete upload must reach PENDING_SCAN before FILE_SCAN_REQUESTED.
+    Note over Storage,DB: File bytes stay in MinIO. PostgreSQL stores metadata, status, attempts and Outbox events, not content bytes.
+    Note over Scan,AV: Unknown antivirus responses, storage inconsistencies and scanner failures fail closed; only an explicit clean result can produce CLEAN.
+    Note over User,API: Download is outside this use case: only CLEAN plus owner authorization permits content streaming.
