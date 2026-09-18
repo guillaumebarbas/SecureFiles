@@ -67,3 +67,9 @@ npm run dev
 ```
 
 Les dependances locales peuvent etre demarrees avec `docker compose up -d postgres clamav`.
+
+## Livraison GitHub
+
+- Les titres, rubriques et textes narratifs des issues et pull requests sont toujours rediges en anglais.
+- Conserver tels quels les identifiants de code, statuts API, commandes, noms de branches, messages de commit et libelles produit cites.
+- Relire le titre et le corps complets avant toute creation ou mise a jour via GitHub MCP afin d'eviter un contenu mixte francais/anglais.
