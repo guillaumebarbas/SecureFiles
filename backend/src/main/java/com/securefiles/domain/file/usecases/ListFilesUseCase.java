@@ -97,7 +97,7 @@ public final class ListFilesUseCase implements ListFiles {
 
     private boolean canDownload(StoredFile storedFile, ListFilesCommand command) {
         return storedFile.status() == com.securefiles.domain.file.model.FileStatus.CLEAN
-                && isOwner(storedFile, command);
+                && command.requesterId() != null;
     }
 
     private boolean canDelete(StoredFile storedFile, ListFilesCommand command) {

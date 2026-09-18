@@ -93,8 +93,8 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
    renvoie `INVALID_PAGINATION`; un tri, une direction ou un statut invalide renvoie
    `INVALID_LIST_QUERY`, dans les deux cas avec le statut `400`. Chaque element expose aussi
    `canDownload` et `canDelete`. Ces capacites sont calculees par le backend pour le demandeur
-   courant : `canDownload` vaut `true` uniquement pour le proprietaire authentifie d'un fichier
-   `CLEAN`, et `canDelete` vaut `true` pour son proprietaire ou un administrateur, sauf lorsque le
+   courant : `canDownload` vaut `true` pour tout demandeur authentifie d'un fichier `CLEAN`, et
+   `canDelete` vaut `true` pour son proprietaire ou un administrateur, sauf lorsque le
    fichier est `UPLOADING` ou `SCANNING`. Ces indicateurs servent a construire l'interface ; les
    controles d'acces restent appliques par les use cases des endpoints.
 - `DELETE /api/v1/files/{id}` : supprime le contenu prive, les metadonnees et les evenements Outbox
@@ -109,8 +109,8 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
    de scan sont epuisees, `failureCause` expose en plus la derniere cause precise. Un fichier
    absent ou inaccessible renvoie `404`; cette reponse n'expose ni les octets ni la cle de
    stockage.
-- `GET /api/v1/files/{id}/content` : streame le contenu uniquement pour son proprietaire
-   authentifie lorsque le statut est `CLEAN`. Un fichier absent ou inaccessible renvoie `404`, et un
+- `GET /api/v1/files/{id}/content` : streame le contenu pour tout utilisateur authentifie lorsque
+   le statut est `CLEAN`. Un fichier absent ou inaccessible renvoie `404`, et un
    fichier dont le statut n'est pas `CLEAN` renvoie `409 Conflict`. Le flux est emis directement par
    le backend, sans charger le fichier complet en memoire dans la console.
 - `POST /api/v1/auth/register` : cree un compte public avec un ou plusieurs roles autorises
@@ -138,37 +138,60 @@ Prerequis : Java 21+, Maven 3.9+, Node.js 22+, Docker Compose.
 Sur Apple Silicon, le service ClamAV est execute en `linux/amd64` via l'emulation Docker
 Desktop, car l'image officielle utilisee ne publie pas de variante `linux/arm64`.
 
-Le backend possede son entree REST et le wiring des ports sortants. Les commandes
-ci-dessous demarrent l'environnement local necessaire au flux complet.
+Le backend possede son entree REST et le wiring des ports sortants. La cible `make init`
+prepare le demarrage local necessaire au flux complet : elle cree `.env` depuis
+`.env.example` s'il n'existe pas, demarre les dependances, compile le backend et installe
+les dependances frontend.
 
-1. Copier `.env.example` vers `.env` et adapter les secrets locaux.
-2. Demarrer les dependances :
+1. Initialiser l'environnement local en premier :
 
    ```bash
-   docker compose up -d --wait postgres minio rabbitmq clamav
+   make init-env
    ```
+
+2. Initialiser le demarrage local :
+
+   ```bash
+   make init
+   ```
+
+   Sous Windows, GNU Make peut etre installe avec Chocolatey depuis une console
+   PowerShell administrateur : `choco install make -y`. Maven est aussi requis pour
+   compiler et lancer le backend : `choco install maven -y`. Les cibles `init-env` et `back`
+   utilisent automatiquement la syntaxe Windows lorsqu'elles sont executees avec GNU Make.
+   Apres l'installation de Maven, recharger le profil Chocolatey puis l'environnement :
+
+   ```powershell
+   Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
+   refreshenv
+   ```
+
+   Fermer puis rouvrir VS Code produit le meme effet. `mvn` doit ensuite etre disponible
+   dans le `PATH` de `make`.
+   La cible `init` depend elle-meme de `init-env` ; l'etape est donc rejouee sans effet
+   si `.env` existe deja.
 
    PostgreSQL reste sur le port `5432` dans le conteneur et est expose sur le port
    hote `5433` par defaut afin d'eviter les collisions avec une instance PostgreSQL
    deja installee sur macOS. Le port hote peut etre change avec `POSTGRES_HOST_PORT`,
    en alignant alors `DATABASE_URL`.
 
-3. Lancer l'API :
+3. Lancer l'API dans un terminal :
 
    ```bash
-   SPRING_PROFILES_ACTIVE=local mvn -f backend/pom.xml spring-boot:run
+   make back
    ```
 
    Le profil `local` conserve uniquement les reglages de developpement de l'authentification
-   (cookie non securise et cle ephemere). Toute route protegee exige une session JWT active ;
-   il faut donc creer un compte et se connecter avant d'utiliser les fichiers.
+   (cookie non securise et cle ephemere) et reste utilise par defaut. Pour lancer un autre
+   profil, utiliser `SPRING_PROFILES_ACTIVE=prod make back`. Toute route protegee exige une
+   session JWT active ; il faut donc creer un compte et se connecter avant d'utiliser les
+   fichiers.
 
 4. Dans un autre terminal, lancer la console :
 
    ```bash
-   cd frontend
-   npm install
-   npm run dev
+   make front
    ```
 
 La console est disponible sur `http://localhost:5173` et l'API sur `http://localhost:8080`.

@@ -258,11 +258,31 @@ class ListFilesUseCaseTest {
 
         assertThat(ownerResult.content().get(0).canDownload()).isTrue();
         assertThat(ownerResult.content().get(0).canDelete()).isTrue();
-        assertThat(ownerResult.content().get(1).canDownload()).isFalse();
+        assertThat(ownerResult.content().get(1).canDownload()).isTrue();
         assertThat(ownerResult.content().get(1).canDelete()).isFalse();
-        assertThat(administratorResult.content().get(0).canDownload()).isFalse();
+        assertThat(administratorResult.content().get(0).canDownload()).isTrue();
+        assertThat(administratorResult.content().get(1).canDownload()).isTrue();
         assertThat(administratorResult.content().get(0).canDelete()).isTrue();
         assertThat(administratorResult.content().get(1).canDelete()).isTrue();
+    }
+
+    @Test
+    void list_shouldHideDownloadCapability_whenRequesterIsAnonymous() {
+        StoredFile cleanFile = createFileForOwner(
+                FIRST_OWNER_ID.toString(),
+                NEWEST_FILE_ID,
+                "clean.pdf",
+                42L,
+                NEWEST_SHA_256,
+                FileStatus.CLEAN,
+                NEWEST_CREATED_AT);
+        when(repository.findPage(new FileListQuery())).thenReturn(new StoredFilePage(List.of(cleanFile), 1));
+
+        ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
+
+        assertThat(result.content()).singleElement()
+                .extracting(metadata -> metadata.canDownload())
+                .isEqualTo(false);
     }
 
     private StoredFile createFile(

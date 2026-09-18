@@ -27,7 +27,7 @@ describe('MenuActions', () => {
   it('renders its actions in order and keeps links as links', async () => {
     const user = userEvent.setup();
 
-    render(
+    const { container } = render(
       <MenuActions
         actions={createActions(vi.fn())}
         ariaLabel="Actions du fichier"
@@ -36,7 +36,9 @@ describe('MenuActions', () => {
 
     await user.click(screen.getByRole('button', { name: 'Actions du fichier' }));
 
+    expect(container.querySelector('.shared-menu-actions')).toHaveClass('shared-menu-actions--open');
     const menu = screen.getByRole('menu', { name: 'Actions du fichier' });
+    expect(menu.parentElement).toBe(document.body);
     const menuItems = within(menu).getAllByRole('menuitem');
 
     expect(menuItems).toHaveLength(2);

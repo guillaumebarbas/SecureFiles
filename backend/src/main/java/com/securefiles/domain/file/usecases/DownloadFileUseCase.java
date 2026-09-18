@@ -30,9 +30,6 @@ public final class DownloadFileUseCase implements DownloadFile {
         Objects.requireNonNull(command, "command must not be null");
         StoredFile storedFile = repository.findById(command.fileId())
                 .orElseThrow(() -> fileNotFound());
-        if (!storedFile.ownerId().equals(command.requesterId())) {
-            throw fileNotFound();
-        }
         if (storedFile.status() != FileStatus.CLEAN) {
             throw new DownloadException(
                     FileFailureCodes.FILE_NOT_AVAILABLE,

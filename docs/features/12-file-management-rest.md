@@ -13,7 +13,7 @@ Stable
 - `GET /api/v1/files` expose les capacites calculees pour le demandeur courant.
 - `GET /api/v1/files/{id}` expose les metadonnees et les erreurs de scan connues.
 - `DELETE /api/v1/files/{id}` renvoie `204 No Content` lorsque la suppression est autorisee.
-- `GET /api/v1/files/{id}/content` reste reserve au proprietaire authentifie d'un fichier `CLEAN`.
+- `GET /api/v1/files/{id}/content` est accessible a tout utilisateur authentifie pour un fichier `CLEAN`.
 
 ## Quick usage
 
