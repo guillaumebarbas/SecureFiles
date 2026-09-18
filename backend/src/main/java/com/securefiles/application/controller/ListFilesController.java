@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.security.Principal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,13 +42,32 @@ public final class ListFilesController {
             @RequestParam(defaultValue = "10") String size,
             @RequestParam(defaultValue = "createdAt") String sort,
             @RequestParam(defaultValue = "desc") String direction,
-            @RequestParam(name = "status", required = false) List<String> statuses) {
-        return fileMetadataMapper.toPageResponse(listFiles.list(new ListFilesCommand(new FileListQuery(
+            @RequestParam(name = "status", required = false) List<String> statuses,
+            Principal principal,
+            Authentication authentication) {
+        FileListQuery query = new FileListQuery(
                 parsePaginationParameter(page),
                 parsePaginationParameter(size),
                 parseSort(sort),
                 parseDirection(direction),
-                parseStatuses(statuses)))));
+                parseStatuses(statuses));
+        return fileMetadataMapper.toPageResponse(listFiles.list(new ListFilesCommand(
+                query,
+                requesterId(principal, authentication),
+                isAdministrator(authentication))));
+    }
+
+    private String requesterId(Principal principal, Authentication authentication) {
+        if (principal == null || authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        return principal.getName();
+    }
+
+    private boolean isAdministrator(Authentication authentication) {
+        return authentication != null
+                && authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
     }
 
     private int parsePaginationParameter(String value) {

@@ -51,7 +51,7 @@ Skills SecureFiles a activer selon le besoin :
 - [Securite du flux de fichiers](../skills/securefiles-security/SKILL.md)
 - [Frontend UX/UI](../skills/securefiles-frontend/SKILL.md)
 - [Documentation de feature](../skills/write-feature-resume/SKILL.md) pour documenter les commits et changements locaux d'une branche ; les resumes sont numerotes dans `docs/features/<NN>-<short-name>.md` avec une sequence append-only, et `docs/features/README.md` est le seul index non numerote.
-- [Livraison issue/PR](../skills/feature-issue-pr/SKILL.md) pour analyser tous les commits, creer l'issue et ouvrir une pull request vers `main`.
+- [Livraison issue/PR](../skills/feature-issue-pr/SKILL.md) pour analyser tous les commits, creer l'issue et ouvrir une pull request vers `main` ; tous les titres, rubriques et textes narratifs publies sur GitHub doivent etre en anglais.
 
 Pour une tache transversale, charger au minimum `clean_code.md` et `strategy_test.md`. Pour toute tache frontend, charger aussi `ux_ui.md`.
 

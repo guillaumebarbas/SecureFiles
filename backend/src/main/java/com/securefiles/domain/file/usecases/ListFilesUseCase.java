@@ -37,7 +37,7 @@ public final class ListFilesUseCase implements ListFiles {
         Map<String, String> authors = findAuthors(storedFiles);
         Map<UUID, String> preciseFailureCauses = findPreciseFailureCauses(storedFiles);
         List<GetFileMetadataResult> content = storedFiles.stream()
-            .map(storedFile -> toMetadataResult(storedFile, authors, preciseFailureCauses))
+            .map(storedFile -> toMetadataResult(storedFile, authors, preciseFailureCauses, command))
                 .toList();
         return toPageResult(command, storedFilePage, content);
     }
@@ -80,7 +80,8 @@ public final class ListFilesUseCase implements ListFiles {
     private GetFileMetadataResult toMetadataResult(
             StoredFile storedFile,
             Map<String, String> authors,
-            Map<UUID, String> preciseFailureCauses) {
+            Map<UUID, String> preciseFailureCauses,
+            ListFilesCommand command) {
         return new GetFileMetadataResult(
                 storedFile.id(),
                 storedFile.originalFilename(),
@@ -89,7 +90,24 @@ public final class ListFilesUseCase implements ListFiles {
                 storedFile.status(),
                 storedFile.createdAt(),
                 storedFile.failureCode(),
-                resolveFailureCause(storedFile, preciseFailureCauses));
+                resolveFailureCause(storedFile, preciseFailureCauses),
+                canDownload(storedFile, command),
+                canDelete(storedFile, command));
+    }
+
+    private boolean canDownload(StoredFile storedFile, ListFilesCommand command) {
+        return storedFile.status() == com.securefiles.domain.file.model.FileStatus.CLEAN
+                && isOwner(storedFile, command);
+    }
+
+    private boolean canDelete(StoredFile storedFile, ListFilesCommand command) {
+        boolean deletableStatus = storedFile.status() != com.securefiles.domain.file.model.FileStatus.UPLOADING
+                && storedFile.status() != com.securefiles.domain.file.model.FileStatus.SCANNING;
+        return deletableStatus && (command.administrator() || isOwner(storedFile, command));
+    }
+
+    private boolean isOwner(StoredFile storedFile, ListFilesCommand command) {
+        return command.requesterId() != null && command.requesterId().equals(storedFile.ownerId());
     }
 
     private String resolveAuthor(String ownerId) {

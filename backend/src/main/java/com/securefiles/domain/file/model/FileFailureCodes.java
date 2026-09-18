@@ -6,6 +6,7 @@ public final class FileFailureCodes {
     public static final String CLAMAV_INVALID_RESPONSE = "CLAMAV_INVALID_RESPONSE";
     public static final String CLAMAV_UNAVAILABLE = "CLAMAV_UNAVAILABLE";
     public static final String CONTENT_UNAVAILABLE = "CONTENT_UNAVAILABLE";
+    public static final String FILE_DELETE_FAILED = "FILE_DELETE_FAILED";
     public static final String DECLARED_SIZE_MISMATCH = "DECLARED_SIZE_MISMATCH";
     public static final String FILE_NOT_AVAILABLE = "FILE_NOT_AVAILABLE";
     public static final String FILE_NOT_FOUND = "FILE_NOT_FOUND";

@@ -12,7 +12,9 @@ public record FileMetadataResponseDto(
         String status,
         Instant createdAt,
         String failureCode,
-        String failureCause) {
+        String failureCause,
+        boolean canDownload,
+        boolean canDelete) {
 
     public FileMetadataResponseDto(
             UUID fileId,
@@ -22,7 +24,19 @@ public record FileMetadataResponseDto(
             String status,
             Instant createdAt,
             String failureCode) {
-        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, null);
+        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, null, false, false);
+    }
+
+    public FileMetadataResponseDto(
+            UUID fileId,
+            String originalFilename,
+            String author,
+            Long sizeBytes,
+            String status,
+            Instant createdAt,
+            String failureCode,
+            String failureCause) {
+        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, failureCause, false, false);
     }
 
     public FileMetadataResponseDto {

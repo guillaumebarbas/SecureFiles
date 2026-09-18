@@ -92,6 +92,7 @@ Avant l'appel a `write-feature-resume`, determiner `NN` comme le prochain numero
 
 ## GitHub issue
 
+- Tous les titres, rubriques et textes narratifs de l'issue doivent etre en anglais. Traduire le contenu source avant publication et ne pas melanger le francais et l'anglais dans une meme section.
 - Deriver un titre court et stable a partir de la feature documentee, par exemple `Feature: <short-name>`.
 - Creer l'issue avant la pull request avec le serveur MCP GitHub configure ; utiliser `gh issue create` uniquement comme solution de repli si `gh` est disponible.
 - Le corps de l'issue doit contenir : resume, motivation, perimetre, criteres d'acceptation, validations observees, liste de commits et lien vers le resume de feature.
@@ -100,6 +101,7 @@ Avant l'appel a `write-feature-resume`, determiner `NN` comme le prochain numero
 
 ## Pull request vers main
 
+- Tous les titres, rubriques et textes narratifs de la pull request doivent etre en anglais. Les identifiants de code, statuts API, commandes, noms de branches, messages de commit et libelles produit cites peuvent rester inchanges.
 - Verifier que tous les commits a livrer sont sur la branche source et que le working tree est propre.
 - Pousser la branche source avec `git push -u origin HEAD` si elle n'est pas encore disponible sur le remote.
 - Creer la pull request avec `main` comme branche de base et la branche courante comme branche source, via le MCP GitHub ou `gh pr create` en repli.

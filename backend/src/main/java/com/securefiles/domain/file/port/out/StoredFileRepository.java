@@ -15,6 +15,8 @@ public interface StoredFileRepository {
 
     Optional<StoredFile> findById(UUID fileId);
 
+    void delete(UUID fileId);
+
     StoredFilePage findPage(FileListQuery query);
 
     List<StoredFile> findByOwnerId(String ownerId);

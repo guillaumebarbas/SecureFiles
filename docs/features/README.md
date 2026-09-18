@@ -24,6 +24,7 @@ Merge the feature branches in this order:
 9. `09-scan-retry-reliability.md` from `fix/scan-retry-reliability` hardens scan retries, lease recovery, broker confirmation, and terminal failure causes.
 10. `10-frontend-developer-library-access.md` from `feat/frontend-developer-library-access` limits the Bibliothèque navigation item to profiles containing the `developpeur` role.
 11. `11-native-diagram-skill-workflow.md` from `feature/skills-diagrams` adds the native draw.io skill workflow, simplified pairs, validation, and PNG previews.
+12. `12-file-management-rest.md` from `feature/file-management-rest` adds file metadata capabilities, authorized deletion, and shared frontend file actions.
 
 The summaries remain with the branch that delivers the corresponding
 implementation. After merging the branches in sequence, this directory gives

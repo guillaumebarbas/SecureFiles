@@ -786,6 +786,119 @@ h3 {
   width: 100%;
 }
 
+.shared-menu-actions {
+  position: relative;
+  display: inline-flex;
+  min-width: 36px;
+}
+
+.shared-menu-actions__trigger.shared-button {
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+}
+
+.shared-menu-actions__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 25;
+  display: grid;
+  min-width: 184px;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  animation: login-menu-enter 180ms ease both;
+}
+
+.shared-button-menu-actions {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  min-height: 38px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-primary);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-decoration: none;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease;
+}
+
+.shared-button-menu-actions:hover {
+  border-color: var(--border);
+  color: var(--action-hover);
+  background: var(--surface-secondary);
+  transform: translateY(-1px);
+}
+
+.shared-button.shared-button-menu-actions {
+  justify-content: flex-start;
+  min-height: 38px;
+  padding: 0 10px;
+  border-color: transparent;
+  border-radius: 4px;
+  color: var(--text-primary);
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.shared-button.shared-button-menu-actions:hover {
+  border-color: var(--border);
+  color: var(--action-hover);
+  background: var(--surface-secondary);
+}
+
+.shared-button-menu-actions--success,
+.shared-button-menu-actions--success:hover {
+  color: var(--success);
+}
+
+.shared-button-menu-actions--danger,
+.shared-button-menu-actions--danger:hover {
+  color: var(--danger);
+}
+
+.shared-button.shared-button-menu-actions--success,
+.shared-button.shared-button-menu-actions--success:hover {
+  color: var(--success);
+}
+
+.shared-button.shared-button-menu-actions--danger,
+.shared-button.shared-button-menu-actions--danger:hover {
+  color: var(--danger);
+}
+
+.shared-button-menu-actions:active {
+  transform: scale(0.98);
+}
+
+.shared-button-menu-actions .shared-row {
+  gap: 8px;
+}
+
+.shared-button-menu-actions svg {
+  flex-shrink: 0;
+}
+
+.shared-menu-actions__empty {
+  display: block;
+  padding: 8px 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .shared-file-upload {
   width: 100%;
 }
@@ -1238,10 +1351,8 @@ h3 {
 }
 
 .shared-tooltip__content {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  z-index: 10;
+  position: fixed;
+  z-index: 1000;
   width: max-content;
   max-width: 220px;
   padding: 7px 9px;
@@ -1252,7 +1363,7 @@ h3 {
   line-height: 1.35;
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 4px);
+  transform: translate(-50%, calc(-100% + 4px));
   transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
   visibility: hidden;
 }
@@ -1268,10 +1379,9 @@ h3 {
   transform: translate(-50%, -4px) rotate(45deg);
 }
 
-.shared-tooltip:hover .shared-tooltip__content,
-.shared-tooltip:focus-within .shared-tooltip__content {
+.shared-tooltip__content--visible {
   opacity: 1;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, -100%);
   visibility: visible;
 }
 

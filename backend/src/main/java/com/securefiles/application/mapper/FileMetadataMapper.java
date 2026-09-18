@@ -19,7 +19,9 @@ public final class FileMetadataMapper {
                 result.status().name(),
                 result.createdAt(),
                 result.failureCode().orElse(null),
-                result.failureCause().orElse(null));
+                result.failureCause().orElse(null),
+                result.canDownload(),
+                result.canDelete());
     }
 
     public List<FileMetadataResponseDto> toResponses(List<GetFileMetadataResult> results) {

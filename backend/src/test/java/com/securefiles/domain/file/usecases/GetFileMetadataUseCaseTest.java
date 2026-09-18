@@ -60,6 +60,17 @@ class GetFileMetadataUseCaseTest {
     }
 
     @Test
+    void get_shouldExposeOwnerCapabilities_whenFileIsClean() {
+        when(repository.findById(FILE_ID)).thenReturn(Optional.of(createCleanFile()));
+
+        GetFileMetadataResult result = getFileMetadataUseCase.get(
+                new GetFileMetadataCommand(FILE_ID, "owner-1"));
+
+        assertThat(result.canDownload()).isTrue();
+        assertThat(result.canDelete()).isTrue();
+    }
+
+    @Test
     void get_shouldExposeAttemptsExhaustionAndPreciseCause_whenScanAttemptsAreExhausted() {
         when(repository.findById(FILE_ID)).thenReturn(Optional.of(createScanFailedFile()));
         when(repository.findLatestPreciseFailureCodesByFileIds(Set.of(FILE_ID)))
@@ -129,6 +140,16 @@ class GetFileMetadataUseCaseTest {
                                 "quarantine/11111111-1111-1111-1111-111111111111/payload",
                                 "version-1"),
                         CREATED_AT);
+    }
+
+    private StoredFile createCleanFile() {
+        UUID leaseId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        return createPendingScanFile()
+                .claimForScan(leaseId, CREATED_AT.plusSeconds(30), CREATED_AT)
+                .completeScan(
+                        leaseId,
+                        com.securefiles.domain.file.model.AntivirusScanResult.clean(),
+                        CREATED_AT.plusSeconds(1));
     }
 
                         private StoredFile createScanFailedFile() {

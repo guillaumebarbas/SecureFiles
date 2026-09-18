@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getCurrentUser,
   checkBackendHealth,
+  deleteFile,
   getFileMetadata,
+  getDownloadUrl,
   getUploadConfiguration,
   listFiles,
   loginUser,
@@ -14,6 +16,7 @@ import {
 
 vi.mock('axios', () => ({
   default: {
+    delete: vi.fn(),
     get: vi.fn(),
     isAxiosError: (error: unknown) => Boolean((error as { isAxiosError?: boolean }).isAxiosError),
     post: vi.fn(),
@@ -98,6 +101,23 @@ describe('filesApi', () => {
     await expect(getFileMetadata(fileId)).resolves.toEqual(response);
 
     expect(axios.get).toHaveBeenCalledWith(`/api/v1/files/${fileId}`, expect.any(Object));
+  });
+
+  it('builds the streaming download URL from a file identifier', () => {
+    expect(getDownloadUrl('file with spaces')).toBe('/api/v1/files/file%20with%20spaces/content');
+  });
+
+  it('deletes a file after preparing the CSRF cookie', async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: undefined } as never);
+    vi.mocked(axios.delete).mockResolvedValue({ data: undefined } as never);
+
+    await expect(deleteFile('11111111-1111-1111-1111-111111111111')).resolves.toBeUndefined();
+
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/csrf', { withCredentials: true });
+    expect(axios.delete).toHaveBeenCalledWith(
+      '/api/v1/files/11111111-1111-1111-1111-111111111111',
+      { withCredentials: true },
+    );
   });
 
   it('gets the maximum upload size from the configuration endpoint', async () => {

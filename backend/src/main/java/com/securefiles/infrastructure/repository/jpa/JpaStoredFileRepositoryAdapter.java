@@ -27,16 +27,19 @@ public class JpaStoredFileRepositoryAdapter implements StoredFileRepository {
 
     private final StoredFileJpaRepository storedFileRepository;
     private final ScanAttemptJpaRepository scanAttemptRepository;
+    private final OutboxEventJpaRepository outboxEventRepository;
     private final StoredFileEntityMapper storedFileMapper;
     private final ScanAttemptEntityMapper scanAttemptMapper;
 
     public JpaStoredFileRepositoryAdapter(
             StoredFileJpaRepository storedFileRepository,
             ScanAttemptJpaRepository scanAttemptRepository,
+            OutboxEventJpaRepository outboxEventRepository,
             StoredFileEntityMapper storedFileMapper,
             ScanAttemptEntityMapper scanAttemptMapper) {
         this.storedFileRepository = storedFileRepository;
         this.scanAttemptRepository = scanAttemptRepository;
+        this.outboxEventRepository = outboxEventRepository;
         this.storedFileMapper = storedFileMapper;
         this.scanAttemptMapper = scanAttemptMapper;
     }
@@ -51,6 +54,13 @@ public class JpaStoredFileRepositoryAdapter implements StoredFileRepository {
     @Transactional(readOnly = true)
     public Optional<StoredFile> findById(UUID fileId) {
         return storedFileRepository.findById(fileId).map(storedFileMapper::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID fileId) {
+        outboxEventRepository.deleteByFileId(fileId);
+        storedFileRepository.deleteById(fileId);
     }
 
     @Override

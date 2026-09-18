@@ -14,7 +14,9 @@ public record GetFileMetadataResult(
         FileStatus status,
         Instant createdAt,
         Optional<String> failureCode,
-        Optional<String> failureCause) {
+        Optional<String> failureCause,
+        boolean canDownload,
+        boolean canDelete) {
 
     public GetFileMetadataResult(
             UUID fileId,
@@ -24,7 +26,19 @@ public record GetFileMetadataResult(
             FileStatus status,
             Instant createdAt,
             Optional<String> failureCode) {
-        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, Optional.empty());
+        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, Optional.empty(), false, false);
+    }
+
+    public GetFileMetadataResult(
+            UUID fileId,
+            String originalFilename,
+            String author,
+            Optional<Long> sizeBytes,
+            FileStatus status,
+            Instant createdAt,
+            Optional<String> failureCode,
+            Optional<String> failureCause) {
+        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, failureCause, false, false);
     }
 
     public GetFileMetadataResult {

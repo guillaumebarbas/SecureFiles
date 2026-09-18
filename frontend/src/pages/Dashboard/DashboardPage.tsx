@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent
 import { Check, Clock3, CloudUpload, Filter, FolderOpen, RefreshCw, ShieldAlert, ShieldCheck, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
+  deleteFile,
   listFiles,
   type FileSortField,
   type FileMetadataResponse,
@@ -16,49 +17,8 @@ import { Tag } from '../../shared/feedback/Tag';
 import { Section } from '../../shared/layout/Section/Section';
 import { Row } from '../../shared/layout/Row';
 import { fileFailureDetails } from '../../shared/constants/fileFailureCodes';
+import { FileActionsMenu } from '../../shared/files/FileActionsMenu';
 import { dashboardPageClassNames } from './style';
-
-const dashboardFileColumns: TableColumn<FileMetadataResponse>[] = [
-  {
-    header: 'Nom',
-    key: 'originalFilename',
-    serverSortKey: 'name',
-    sortable: true,
-  },
-  {
-    header: 'Auteur',
-    key: 'author',
-    render: (file) => file.author ?? 'Auteur inconnu',
-    serverSortKey: 'author',
-    sortable: true,
-  },
-  {
-    header: 'Statut',
-    key: 'status',
-    render: (file) => (
-      <Tag
-        details={fileFailureDetails(file.failureCode, file.failureCause)}
-        icon={statusIcon(file.status)}
-        text={file.status}
-        tone={statusTone(file.status)}
-      />
-    ),
-  },
-  {
-    header: 'Taille',
-    key: 'sizeBytes',
-    render: (file) => formatFileSize(file.sizeBytes),
-    serverSortKey: 'size',
-    sortable: true,
-  },
-  {
-    header: 'Ajouté le',
-    key: 'createdAt',
-    render: (file) => formatCreatedAt(file.createdAt),
-    serverSortKey: 'createdAt',
-    sortable: true,
-  },
-];
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 10;
@@ -135,12 +95,72 @@ function formatCreatedAt(createdAt: string) {
   }).format(new Date(createdAt));
 }
 
+function createDashboardFileColumns(
+  isAuthenticated: boolean,
+  onDelete: (fileId: string) => Promise<boolean>,
+): TableColumn<FileMetadataResponse>[] {
+  return [
+    {
+      header: 'Nom',
+      key: 'originalFilename',
+      serverSortKey: 'name',
+      sortable: true,
+    },
+    {
+      header: 'Auteur',
+      key: 'author',
+      render: (file) => file.author ?? 'Auteur inconnu',
+      serverSortKey: 'author',
+      sortable: true,
+    },
+    {
+      header: 'Statut',
+      key: 'status',
+      render: (file) => (
+        <Tag
+          details={fileFailureDetails(file.failureCode, file.failureCause)}
+          icon={statusIcon(file.status)}
+          text={file.status}
+          tone={statusTone(file.status)}
+        />
+      ),
+    },
+    {
+      header: 'Taille',
+      key: 'sizeBytes',
+      render: (file) => formatFileSize(file.sizeBytes),
+      serverSortKey: 'size',
+      sortable: true,
+    },
+    {
+      header: 'Ajouté le',
+      key: 'createdAt',
+      render: (file) => formatCreatedAt(file.createdAt),
+      serverSortKey: 'createdAt',
+      sortable: true,
+    },
+    {
+      header: 'Action',
+      key: 'canDelete',
+      render: (file) => (
+        <FileActionsMenu
+          file={file}
+          isAuthenticated={isAuthenticated}
+          onDelete={onDelete}
+        />
+      ),
+    },
+  ];
+}
+
 export type DashboardPageProps = {
+  currentUser?: import('../../api/filesApi').UserProfile;
   isAuthenticated?: boolean;
   onAuthenticationRequired?: () => void;
 };
 
 export function DashboardPage({
+  currentUser,
   isAuthenticated = true,
   onAuthenticationRequired,
 }: DashboardPageProps = {}) {
@@ -176,6 +196,14 @@ export function DashboardPage({
         if (!isActive) {
           return;
         }
+        if (serverPage.totalPages > 0 && page > serverPage.totalPages) {
+          setPage(serverPage.totalPages);
+          return;
+        }
+        if (serverPage.totalPages === 0 && page !== DEFAULT_PAGE) {
+          setPage(DEFAULT_PAGE);
+          return;
+        }
         setFiles(serverPage.content);
         setFilesPagination(serverPage);
         setFilesError(null);
@@ -196,7 +224,7 @@ export function DashboardPage({
       isActive = false;
       controller.abort();
     };
-  }, [page, pageSize, refreshVersion, selectedStatuses, sortDirection, sortField]);
+  }, [currentUser, isAuthenticated, page, pageSize, refreshVersion, selectedStatuses, sortDirection, sortField]);
 
   useEffect(() => {
     if (!isStatusFilterOpen) {
@@ -220,6 +248,18 @@ export function DashboardPage({
 
   function handleFilesRetry() {
     setRefreshVersion((currentVersion) => currentVersion + 1);
+  }
+
+  async function handleFileDelete(fileId: string): Promise<boolean> {
+    try {
+      await deleteFile(fileId);
+      setFilesError(null);
+      setRefreshVersion((currentVersion) => currentVersion + 1);
+      return true;
+    } catch (error) {
+      setFilesError(readErrorMessage(error));
+      return false;
+    }
   }
 
   function handlePageSizeChange(nextPageSize: number) {
@@ -371,7 +411,7 @@ export function DashboardPage({
         <GenericTable
           animatedRowKey={animatedFileId}
           caption="Fichiers uploadés"
-          columns={dashboardFileColumns}
+          columns={createDashboardFileColumns(isAuthenticated, handleFileDelete)}
           emptyMessage="Aucun fichier uploadé pour le moment."
           getRowKey={(file) => file.fileId}
           rows={files}
