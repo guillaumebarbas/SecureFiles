@@ -298,16 +298,32 @@ pas etre lue ou si le fichier la depasse, et propose une relance de lecture. Cet
 verification ameliore l'experience utilisateur; un client HTTP direct reste controle par
 Spring et par la verification streamee du domaine.
 
-### Alias de lancement
+### Initialisation et alias de lancement
 
 Depuis la racine du depot :
 
 ```bash
+make init
 make front
 make back
 ```
 
-`make front` lance Vite depuis `frontend/` et `make back` lance Spring Boot depuis `backend/`.
+`make init` demarre PostgreSQL, MinIO, RabbitMQ et ClamAV avec Docker Compose, installe les dependances npm et compile le backend sans lancer de serveur.
+`make front` installe ou verifie les dependances frontend puis lance Vite depuis `frontend/`.
+`make back` demarre les dependances Docker, compile le backend puis lance Spring Boot depuis `backend/`.
+
+Le profil Spring `local` reste necessaire par defaut pour le lancement local : il desactive
+le flag `Secure` du cookie pour `http://localhost` et autorise la cle JWT ephemere lorsque
+`JWT_SECRET` n'est pas fourni. Pour utiliser un autre profil, fournir explicitement
+`SPRING_PROFILES_ACTIVE` :
+
+```bash
+SPRING_PROFILES_ACTIVE=prod make back
+```
+
+Ce profil peut etre retire uniquement si la configuration d'execution fournit deja un
+`JWT_SECRET` valide et les reglages de cookie/HTTPS adaptes ; ce n'est pas le cas du
+demarrage local par defaut.
 
 ## Test rapide de l'API
 
