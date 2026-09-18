@@ -5,6 +5,7 @@ export const boutonMenuActionsClassNames = {
 export const menuActionsClassNames = {
   empty: 'shared-menu-actions__empty',
   menu: 'shared-menu-actions__menu',
+  open: 'shared-menu-actions--open',
   root: 'shared-menu-actions',
   trigger: 'shared-menu-actions__trigger',
 } as const;
