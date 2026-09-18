@@ -189,13 +189,16 @@ export function App() {
   }
 
   const currentRouteMetadata = routeMetadata[currentRoute];
+  const visibleNavigationItems = navigationItems.filter(
+    (item) => item.href !== '/components' || currentUser?.roles.includes('developpeur') === true,
+  );
 
   return (
     <div className={appClassNames.shell}>
       <SideNavBar
         activePath={currentRoute}
         backendStatus={backendStatus}
-        items={navigationItems}
+        items={visibleNavigationItems}
         onNavigate={handleNavigate}
         version={applicationVersion}
       />
