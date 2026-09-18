@@ -143,11 +143,33 @@ prepare le demarrage local necessaire au flux complet : elle cree `.env` depuis
 `.env.example` s'il n'existe pas, demarre les dependances, compile le backend et installe
 les dependances frontend.
 
-1. Initialiser le demarrage local :
+1. Initialiser l'environnement local en premier :
+
+   ```bash
+   make init-env
+   ```
+
+2. Initialiser le demarrage local :
 
    ```bash
    make init
    ```
+
+   Sous Windows, GNU Make peut etre installe avec Chocolatey depuis une console
+   PowerShell administrateur : `choco install make -y`. Maven est aussi requis pour
+   compiler et lancer le backend : `choco install maven -y`. Les cibles `init-env` et `back`
+   utilisent automatiquement la syntaxe Windows lorsqu'elles sont executees avec GNU Make.
+   Apres l'installation de Maven, recharger le profil Chocolatey puis l'environnement :
+
+   ```powershell
+   Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
+   refreshenv
+   ```
+
+   Fermer puis rouvrir VS Code produit le meme effet. `mvn` doit ensuite etre disponible
+   dans le `PATH` de `make`.
+   La cible `init` depend elle-meme de `init-env` ; l'etape est donc rejouee sans effet
+   si `.env` existe deja.
 
    PostgreSQL reste sur le port `5432` dans le conteneur et est expose sur le port
    hote `5433` par defaut afin d'eviter les collisions avec une instance PostgreSQL
