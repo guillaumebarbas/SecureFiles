@@ -894,8 +894,34 @@ Resultat : Analyse du flux Outbox/RabbitMQ et du cas d'utilisation de scan : le 
 
 - - - - -
 Prompt :
+Follow instructions in #prompt:plan-approve-implement.prompt.md with these arguments: Je voudrais désormais conditionnié l'affichage de l'onglet bibliotheque pour uniquement les developpeur.
+Resultat : Analyse et plan final prepares pour filtrer l'onglet Bibliothèque selon le role `developpeur`; implementation en attente d'approbation explicite.
+- - - - -
+
+- - - - -
+Prompt :
 go
 Resultat : Les messages de scan non réservables restent en retry, les leases `SCANNING` expirées sont récupérées avant redélivrance, le TTL RabbitMQ est aligné sur le délai métier, et l'Outbox attend une confirmation broker avant `published_at`. Après épuisement, l'API conserve `SCAN_ATTEMPTS_EXHAUSTED` et expose la cause précise ; le frontend l'affiche. Suite backend : 79 tests passés ; frontend : 89 tests passés et build réussi.
+- - - - -
+
+- - - - -
+Prompt :
+j'ai pas comprit : 1. - développeur seul ou avec `utilisateur` : onglet visible.
+
+Moi je veux seulement avec le role developpeur
+Resultat : Clarification du plan : l'onglet Bibliothèque devra être visible uniquement pour le profil ayant exactement le rôle `developpeur`; les profils `utilisateur` ou cumulés resteront masqués. Implémentation toujours en attente d'approbation.
+- - - - -
+
+- - - - -
+Prompt :
+non effectivement si c'est une combinaison - `['developpeur', 'utilisateur']` on affiche.
+Resultat : Règle corrigée : l'onglet Bibliothèque sera visible dès que le profil contient le rôle `developpeur`, y compris avec `utilisateur`; les profils sans `developpeur` resteront masqués. Implémentation toujours en attente d'approbation.
+- - - - -
+
+- - - - -
+Prompt :
+approuvé
+Resultat : L'onglet Bibliothèque est maintenant affiché uniquement lorsque le profil contient le rôle `developpeur`, y compris avec `utilisateur`. Les scénarios anonyme, utilisateur seul et développeur cumulatif sont couverts ; 19 fichiers et 90 tests frontend passent, ainsi que le build Vite.
 - - - - -
 
 - - - - -
