@@ -1,10 +1,28 @@
-.PHONY: front back diagrams-check diagrams-export
+.PHONY: init init-infra init-backend init-frontend front back diagrams-check diagrams-export
 
-front:
-	npm --prefix frontend run dev
+COMPOSE ?= docker compose
+MVN ?= mvn
+NPM ?= npm
+SPRING_PROFILES_ACTIVE ?= local
 
-back:
-	SPRING_PROFILES_ACTIVE=local mvn -f backend/pom.xml spring-boot:run
+LOCAL_SERVICES := postgres minio rabbitmq clamav
+
+init: init-infra init-backend init-frontend
+
+init-infra:
+	$(COMPOSE) up -d --wait $(LOCAL_SERVICES)
+
+init-backend:
+	$(MVN) -f backend/pom.xml -DskipTests compile
+
+init-frontend:
+	$(NPM) --prefix frontend install
+
+front: init-frontend
+	$(NPM) --prefix frontend run dev
+
+back: init-infra init-backend
+	SPRING_PROFILES_ACTIVE=$(SPRING_PROFILES_ACTIVE) $(MVN) -f backend/pom.xml spring-boot:run
 
 diagrams-check:
 	sh scripts/check-diagrams.sh
