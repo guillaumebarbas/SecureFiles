@@ -1,6 +1,7 @@
 package com.securefiles.domain.file.usecases;
 
 import com.securefiles.domain.file.model.FileFailureCodes;
+import com.securefiles.domain.file.model.FileStatus;
 import com.securefiles.domain.file.model.StoredFile;
 import com.securefiles.domain.file.model.metadata.FileMetadataException;
 import com.securefiles.domain.file.port.in.GetFileMetadata;
@@ -42,7 +43,13 @@ public final class GetFileMetadataUseCase implements GetFileMetadata {
                 storedFile.status(),
                 storedFile.createdAt(),
                 storedFile.failureCode(),
-                resolveFailureCause(storedFile));
+                resolveFailureCause(storedFile),
+                storedFile.status() == FileStatus.CLEAN,
+                isDeletable(storedFile));
+    }
+
+    private boolean isDeletable(StoredFile storedFile) {
+        return storedFile.status() != FileStatus.UPLOADING && storedFile.status() != FileStatus.SCANNING;
     }
 
     private Optional<String> resolveFailureCause(StoredFile storedFile) {

@@ -2,6 +2,7 @@ package com.securefiles.application.controller;
 
 import com.securefiles.domain.file.model.upload.UploadException;
 import com.securefiles.domain.file.model.FileFailureCodes;
+import com.securefiles.domain.file.model.delete.DeleteFileException;
 import com.securefiles.domain.file.model.download.DownloadException;
 import com.securefiles.domain.file.model.list.ListFilesException;
 import com.securefiles.domain.file.model.metadata.FileMetadataException;
@@ -45,6 +46,17 @@ public final class UploadFileExceptionHandler {
         HttpStatus status = switch (exception.code()) {
             case FileFailureCodes.FILE_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case FileFailureCodes.FILE_NOT_AVAILABLE, FileFailureCodes.STORAGE_INTEGRITY_MISMATCH -> HttpStatus.CONFLICT;
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+        };
+        return ResponseEntity.status(status)
+                .body(new ApiErrorResponse(exception.code(), exception.getMessage()));
+    }
+
+    @ExceptionHandler(DeleteFileException.class)
+    public ResponseEntity<ApiErrorResponse> handleDeleteFileException(DeleteFileException exception) {
+        HttpStatus status = switch (exception.code()) {
+            case FileFailureCodes.FILE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case FileFailureCodes.FILE_NOT_AVAILABLE -> HttpStatus.CONFLICT;
             default -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
         return ResponseEntity.status(status)

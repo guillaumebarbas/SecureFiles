@@ -231,6 +231,40 @@ class ListFilesUseCaseTest {
                 .isEqualTo("Auteur inconnu");
     }
 
+    @Test
+    void list_shouldExposeActionCapabilities_forRequesterAndAdministrator() {
+        StoredFile ownerFile = createFileForOwner(
+                FIRST_OWNER_ID.toString(),
+                NEWEST_FILE_ID,
+                "owner.pdf",
+                42L,
+                NEWEST_SHA_256,
+                FileStatus.CLEAN,
+                NEWEST_CREATED_AT);
+        StoredFile otherFile = createFileForOwner(
+                SECOND_OWNER_ID.toString(),
+                OLDEST_FILE_ID,
+                "other.pdf",
+                12L,
+                OLDEST_SHA_256,
+                FileStatus.CLEAN,
+                OLDEST_CREATED_AT);
+        when(repository.findPage(new FileListQuery())).thenReturn(new StoredFilePage(List.of(ownerFile, otherFile), 2));
+
+        ListFilesResult ownerResult = listFilesUseCase.list(
+                new ListFilesCommand(new FileListQuery(), FIRST_OWNER_ID.toString(), false));
+        ListFilesResult administratorResult = listFilesUseCase.list(
+                new ListFilesCommand(new FileListQuery(), "administrator-1", true));
+
+        assertThat(ownerResult.content().get(0).canDownload()).isTrue();
+        assertThat(ownerResult.content().get(0).canDelete()).isTrue();
+        assertThat(ownerResult.content().get(1).canDownload()).isFalse();
+        assertThat(ownerResult.content().get(1).canDelete()).isFalse();
+        assertThat(administratorResult.content().get(0).canDownload()).isFalse();
+        assertThat(administratorResult.content().get(0).canDelete()).isTrue();
+        assertThat(administratorResult.content().get(1).canDelete()).isTrue();
+    }
+
     private StoredFile createFile(
             UUID fileId,
             String filename,

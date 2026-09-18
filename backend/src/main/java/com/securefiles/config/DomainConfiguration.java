@@ -10,6 +10,7 @@ import com.securefiles.domain.user.port.in.CreateUser;
 import com.securefiles.domain.file.port.in.GetFileMetadata;
 import com.securefiles.domain.file.port.in.GetUploadConfiguration;
 import com.securefiles.domain.file.port.in.DownloadFile;
+import com.securefiles.domain.file.port.in.DeleteFile;
 import com.securefiles.domain.file.port.in.ListFiles;
 import com.securefiles.domain.file.port.in.RecoverExpiredScan;
 import com.securefiles.domain.file.port.in.ScanFile;
@@ -19,6 +20,7 @@ import com.securefiles.domain.file.port.out.FileAcceptancePort;
 import com.securefiles.domain.file.port.out.FileContentStorage;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
 import com.securefiles.domain.file.usecases.DownloadFileUseCase;
+import com.securefiles.domain.file.usecases.DeleteFileUseCase;
 import com.securefiles.domain.file.usecases.GetFileMetadataUseCase;
 import com.securefiles.domain.file.usecases.GetUploadConfigurationUseCase;
 import com.securefiles.domain.file.usecases.ListFilesUseCase;
@@ -159,6 +161,13 @@ public class DomainConfiguration {
             StoredFileRepository repository,
             FileContentStorage contentStorage) {
         return new DownloadFileUseCase(repository, contentStorage);
+    }
+
+    @Bean
+    public DeleteFile deleteFile(
+            StoredFileRepository repository,
+            FileContentStorage contentStorage) {
+        return new DeleteFileUseCase(repository, contentStorage);
     }
 
     @Bean

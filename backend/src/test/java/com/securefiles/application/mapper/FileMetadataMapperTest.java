@@ -28,7 +28,10 @@ class FileMetadataMapperTest {
                 Optional.of(42L),
                 FileStatus.SCANNING,
                 CREATED_AT,
-                Optional.empty());
+                Optional.empty(),
+                Optional.empty(),
+                true,
+                true);
 
         FileMetadataResponseDto response = mapper.toResponse(result);
 
@@ -38,6 +41,8 @@ class FileMetadataMapperTest {
         assertThat(response.sizeBytes()).isEqualTo(42L);
         assertThat(response.status()).isEqualTo("SCANNING");
         assertThat(response.createdAt()).isEqualTo(CREATED_AT);
+        assertThat(response.canDownload()).isTrue();
+        assertThat(response.canDelete()).isTrue();
     }
 
     @Test
