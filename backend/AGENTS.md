@@ -29,8 +29,9 @@ une dependance ou un comportement qui viole les invariants ci-dessous.
   scannable, telechargeable ni retourne comme upload accepte.
 - Un upload complet et valide passe a `PENDING_SCAN` avant toute demande de scan et le
   `POST /api/v1/files` retourne `202 Accepted` avec ce statut.
-- Seul `CLEAN` autorise l'ouverture du flux de telechargement et l'autorisation du
-  proprietaire doit aussi etre verifiee.
+- Seul `CLEAN` autorise l'ouverture du flux de telechargement pour un utilisateur
+  authentifie. Le download n'est pas limite au proprietaire ; la suppression reste
+  reservee au proprietaire ou a un administrateur.
 - Toute panne, reponse inconnue, limite depassee ou timeout antivirus est fail closed.
   Aucun doute ne peut produire `CLEAN`.
 - Les octets restent hors PostgreSQL. La base conserve les metadonnees, les statuts,

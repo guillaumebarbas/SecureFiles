@@ -15,14 +15,14 @@ Stable
 - [POST /api/v1/auth/register](../../backend/src/main/java/com/securefiles/application/controller/UserAuthenticationController.java) creates a public account with allowed cumulative roles and a password between 8 and 255 characters.
 - [POST /api/v1/auth/login](../../backend/src/main/java/com/securefiles/application/controller/UserAuthenticationController.java) creates a revocable, 30-day session and sends its JWT only in the HttpOnly `SECUREFILES_AUTH` cookie.
 - [GET /api/v1/users/me](../../backend/src/main/java/com/securefiles/application/controller/CurrentUserController.java) returns the current profile, or `204 No Content` when no valid session exists.
-- [GET /api/v1/files](../../backend/src/main/java/com/securefiles/application/controller/ListFilesController.java) returns public file metadata including `author`; [GET /api/v1/files/{id}](../../backend/src/main/java/com/securefiles/application/controller/GetFileMetadataController.java), content downloads, and uploads remain authenticated and owner-scoped.
+- [GET /api/v1/files](../../backend/src/main/java/com/securefiles/application/controller/ListFilesController.java) returns public file metadata including `author`; [GET /api/v1/files/{id}](../../backend/src/main/java/com/securefiles/application/controller/GetFileMetadataController.java) and uploads remain authenticated and owner-scoped, while authenticated users can download `CLEAN` content.
 - [FileUpload](../../frontend/src/shared/forms/FileUpload/FileUpload.tsx) requests authentication before opening the file picker for an anonymous visitor.
 
 ## Quick usage
 
 1. Start the backend and frontend with `make back` and `make front`.
 2. Register and log in from the header before selecting a file for upload.
-3. Browse the recent-files register without a session; sign in to upload or access an owned file's details and content.
+3. Browse the recent-files register without a session; sign in to upload, access an owned file's details, or download any `CLEAN` file.
 
 ## Design decisions
 

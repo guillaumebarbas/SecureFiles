@@ -93,8 +93,8 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
    renvoie `INVALID_PAGINATION`; un tri, une direction ou un statut invalide renvoie
    `INVALID_LIST_QUERY`, dans les deux cas avec le statut `400`. Chaque element expose aussi
    `canDownload` et `canDelete`. Ces capacites sont calculees par le backend pour le demandeur
-   courant : `canDownload` vaut `true` uniquement pour le proprietaire authentifie d'un fichier
-   `CLEAN`, et `canDelete` vaut `true` pour son proprietaire ou un administrateur, sauf lorsque le
+   courant : `canDownload` vaut `true` pour tout demandeur authentifie d'un fichier `CLEAN`, et
+   `canDelete` vaut `true` pour son proprietaire ou un administrateur, sauf lorsque le
    fichier est `UPLOADING` ou `SCANNING`. Ces indicateurs servent a construire l'interface ; les
    controles d'acces restent appliques par les use cases des endpoints.
 - `DELETE /api/v1/files/{id}` : supprime le contenu prive, les metadonnees et les evenements Outbox
@@ -109,8 +109,8 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
    de scan sont epuisees, `failureCause` expose en plus la derniere cause precise. Un fichier
    absent ou inaccessible renvoie `404`; cette reponse n'expose ni les octets ni la cle de
    stockage.
-- `GET /api/v1/files/{id}/content` : streame le contenu uniquement pour son proprietaire
-   authentifie lorsque le statut est `CLEAN`. Un fichier absent ou inaccessible renvoie `404`, et un
+- `GET /api/v1/files/{id}/content` : streame le contenu pour tout utilisateur authentifie lorsque
+   le statut est `CLEAN`. Un fichier absent ou inaccessible renvoie `404`, et un
    fichier dont le statut n'est pas `CLEAN` renvoie `409 Conflict`. Le flux est emis directement par
    le backend, sans charger le fichier complet en memoire dans la console.
 - `POST /api/v1/auth/register` : cree un compte public avec un ou plusieurs roles autorises
