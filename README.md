@@ -138,14 +138,15 @@ Prerequis : Java 21+, Maven 3.9+, Node.js 22+, Docker Compose.
 Sur Apple Silicon, le service ClamAV est execute en `linux/amd64` via l'emulation Docker
 Desktop, car l'image officielle utilisee ne publie pas de variante `linux/arm64`.
 
-Le backend possede son entree REST et le wiring des ports sortants. Les commandes
-ci-dessous demarrent l'environnement local necessaire au flux complet.
+Le backend possede son entree REST et le wiring des ports sortants. La cible `make init`
+prepare le demarrage local necessaire au flux complet : elle cree `.env` depuis
+`.env.example` s'il n'existe pas, demarre les dependances, compile le backend et installe
+les dependances frontend.
 
-1. Copier `.env.example` vers `.env` et adapter les secrets locaux.
-2. Demarrer les dependances :
+1. Initialiser le demarrage local :
 
    ```bash
-   docker compose up -d --wait postgres minio rabbitmq clamav
+   make init
    ```
 
    PostgreSQL reste sur le port `5432` dans le conteneur et est expose sur le port
@@ -153,22 +154,22 @@ ci-dessous demarrent l'environnement local necessaire au flux complet.
    deja installee sur macOS. Le port hote peut etre change avec `POSTGRES_HOST_PORT`,
    en alignant alors `DATABASE_URL`.
 
-3. Lancer l'API :
+2. Lancer l'API dans un terminal :
 
    ```bash
-   SPRING_PROFILES_ACTIVE=local mvn -f backend/pom.xml spring-boot:run
+   make back
    ```
 
    Le profil `local` conserve uniquement les reglages de developpement de l'authentification
-   (cookie non securise et cle ephemere). Toute route protegee exige une session JWT active ;
-   il faut donc creer un compte et se connecter avant d'utiliser les fichiers.
+   (cookie non securise et cle ephemere) et reste utilise par defaut. Pour lancer un autre
+   profil, utiliser `SPRING_PROFILES_ACTIVE=prod make back`. Toute route protegee exige une
+   session JWT active ; il faut donc creer un compte et se connecter avant d'utiliser les
+   fichiers.
 
-4. Dans un autre terminal, lancer la console :
+3. Dans un autre terminal, lancer la console :
 
    ```bash
-   cd frontend
-   npm install
-   npm run dev
+   make front
    ```
 
 La console est disponible sur `http://localhost:5173` et l'API sur `http://localhost:8080`.
