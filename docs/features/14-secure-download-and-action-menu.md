@@ -47,4 +47,6 @@ Stable
 ## Notes
 
 - Commit `d48ac28` is already documented by feature `13`; this summary focuses on the download-access and action-menu changes delivered afterward.
-- Local `resume.md` edits and unrelated untracked paths were intentionally excluded from the delivery commits.
+- Commit `051a1e6` adds Windows-compatible local startup commands and is included in the branch history.
+- Commit `61a2570` adds the TypeSafe skill registry, its license and guidance, the Claude skill link, and the Excalidraw diagnostic log to the branch.
+- The branch now contains the prompt journal changes from `resume.md`; they are documented as branch context and are not part of the secure file behavior.

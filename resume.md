@@ -1176,7 +1176,7 @@ Resultat : `FileActionsMenu` est maintenant partage sous `frontend/src/shared/fi
 Prompt :
 Ok maintenant créer deux branches l'une pour les skills, driagramme et l'autre pour le reste.
 
- Fait les commits, issues, pr (invoque le skills) 
+ Fait les commits, issues, pr (invoque le skills)
 Resultat : Deux branches ont ete creees et livrees separement : `feature/skills-diagrams` pour le workflow draw.io natif et `feature/file-management-rest` pour les changements backend, frontend, API et regles. Les commits ont ete pousses et les issues/PR creees pour la branche diagrammes ; la livraison GitHub de la branche rest reste a finaliser.
 - - - - -
 - - - - -

@@ -176,7 +176,7 @@ les dependances frontend.
    deja installee sur macOS. Le port hote peut etre change avec `POSTGRES_HOST_PORT`,
    en alignant alors `DATABASE_URL`.
 
-2. Lancer l'API dans un terminal :
+3. Lancer l'API dans un terminal :
 
    ```bash
    make back
@@ -188,7 +188,7 @@ les dependances frontend.
    session JWT active ; il faut donc creer un compte et se connecter avant d'utiliser les
    fichiers.
 
-3. Dans un autre terminal, lancer la console :
+4. Dans un autre terminal, lancer la console :
 
    ```bash
    make front
