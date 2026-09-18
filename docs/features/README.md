@@ -25,6 +25,7 @@ Merge the feature branches in this order:
 10. `10-frontend-developer-library-access.md` from `feat/frontend-developer-library-access` limits the Bibliothèque navigation item to profiles containing the `developpeur` role.
 11. `11-native-diagram-skill-workflow.md` from `feature/skills-diagrams` adds the native draw.io skill workflow, simplified pairs, validation, and PNG previews.
 12. `12-file-management-rest.md` from `feature/file-management-rest` adds file metadata capabilities, authorized deletion, and shared frontend file actions.
+13. `13-project-initialization-workflow.md` from `feature/project-initialization` centralizes local project initialization and front/back launch commands.
 
 The summaries remain with the branch that delivers the corresponding
 implementation. After merging the branches in sequence, this directory gives
