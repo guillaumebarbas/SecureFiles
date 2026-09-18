@@ -30,7 +30,11 @@ Ne jamais utiliser de commande destructive (`reset`, `checkout`, `clean`) et ne 
 
 ## Sortie
 
-- Ecrire par defaut dans `docs/features/<short-name>.md` ; conserver le nom et le chemin demandes par l'utilisateur s'ils sont fournis.
+- Ecrire par defaut dans `docs/features/<NN>-<short-name>.md`.
+- Determiner `NN` avant la redaction en listant les resumes existants qui correspondent a `^[0-9]{2}-.+\.md$`, puis utiliser le nombre suivant le plus eleve. Le numero `00` est reserve a la fondation initiale lorsqu'elle doit etre regularisee ; les numeros publies restent immuables.
+- Ne jamais creer de resume de feature non numerote. `docs/features/README.md` est le seul fichier autorise sans prefixe numerique car il sert d'index.
+- Avant le commit, verifier que chaque fichier de feature respecte le format `^[0-9]{2}-.+\.md$`, qu'aucun numero n'est duplique et que l'index reference le nouveau nom.
+- Si une autre branche a reserve le meme numero entre l'analyse et le commit, conserver les numeros deja publies et choisir le prochain numero libre avant de poursuivre.
 - Creer le dossier de sortie uniquement si la documentation doit effectivement etre ecrite.
 - Utiliser des liens relatifs vers les fichiers et les contrats du depot.
 - Utiliser la date courante au format `YYYY-MM-DD` pour le changelog.

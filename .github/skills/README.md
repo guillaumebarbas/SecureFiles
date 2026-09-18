@@ -13,3 +13,5 @@ Ces skills sont des guides locaux, adaptes au domaine de SecureFiles. Ils repren
 - `feature-issue-pr` : analyser tous les commits d'une branche, appeler `write-feature-resume`, puis creer une issue et une pull request vers `main`.
 
 Chaque skill renvoie vers les regles partagees dans `rules/`. Charger uniquement les skills utiles a la tache, et charger `securefiles-security` pour tout changement qui touche le contenu ou le statut d'un fichier.
+
+Les resumes de features sont stockes dans `docs/features/<NN>-<short-name>.md` avec une numerotation append-only a deux chiffres. `docs/features/README.md` est le seul fichier sans numero ; un nouveau resume prend le numero suivant le plus eleve sans renumeroter les livraisons existantes.

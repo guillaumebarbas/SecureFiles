@@ -936,3 +936,9 @@ Prompt :
 Follow instructions in #prompt:SKILL.md with these arguments: Créer une branche puis utilise le skill pour commit, issues, pr
 Resultat : Branche `feat/frontend-developer-library-access` créée et publiée avec les commits `feat(frontend): restrict library tab to developers` et `docs: add feature resume for frontend-developer-library-access`. L'issue et la pull request n'ont pas été créées : `gh` est absent et aucun outil MCP GitHub d'écriture n'est exposé dans la session.
 - - - - -
+
+- - - - -
+Prompt :
+peux relancer via mcp, et corriger dans docs/feature il en a des feature qui n'ont pas de numéro (corrige ce probleme et les regles pour que ce soit perrain)
+Resultat : Les resumes de features sont maintenant numerotes de `00` a `10`, le doublon Profile/Login a ete supprime, l'index a ete complete et les skills ainsi que l'agent imposent une numerotation append-only.
+- - - - -
