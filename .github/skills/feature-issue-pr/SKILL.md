@@ -86,7 +86,9 @@ Appeler explicitement :
 #file:write-feature-resume
 ```
 
-Le resume doit prendre en compte la plage complete `BASE..HEAD`, les fichiers modifies et les validations observees. Ecrire par defaut dans `docs/features/<short-name>.md`, puis verifier les liens et le contenu genere. Ne jamais inventer un test, une API, une decision ou un resultat.
+Le resume doit prendre en compte la plage complete `BASE..HEAD`, les fichiers modifies et les validations observees. Ecrire par defaut dans `docs/features/<NN>-<short-name>.md`, puis verifier les liens et le contenu genere. Ne jamais inventer un test, une API, une decision ou un resultat.
+
+Avant l'appel a `write-feature-resume`, determiner `NN` comme le prochain numero apres le plus grand fichier de feature existant. Conserver les numeros deja publies, ne jamais reutiliser un numero et ne jamais creer de fichier de feature sans prefixe numerique. Apres l'appel, verifier que `docs/features/README.md` reference le nouveau nom et qu'il n'existe ni doublon de numero ni resume de feature non numerote.
 
 ## GitHub issue
 

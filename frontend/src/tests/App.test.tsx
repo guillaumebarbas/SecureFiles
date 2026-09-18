@@ -115,20 +115,38 @@ describe('App', () => {
     expect(screen.getByRole('complementary', { name: 'Navigation SecureFiles' })).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Fichiers' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Bibliothèque' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Bibliothèque' })).not.toBeInTheDocument();
   });
 
   it('opens the shared components library on its dedicated route', async () => {
     const user = userEvent.setup();
+    mockedGetCurrentUser.mockResolvedValue({
+      userId: '11111111-1111-1111-1111-111111111111',
+      name: 'Alice Martin',
+      roles: ['developpeur'],
+    });
 
     render(<App />);
-    await user.click(screen.getByRole('link', { name: 'Bibliothèque' }));
+    await user.click(await screen.findByRole('link', { name: 'Bibliothèque' }));
 
     expect(window.location.pathname).toBe('/components');
     expect(screen.getByRole('link', { name: 'Bibliothèque' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('heading', { name: 'Composants réutilisables', level: 1 })).toBeVisible();
     expect(screen.getByText('Bibliothèque partagée')).toHaveClass('app-header__eyebrow');
     expect(screen.queryByText('SecureFiles / Bibliothèque partagée')).not.toBeInTheDocument();
+  });
+
+  it('hides the shared components library for a user without the developer role', async () => {
+    mockedGetCurrentUser.mockResolvedValue({
+      userId: '11111111-1111-1111-1111-111111111111',
+      name: 'Alice Martin',
+      roles: ['utilisateur'],
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'Alice Martin' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Bibliothèque' })).not.toBeInTheDocument();
   });
 
   it('opens the profile page from the primary navigation', async () => {
@@ -161,6 +179,7 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByRole('button', { name: 'Alice Martin' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Bibliothèque' })).toBeVisible();
     await userEvent.click(screen.getByRole('link', { name: 'Profil' }));
     expect(await screen.findByText('developpeur')).toBeVisible();
     expect(screen.getByText('utilisateur')).toBeVisible();

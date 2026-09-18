@@ -894,8 +894,34 @@ Resultat : Analyse du flux Outbox/RabbitMQ et du cas d'utilisation de scan : le 
 
 - - - - -
 Prompt :
+Follow instructions in #prompt:plan-approve-implement.prompt.md with these arguments: Je voudrais désormais conditionnié l'affichage de l'onglet bibliotheque pour uniquement les developpeur.
+Resultat : Analyse et plan final prepares pour filtrer l'onglet Bibliothèque selon le role `developpeur`; implementation en attente d'approbation explicite.
+- - - - -
+
+- - - - -
+Prompt :
 go
 Resultat : Les messages de scan non réservables restent en retry, les leases `SCANNING` expirées sont récupérées avant redélivrance, le TTL RabbitMQ est aligné sur le délai métier, et l'Outbox attend une confirmation broker avant `published_at`. Après épuisement, l'API conserve `SCAN_ATTEMPTS_EXHAUSTED` et expose la cause précise ; le frontend l'affiche. Suite backend : 79 tests passés ; frontend : 89 tests passés et build réussi.
+- - - - -
+
+- - - - -
+Prompt :
+j'ai pas comprit : 1. - développeur seul ou avec `utilisateur` : onglet visible.
+
+Moi je veux seulement avec le role developpeur
+Resultat : Clarification du plan : l'onglet Bibliothèque devra être visible uniquement pour le profil ayant exactement le rôle `developpeur`; les profils `utilisateur` ou cumulés resteront masqués. Implémentation toujours en attente d'approbation.
+- - - - -
+
+- - - - -
+Prompt :
+non effectivement si c'est une combinaison - `['developpeur', 'utilisateur']` on affiche.
+Resultat : Règle corrigée : l'onglet Bibliothèque sera visible dès que le profil contient le rôle `developpeur`, y compris avec `utilisateur`; les profils sans `developpeur` resteront masqués. Implémentation toujours en attente d'approbation.
+- - - - -
+
+- - - - -
+Prompt :
+approuvé
+Resultat : L'onglet Bibliothèque est maintenant affiché uniquement lorsque le profil contient le rôle `developpeur`, y compris avec `utilisateur`. Les scénarios anonyme, utilisateur seul et développeur cumulatif sont couverts ; 19 fichiers et 90 tests frontend passent, ainsi que le build Vite.
 - - - - -
 
 - - - - -
@@ -903,4 +929,16 @@ Prompt :
 Follow instructions in #prompt:SKILL.md with these arguments: créer une branch puis fait les commit , issues, pr
 Resultat :
 Branche `fix/scan-retry-reliability` créée, corrections de fiabilité du scan regroupées en commits Conventional Commits, puis préparation du résumé, de l'issue et de la pull request vers `main`.
+- - - - -
+
+- - - - -
+Prompt :
+Follow instructions in #prompt:SKILL.md with these arguments: Créer une branche puis utilise le skill pour commit, issues, pr
+Resultat : Branche `feat/frontend-developer-library-access` créée et publiée avec les commits `feat(frontend): restrict library tab to developers` et `docs: add feature resume for frontend-developer-library-access`. L'issue et la pull request n'ont pas été créées : `gh` est absent et aucun outil MCP GitHub d'écriture n'est exposé dans la session.
+- - - - -
+
+- - - - -
+Prompt :
+peux relancer via mcp, et corriger dans docs/feature il en a des feature qui n'ont pas de numéro (corrige ce probleme et les regles pour que ce soit perrain)
+Resultat : Les resumes de features sont maintenant numerotes de `00` a `10`, le doublon Profile/Login a ete supprime, l'index a ete complete et les skills ainsi que l'agent imposent une numerotation append-only.
 - - - - -
