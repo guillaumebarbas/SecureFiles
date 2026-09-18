@@ -23,6 +23,7 @@ Merge the feature branches in this order:
 8. `08-file-list-server-pagination.md` from `feat/file-list-server-pagination` replaces frontend-only recent-file pagination with backend pagination and controlled server navigation.
 9. `09-scan-retry-reliability.md` from `fix/scan-retry-reliability` hardens scan retries, lease recovery, broker confirmation, and terminal failure causes.
 10. `10-frontend-developer-library-access.md` from `feat/frontend-developer-library-access` limits the Bibliothèque navigation item to profiles containing the `developpeur` role.
+12. `12-file-management-rest.md` from `feature/file-management-rest` adds file metadata capabilities, authorized deletion, and shared frontend file actions.
 
 The summaries remain with the branch that delivers the corresponding
 implementation. After merging the branches in sequence, this directory gives
