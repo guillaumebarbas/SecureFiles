@@ -19,6 +19,8 @@ export type UploadFileResponse = {
 
 export type FileMetadataResponse = Omit<UploadFileResponse, 'sizeBytes'> & {
   author?: string;
+  canDelete?: boolean;
+  canDownload?: boolean;
   failureCode?: string | null;
   failureCause?: string | null;
   sizeBytes: number | null;
@@ -188,6 +190,22 @@ export async function getFileMetadata(
       'FILE_METADATA_REQUEST_FAILED',
       'Le statut du fichier ne peut pas être lu.',
     );
+  }
+}
+
+export function getDownloadUrl(fileId: string): string {
+  return `/api/v1/files/${encodeURIComponent(fileId)}/content`;
+}
+
+export async function deleteFile(fileId: string): Promise<void> {
+  await prepareAuthRequest();
+
+  try {
+    await axios.delete(`/api/v1/files/${encodeURIComponent(fileId)}`, {
+      withCredentials: true,
+    });
+  } catch (error) {
+    throw normalizeApiError(error, 'FILE_DELETE_REQUEST_FAILED', 'Le fichier ne peut pas être supprimé.');
   }
 }
 

@@ -4,7 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, vi } from 'vitest';
 import { DashboardPage } from '../../../pages/Dashboard/DashboardPage';
 import {
+  deleteFile,
   getFileMetadata,
+  getDownloadUrl,
   getUploadConfiguration,
   listFiles,
   uploadFile,
@@ -13,7 +15,9 @@ import {
 } from '../../../api/filesApi';
 
 vi.mock('../../../api/filesApi', () => ({
+  deleteFile: vi.fn(),
   getFileMetadata: vi.fn(),
+  getDownloadUrl: vi.fn(),
   getUploadConfiguration: vi.fn(),
   listFiles: vi.fn(),
   uploadFile: vi.fn(),
@@ -21,6 +25,8 @@ vi.mock('../../../api/filesApi', () => ({
 
 const mockedUploadFile = vi.mocked(uploadFile);
 const mockedGetFileMetadata = vi.mocked(getFileMetadata);
+const mockedGetDownloadUrl = vi.mocked(getDownloadUrl);
+const mockedDeleteFile = vi.mocked(deleteFile);
 const mockedGetUploadConfiguration = vi.mocked(getUploadConfiguration);
 const mockedListFiles = vi.mocked(listFiles);
 
@@ -92,6 +98,107 @@ describe('DashboardPage', () => {
     render(<DashboardPage />);
 
     expect(screen.getByRole('columnheader', { name: 'Auteur' })).toBeVisible();
+  });
+
+  it('opens the row action menu and streams a clean file or deletes it', async () => {
+    const user = userEvent.setup();
+    const file = {
+      author: 'Alice Martin',
+      canDelete: true,
+      canDownload: true,
+      createdAt: '2026-09-15T10:00:00Z',
+      fileId: '11111111-1111-1111-1111-111111111111',
+      originalFilename: 'safe-document.txt',
+      sizeBytes: 12,
+      status: 'CLEAN' as const,
+    };
+    mockedGetDownloadUrl.mockReturnValue('/api/v1/files/11111111-1111-1111-1111-111111111111/content');
+    mockedDeleteFile.mockResolvedValue();
+    mockedListFiles
+      .mockResolvedValueOnce(createFilesPageResponse([file]))
+      .mockResolvedValueOnce(emptyFilesPage);
+
+    render(<DashboardPage isAuthenticated />);
+
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
+    const row = await within(table).findByRole('row', { name: /safe-document\.txt/ });
+    expect(within(table).getByRole('columnheader', { name: 'Action' })).toBeVisible();
+    await user.click(within(row).getByRole('button', { name: 'Actions pour safe-document.txt' }));
+
+    const menu = screen.getByRole('menu', { name: 'Actions pour safe-document.txt' });
+    const downloadAction = within(menu).getByRole('menuitem', { name: 'Télécharger' });
+    expect(downloadAction.tagName).toBe('A');
+    expect(downloadAction).toHaveClass('shared-button-menu-actions--success');
+    expect(downloadAction).toHaveAttribute(
+      'href',
+      '/api/v1/files/11111111-1111-1111-1111-111111111111/content',
+    );
+    const deleteAction = within(menu).getByRole('menuitem', { name: 'Supprimer' });
+    expect(deleteAction).toHaveClass('shared-button-menu-actions--danger');
+    await user.click(deleteAction);
+
+    expect(mockedDeleteFile).toHaveBeenCalledWith(file.fileId);
+    await waitFor(() => expect(mockedListFiles).toHaveBeenCalledTimes(2));
+    expect(within(table).queryByText('safe-document.txt')).not.toBeInTheDocument();
+  });
+
+  it('does not offer actions when the backend grants no capability', async () => {
+    const user = userEvent.setup();
+    const file = {
+      author: 'Alice Martin',
+      canDelete: false,
+      canDownload: false,
+      createdAt: '2026-09-15T10:00:00Z',
+      fileId: '11111111-1111-1111-1111-111111111111',
+      originalFilename: 'protected-document.txt',
+      sizeBytes: 12,
+      status: 'CLEAN' as const,
+    };
+    mockedListFiles.mockResolvedValue(createFilesPageResponse([file]));
+
+    render(<DashboardPage isAuthenticated={false} />);
+
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
+    const row = await within(table).findByRole('row', { name: /protected-document\.txt/ });
+    await user.click(within(row).getByRole('button', { name: 'Actions pour protected-document.txt' }));
+
+    const menu = screen.getByRole('menu', { name: 'Actions pour protected-document.txt' });
+    expect(within(menu).queryByRole('link', { name: 'Télécharger' })).not.toBeInTheDocument();
+    expect(within(menu).queryByRole('menuitem', { name: 'Supprimer' })).not.toBeInTheDocument();
+    expect(within(menu).getByText('Aucune action disponible.')).toBeVisible();
+  });
+
+  it('focuses the first action and closes the menu with Escape or an outside click', async () => {
+    const user = userEvent.setup();
+    const file = {
+      canDelete: true,
+      canDownload: true,
+      createdAt: '2026-09-15T10:00:00Z',
+      fileId: '11111111-1111-1111-1111-111111111111',
+      originalFilename: 'focusable-document.txt',
+      sizeBytes: 12,
+      status: 'CLEAN' as const,
+    };
+    mockedListFiles.mockResolvedValue(createFilesPageResponse([file]));
+
+    render(<DashboardPage isAuthenticated />);
+
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
+    const row = await within(table).findByRole('row', { name: /focusable-document\.txt/ });
+    const trigger = within(row).getByRole('button', { name: 'Actions pour focusable-document.txt' });
+    await user.click(trigger);
+
+    const menu = screen.getByRole('menu', { name: 'Actions pour focusable-document.txt' });
+    expect(within(menu).getByRole('menuitem', { name: 'Télécharger' })).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu', { name: 'Actions pour focusable-document.txt' })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+
+    await user.click(trigger);
+    expect(screen.getByRole('menu', { name: 'Actions pour focusable-document.txt' })).toBeVisible();
+    await user.click(document.body);
+    expect(screen.queryByRole('menu', { name: 'Actions pour focusable-document.txt' })).not.toBeInTheDocument();
   });
 
   it('hides the upload action until a file is selected', () => {

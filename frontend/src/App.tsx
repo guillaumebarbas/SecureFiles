@@ -218,6 +218,7 @@ export function App() {
             {currentRoute === '/profile'
               ? <ProfilePage user={currentUser} />
               : renderCurrentPage(currentRoute, {
+                currentUser,
                 isAuthenticated: currentUser !== undefined,
                 onAuthenticationRequired: handleAuthenticationRequired,
               })}

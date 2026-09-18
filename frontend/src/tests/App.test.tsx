@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkBackendHealth,
+  getDownloadUrl,
   getCurrentUser,
   getUploadConfiguration,
   listFiles,
@@ -16,6 +17,7 @@ import { App } from '../App';
 
 vi.mock('../api/filesApi', () => ({
   checkBackendHealth: vi.fn(),
+  getDownloadUrl: vi.fn(),
   getCurrentUser: vi.fn(),
   getUploadConfiguration: vi.fn(),
   listFiles: vi.fn(),
@@ -25,6 +27,7 @@ vi.mock('../api/filesApi', () => ({
 }));
 
 const mockedCheckBackendHealth = vi.mocked(checkBackendHealth);
+const mockedGetDownloadUrl = vi.mocked(getDownloadUrl);
 const mockedGetCurrentUser = vi.mocked(getCurrentUser);
 const mockedGetUploadConfiguration = vi.mocked(getUploadConfiguration);
 const mockedListFiles = vi.mocked(listFiles);
@@ -46,6 +49,7 @@ describe('App', () => {
   beforeEach(() => {
     window.history.replaceState({}, '', '/');
     mockedCheckBackendHealth.mockResolvedValue('online');
+    mockedGetDownloadUrl.mockReturnValue('/api/v1/files/showcase-file-actions/content');
     mockedGetCurrentUser.mockRejectedValue(new Error('Not authenticated'));
     mockedGetUploadConfiguration.mockResolvedValue({ maximumSizeBytes: 1024 });
     mockedListFiles.mockResolvedValue(emptyFilesPage);

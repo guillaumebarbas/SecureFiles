@@ -9,8 +9,10 @@ import {
   ShieldCheck,
   Upload,
 } from 'lucide-react';
+import type { FileMetadataResponse } from '../../api/filesApi';
 import { Button } from '../../shared/actions/Button';
 import { GenericTable, type TableColumn } from '../../shared/data/GenericTable';
+import { FileActionsMenu } from '../../shared/files/FileActionsMenu';
 import { Icon } from '../../shared/feedback/Icon';
 import { Tag } from '../../shared/feedback/Tag';
 import { Tooltip } from '../../shared/feedback/Tooltip';
@@ -33,6 +35,16 @@ const showcaseFiles: ShowcaseFile[] = [
   { id: 'showcase-1', name: 'rapport-annuel.pdf', size: '2.4 MB', status: 'CLEAN' },
   { id: 'showcase-2', name: 'archive-a-verifier.zip', size: '18.7 MB', status: 'PENDING_SCAN' },
 ];
+
+const showcaseActionFile: FileMetadataResponse = {
+  canDelete: true,
+  canDownload: true,
+  createdAt: '2026-09-15T10:00:00Z',
+  fileId: 'showcase-file-actions',
+  originalFilename: 'rapport-annuel.pdf',
+  sizeBytes: 2400000,
+  status: 'CLEAN',
+};
 
 const showcaseColumns: TableColumn<ShowcaseFile>[] = [
   { header: 'Nom', key: 'name', sortable: true },
@@ -82,6 +94,18 @@ export function SharedComponentsShowcasePage() {
           </Button>
           <Button variant="gradient">Action accentuée</Button>
         </Row>
+      </Section>
+
+      <Section
+        description="Un menu contextualisé pour télécharger ou supprimer un fichier autorisé."
+        icon={Download}
+        title="Actions d'un fichier"
+      >
+        <FileActionsMenu
+          file={showcaseActionFile}
+          isAuthenticated
+          onDelete={async () => true}
+        />
       </Section>
 
       <Section

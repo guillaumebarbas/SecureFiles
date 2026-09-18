@@ -1,17 +1,20 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getUploadConfiguration } from '../../../api/filesApi';
+import { getDownloadUrl, getUploadConfiguration } from '../../../api/filesApi';
 import { SharedComponentsShowcasePage } from '../../../pages/SharedComponentsShowcase/SharedComponentsShowcasePage';
 
 vi.mock('../../../api/filesApi', () => ({
+  getDownloadUrl: vi.fn(),
   getUploadConfiguration: vi.fn(),
 }));
 
+const mockedGetDownloadUrl = vi.mocked(getDownloadUrl);
 const mockedGetUploadConfiguration = vi.mocked(getUploadConfiguration);
 
 describe('SharedComponentsShowcasePage', () => {
   beforeEach(() => {
+    mockedGetDownloadUrl.mockReturnValue('/api/v1/files/showcase-file-actions/content');
     mockedGetUploadConfiguration.mockResolvedValue({ maximumSizeBytes: 1024 });
   });
 
@@ -37,6 +40,19 @@ describe('SharedComponentsShowcasePage', () => {
     const table = screen.getByRole('table', { name: 'Exemple de registre' });
 
     expect(within(table).getByText('CLEAN')).toBeVisible();
+  });
+
+  it('presents file actions in the shared component library', async () => {
+    const user = userEvent.setup();
+
+    render(<SharedComponentsShowcasePage />);
+
+    expect(screen.getByRole('heading', { name: "Actions d'un fichier" })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Actions pour rapport-annuel.pdf' }));
+
+    const menu = screen.getByRole('menu', { name: 'Actions pour rapport-annuel.pdf' });
+    expect(within(menu).getByRole('menuitem', { name: 'Télécharger' })).toBeVisible();
+    expect(within(menu).getByRole('menuitem', { name: 'Supprimer' })).toBeVisible();
   });
 
   it('demonstrates disconnected and connected login states', async () => {
