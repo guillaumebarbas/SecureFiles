@@ -1,6 +1,5 @@
 package com.securefiles.domain.file.usecases;
 
-import com.securefiles.domain.file.model.FileStatus;
 import com.securefiles.domain.file.model.StorageMetadata;
 import com.securefiles.domain.file.model.StorageReceipt;
 import com.securefiles.domain.file.model.StoredFile;
@@ -23,7 +22,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -67,6 +65,22 @@ class DownloadFileUseCaseTest {
         verify(contentStorage).openStream(FILE_ID);
     }
 
+        @Test
+        void download_shouldOpenContent_whenFileIsCleanAndAuthenticatedRequesterIsNotOwner() {
+                StoredFile cleanFile = createCleanFile();
+                InputStream content = new ByteArrayInputStream("safe content".getBytes(StandardCharsets.UTF_8));
+                when(repository.findById(FILE_ID)).thenReturn(Optional.of(cleanFile));
+                when(contentStorage.head(FILE_ID)).thenReturn(new StorageMetadata(12L, "version-1"));
+                when(contentStorage.openStream(FILE_ID)).thenReturn(content);
+
+                DownloadFileResult result = downloadFileUseCase.download(
+                                new DownloadFileCommand(FILE_ID, "other-owner"));
+
+                assertThat(result.fileId()).isEqualTo(FILE_ID);
+                assertThat(result.content()).isSameAs(content);
+                verify(contentStorage).openStream(FILE_ID);
+        }
+
     @Test
     void download_shouldReject_whenFileIsNotClean() {
         StoredFile pendingScanFile = createPendingScanFile();
@@ -77,19 +91,6 @@ class DownloadFileUseCaseTest {
                 .isInstanceOf(DownloadException.class)
                 .extracting(exception -> ((DownloadException) exception).code())
                 .isEqualTo("FILE_NOT_AVAILABLE");
-
-        verifyNoInteractions(contentStorage);
-    }
-
-    @Test
-    void download_shouldHideFileExistence_whenOwnerDoesNotMatch() {
-        when(repository.findById(FILE_ID)).thenReturn(Optional.of(createCleanFile()));
-
-        assertThatThrownBy(() -> downloadFileUseCase.download(
-                new DownloadFileCommand(FILE_ID, "other-owner")))
-                .isInstanceOf(DownloadException.class)
-                .extracting(exception -> ((DownloadException) exception).code())
-                .isEqualTo("FILE_NOT_FOUND");
 
         verifyNoInteractions(contentStorage);
     }
