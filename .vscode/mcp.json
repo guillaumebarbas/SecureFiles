@@ -8,6 +8,16 @@
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "lucide-mcp"]
+    },
+    "drawio": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@drawio/mcp"]
+    },
+    "excalidraw": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "excalidraw-mcp"]
     }
   }
 }
