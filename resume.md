@@ -930,3 +930,9 @@ Follow instructions in #prompt:SKILL.md with these arguments: créer une branch 
 Resultat :
 Branche `fix/scan-retry-reliability` créée, corrections de fiabilité du scan regroupées en commits Conventional Commits, puis préparation du résumé, de l'issue et de la pull request vers `main`.
 - - - - -
+
+- - - - -
+Prompt :
+Follow instructions in #prompt:SKILL.md with these arguments: Créer une branche puis utilise le skill pour commit, issues, pr
+Resultat : Branche `feat/frontend-developer-library-access` créée et publiée avec les commits `feat(frontend): restrict library tab to developers` et `docs: add feature resume for frontend-developer-library-access`. L'issue et la pull request n'ont pas été créées : `gh` est absent et aucun outil MCP GitHub d'écriture n'est exposé dans la session.
+- - - - -
