@@ -46,7 +46,7 @@ public final class RabbitMqDeadLetterListener {
 
     @RabbitListener(
             queues = "${securefiles.rabbitmq.dead-letter-queue}",
-            containerFactory = "scanRabbitListenerContainerFactory")
+            containerFactory = "deadLetterRabbitListenerContainerFactory")
     public void handle(
             Message message,
             Channel channel,
