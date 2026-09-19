@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 @EnabledIfEnvironmentVariable(named = "SECUREFILES_AUTH_INTEGRATION", matches = "true")
@@ -31,8 +34,17 @@ class UserAuthenticationFlowIntegrationTest {
         @Autowired
         private TestRestTemplate restTemplate;
 
+        @Autowired
+        private JdbcTemplate jdbcTemplate;
+
         @LocalServerPort
         private int serverPort;
+
+        @BeforeEach
+        @AfterEach
+        void clearLoginRateLimitBuckets() {
+                jdbcTemplate.update("delete from api_rate_limit_bucket where bucket_key like 'login:ip:%'");
+        }
 
         @Test
         void currentUser_shouldReturnNoContent_whenNoSessionCookieIsPresent() {
@@ -51,7 +63,9 @@ class UserAuthenticationFlowIntegrationTest {
 
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
                 assertThat(response.getBody()).isNotNull();
-                assertThat(response.getBody().isArray()).isTrue();
+                assertThat(response.getBody().isObject()).isTrue();
+                assertThat(response.getBody().path("content").isArray()).isTrue();
+                assertThat(response.getBody().path("page").asInt()).isEqualTo(1);
         }
 
         @Test
@@ -82,7 +96,7 @@ class UserAuthenticationFlowIntegrationTest {
         assertThat(registrationResponse.getBody()).isNotNull();
         assertThat(registrationResponse.getBody().path("name").asText()).isEqualTo(userName);
         assertThat(registrationResponse.getBody().path("roles"))
-                .extracting(JsonNode::asText)
+                .extracting(node -> node.asText())
                 .containsExactly("developpeur", "utilisateur");
 
         ResponseEntity<JsonNode> loginResponse = restTemplate.postForEntity(
@@ -108,7 +122,7 @@ class UserAuthenticationFlowIntegrationTest {
         assertThat(currentUserResponse.getBody().path("userId").asText())
                 .isEqualTo(loginResponse.getBody().path("userId").asText());
         assertThat(currentUserResponse.getBody().path("roles"))
-                .extracting(JsonNode::asText)
+                .extracting(node -> node.asText())
                 .containsExactly("developpeur", "utilisateur");
 
         ResponseEntity<Void> logoutResponse = restTemplate.exchange(
@@ -129,6 +143,64 @@ class UserAuthenticationFlowIntegrationTest {
 
         assertThat(revokedSessionResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     }
+
+        @Test
+        void authentication_shouldRejectDifferentSuffix_whenPasswordExceedsBcryptInputLimit() {
+                String userName = "auth-long-password-" + UUID.randomUUID();
+                String registeredPassword = "a".repeat(72) + "X";
+                String differentPassword = "a".repeat(72) + "Y";
+                Map<String, Object> registration = Map.of(
+                                "name", userName,
+                                "password", registeredPassword,
+                                "roles", List.of("utilisateur"));
+
+                ResponseEntity<JsonNode> registrationResponse = restTemplate.postForEntity(
+                                apiUrl("/auth/register"),
+                                jsonEntity(registration),
+                                JsonNode.class);
+
+                assertThat(registrationResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+                ResponseEntity<JsonNode> wrongPasswordResponse = restTemplate.postForEntity(
+                                apiUrl("/auth/login"),
+                                jsonEntity(Map.of("name", userName, "password", differentPassword)),
+                                JsonNode.class);
+
+                assertThat(wrongPasswordResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        void login_shouldRejectTheSixthRequest_whenTheIpExceedsTheLoginRateLimit() {
+                String userName = "auth-rate-limit-" + UUID.randomUUID();
+                ResponseEntity<JsonNode> registrationResponse = restTemplate.postForEntity(
+                                apiUrl("/auth/register"),
+                                jsonEntity(Map.of(
+                                                "name", userName,
+                                                "password", PASSWORD,
+                                                "roles", List.of("utilisateur"))),
+                                JsonNode.class);
+                assertThat(registrationResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+                for (int requestNumber = 0; requestNumber < 5; requestNumber++) {
+                        ResponseEntity<JsonNode> loginResponse = restTemplate.postForEntity(
+                                        apiUrl("/auth/login"),
+                                        jsonEntity(Map.of("name", userName, "password", PASSWORD)),
+                                        JsonNode.class);
+
+                        assertThat(loginResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+                }
+
+                ResponseEntity<JsonNode> limitedResponse = restTemplate.postForEntity(
+                                apiUrl("/auth/login"),
+                                jsonEntity(Map.of("name", userName, "password", PASSWORD)),
+                                JsonNode.class);
+
+                assertThat(limitedResponse.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+                assertThat(limitedResponse.getHeaders().getFirst("Retry-After")).isEqualTo("60");
+                assertThat(limitedResponse.getBody()).isNotNull();
+                assertThat(limitedResponse.getBody().path("code").asText())
+                                .isEqualTo("LOGIN_RATE_LIMIT_EXCEEDED");
+        }
 
     private String apiUrl(String path) {
         return "http://localhost:" + serverPort + API_ROOT + path;

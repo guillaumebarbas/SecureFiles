@@ -48,6 +48,11 @@ public class RabbitMqConfiguration {
     }
 
     @Bean
+    public Queue poisonQueue(RabbitMqProperties properties) {
+        return QueueBuilder.durable(properties.poisonQueue()).build();
+    }
+
+    @Bean
     public Binding scanQueueBinding(Queue scanQueue, TopicExchange scanExchange, RabbitMqProperties properties) {
         return BindingBuilder.bind(scanQueue)
                 .to(scanExchange)
@@ -69,6 +74,16 @@ public class RabbitMqConfiguration {
         return BindingBuilder.bind(deadLetterQueue)
                 .to(scanExchange)
                 .with(properties.deadLetterQueue());
+    }
+
+    @Bean
+    public Binding poisonQueueBinding(
+            Queue poisonQueue,
+            TopicExchange scanExchange,
+            RabbitMqProperties properties) {
+        return BindingBuilder.bind(poisonQueue)
+                .to(scanExchange)
+                .with(properties.poisonQueue());
     }
 
     @Bean

@@ -50,6 +50,7 @@ class FileScanSizeLimitIntegrationTest {
     private static final long BELOW_TEST_LIMIT_SIZE_BYTES = 512 * 1024L;
     private static final long ABOVE_TEST_LIMIT_SIZE_BYTES = 2 * 1024 * 1024L;
     private static final int STREAM_BLOCK_SIZE_BYTES = 8 * 1024;
+    private static final String INTEGRATION_PASSWORD = "integration-password";
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -74,15 +75,21 @@ class FileScanSizeLimitIntegrationTest {
     void upload_shouldFailClosed_whenGeneratedFileExceedsTestOnlyClamAvLimit() throws Exception {
         Path file = createGeneratedFile("securefiles-above-clamav-limit-", ABOVE_TEST_LIMIT_SIZE_BYTES);
         try {
-            UUID fileId = uploadFile(file);
-            JsonNode terminalResponse = awaitTerminalStatus(fileId, Duration.ofSeconds(30));
+            String authenticationCookie = authenticationCookie();
+            UUID fileId = uploadFile(file, authenticationCookie);
+            JsonNode terminalResponse = awaitTerminalStatus(
+                    fileId,
+                    authenticationCookie,
+                    Duration.ofSeconds(30));
 
             assertThat(terminalResponse.path("status").asText())
                     .withFailMessage("Unexpected scan result: %s. %s", terminalResponse, buildDiagnostic(fileId))
                     .isEqualTo("SCAN_FAILED");
 
-                ResponseEntity<Void> downloadResponse = restTemplate.getForEntity(
+                ResponseEntity<Void> downloadResponse = restTemplate.exchange(
                     apiUrl() + "/" + fileId + "/content",
+                    org.springframework.http.HttpMethod.GET,
+                    authenticatedEntity(authenticationCookie),
                     Void.class);
             assertThat(downloadResponse.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         } finally {
@@ -91,17 +98,19 @@ class FileScanSizeLimitIntegrationTest {
     }
 
     private void assertUploadedFileReachesStatus(Path file, String expectedStatus, Duration timeout) {
-        UUID fileId = uploadFile(file);
-        JsonNode terminalResponse = awaitTerminalStatus(fileId, timeout);
+        String authenticationCookie = authenticationCookie();
+        UUID fileId = uploadFile(file, authenticationCookie);
+        JsonNode terminalResponse = awaitTerminalStatus(fileId, authenticationCookie, timeout);
 
         assertThat(terminalResponse.path("status").asText())
                 .withFailMessage("Unexpected scan result: %s. %s", terminalResponse, buildDiagnostic(fileId))
                 .isEqualTo(expectedStatus);
     }
 
-    private UUID uploadFile(Path file) {
+    private UUID uploadFile(Path file, String authenticationCookie) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.set(HttpHeaders.COOKIE, authenticationCookie);
         MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("file", new FileSystemResource(file.toFile()));
 
@@ -117,13 +126,21 @@ class FileScanSizeLimitIntegrationTest {
         return UUID.fromString(uploadResponse.path("fileId").asText());
     }
 
-    private JsonNode awaitTerminalStatus(UUID fileId, Duration timeout) {
+        private JsonNode awaitTerminalStatus(
+            UUID fileId,
+            String authenticationCookie,
+            Duration timeout) {
         try {
             return await()
                     .atMost(timeout)
                     .pollInterval(Duration.ofMillis(250))
                     .until(
-                            () -> restTemplate.getForObject(apiUrl() + "/" + fileId, JsonNode.class),
+                            () -> restTemplate.exchange(
+                                    apiUrl() + "/" + fileId,
+                                    org.springframework.http.HttpMethod.GET,
+                                    authenticatedEntity(authenticationCookie),
+                                    JsonNode.class)
+                                .getBody(),
                             response -> isTerminal(response.path("status").asText()));
         } catch (ConditionTimeoutException exception) {
             throw new AssertionError(buildDiagnostic(fileId), exception);
@@ -172,5 +189,42 @@ class FileScanSizeLimitIntegrationTest {
 
     private String apiUrl() {
         return "http://localhost:" + serverPort + "/api/v1/files";
+    }
+
+    private String authenticationCookie() {
+        String userName = "scan-limit-integration-" + UUID.randomUUID();
+        ResponseEntity<JsonNode> registrationResponse = restTemplate.postForEntity(
+                "http://localhost:" + serverPort + "/api/v1/auth/register",
+                jsonEntity(Map.of(
+                        "name", userName,
+                        "password", INTEGRATION_PASSWORD,
+                        "roles", List.of("utilisateur"))),
+                JsonNode.class);
+        assertThat(registrationResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        ResponseEntity<JsonNode> loginResponse = restTemplate.postForEntity(
+                "http://localhost:" + serverPort + "/api/v1/auth/login",
+                jsonEntity(Map.of("name", userName, "password", INTEGRATION_PASSWORD)),
+                JsonNode.class);
+        assertThat(loginResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        return cookiePair(loginResponse);
+    }
+
+    private HttpEntity<Map<String, Object>> jsonEntity(Map<String, Object> body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return new HttpEntity<>(body, headers);
+    }
+
+    private HttpEntity<Void> authenticatedEntity(String authenticationCookie) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.COOKIE, authenticationCookie);
+        return new HttpEntity<>(headers);
+    }
+
+    private String cookiePair(ResponseEntity<?> response) {
+        String setCookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+        assertThat(setCookie).isNotBlank();
+        return setCookie.substring(0, setCookie.indexOf(';'));
     }
 }

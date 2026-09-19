@@ -47,28 +47,49 @@ securefiles:
       - utilisateur
   upload:
     maximum-size: ${MAX_FILE_SIZE_BYTES:1073741824}B
+    abandoned-after: ${UPLOAD_ABANDONED_AFTER:PT30M}
+    cleanup-batch-size: ${UPLOAD_CLEANUP_BATCH_SIZE:100}
+  quota:
+    per-owner: ${STORAGE_QUOTA_PER_OWNER:10737418240}B
+  rate-limit:
+    upload-window: ${UPLOAD_RATE_LIMIT_WINDOW:PT1M}
+    upload-requests-per-window: ${UPLOAD_RATE_LIMIT_REQUESTS:20}
+    login-window: ${LOGIN_RATE_LIMIT_WINDOW:PT1M}
+    login-requests-per-window: ${LOGIN_RATE_LIMIT_REQUESTS:5}
+    cleanup-interval-millis: ${UPLOAD_RATE_LIMIT_CLEANUP_INTERVAL_MILLIS:300000}
   storage:
     endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
     access-key: ${MINIO_ACCESS_KEY:securefiles}
     secret-key: ${MINIO_SECRET_KEY:securefiles-local-only}
     bucket: ${MINIO_BUCKET:securefiles}
     quarantine-prefix: ${MINIO_QUARANTINE_PREFIX:quarantine}
+    maintenance:
+      deletion-recovery-batch-size: ${DELETION_RECOVERY_BATCH_SIZE:100}
   clamav:
     host: ${CLAMAV_HOST:localhost}
     port: ${CLAMAV_PORT:3311}
     connect-timeout: ${CLAMAV_CONNECT_TIMEOUT:PT5S}
+    write-timeout: ${CLAMAV_WRITE_TIMEOUT:PT10S}
     read-timeout: ${CLAMAV_READ_TIMEOUT:PT60S}
+    scan-timeout: ${CLAMAV_SCAN_TIMEOUT:PT4M}
     chunk-size: ${CLAMAV_CHUNK_SIZE:8192}
   scan:
     lease-duration: ${SCAN_LEASE_DURATION:PT5M}
     maximum-attempts: ${SCAN_MAX_ATTEMPTS:3}
     retry-delay: ${SCAN_RETRY_DELAY:PT1M}
+    recovery-batch-size: ${SCAN_RECOVERY_BATCH_SIZE:100}
+    recovery-interval-millis: ${SCAN_RECOVERY_INTERVAL_MILLIS:30000}
   rabbitmq:
     exchange: ${RABBITMQ_EXCHANGE:securefiles.scan}
     queue: ${RABBITMQ_QUEUE:securefiles.scan}
     routing-key: ${RABBITMQ_ROUTING_KEY:file.scan.requested}
     retry-queue: ${RABBITMQ_RETRY_QUEUE:securefiles.scan.retry}
     dead-letter-queue: ${RABBITMQ_DEAD_LETTER_QUEUE:securefiles.scan.dlq}
+    poison-queue: ${RABBITMQ_POISON_QUEUE:securefiles.scan.poison}
     prefetch: ${RABBITMQ_PREFETCH:1}
     confirm-timeout-millis: ${RABBITMQ_CONFIRM_TIMEOUT_MILLIS:5000}
     relay-interval-millis: ${RABBITMQ_RELAY_INTERVAL_MILLIS:5000}
+    maximum-transport-retries: ${RABBITMQ_MAXIMUM_TRANSPORT_RETRIES:3}
+    publish-lease-duration: ${RABBITMQ_PUBLISH_LEASE_DURATION:PT30S}
+    publish-retry-delay: ${RABBITMQ_PUBLISH_RETRY_DELAY:PT5S}
+    maximum-dead-letter-redrives: ${RABBITMQ_MAXIMUM_DEAD_LETTER_REDRIVES:3}

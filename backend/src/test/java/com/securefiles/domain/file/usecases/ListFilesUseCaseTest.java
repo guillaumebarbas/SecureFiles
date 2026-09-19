@@ -29,6 +29,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -147,6 +149,27 @@ class ListFilesUseCaseTest {
                 assertThat(((ListFilesException) thrown).code()).isEqualTo("INVALID_PAGINATION");
         }
 
+        @Test
+        void listQuery_shouldRejectPageBeyondMaximumOffset() {
+                Throwable thrown = catchThrowable(() -> new FileListQuery(1_002, 10));
+
+                assertThat(thrown).isInstanceOf(ListFilesException.class);
+                assertThat(((ListFilesException) thrown).code()).isEqualTo("INVALID_PAGINATION");
+        }
+
+        @Test
+        void listQuery_shouldRejectDeletingStatus_whenRequestedByPublicList() {
+                Throwable thrown = catchThrowable(() -> new FileListQuery(
+                                1,
+                                10,
+                                FileSortField.CREATED_AT,
+                                SortDirection.DESC,
+                                Set.of(FileStatus.DELETING)));
+
+                assertThat(thrown).isInstanceOf(ListFilesException.class);
+                assertThat(((ListFilesException) thrown).code()).isEqualTo("INVALID_LIST_QUERY");
+        }
+
     @Test
     void list_shouldReturnEmptyMetadata_whenRequesterHasNoFiles() {
         when(repository.findPage(new FileListQuery())).thenReturn(new StoredFilePage(List.of(), 0));
@@ -157,7 +180,7 @@ class ListFilesUseCaseTest {
     }
 
     @Test
-        void list_shouldExposeAttemptsExhaustionAndPreciseCause_whenScanAttemptsAreExhausted() {
+        void list_shouldHideFailureDiagnostics_whenScanAttemptsAreExhausted() {
         StoredFile failedFile = createFailedFile(
                 NEWEST_FILE_ID,
                 "failed.pkg",
@@ -172,14 +195,13 @@ class ListFilesUseCaseTest {
                 FileStatus.CLEAN,
                 OLDEST_CREATED_AT);
         when(repository.findPage(new FileListQuery())).thenReturn(new StoredFilePage(List.of(failedFile, cleanFile), 2));
-        when(repository.findLatestPreciseFailureCodesByFileIds(Set.of(NEWEST_FILE_ID)))
-                .thenReturn(Map.of(NEWEST_FILE_ID, "CLAMAV_UNAVAILABLE"));
 
         ListFilesResult result = listFilesUseCase.list(new ListFilesCommand());
 
-        assertThat(result.content().get(0).failureCode()).contains("SCAN_ATTEMPTS_EXHAUSTED");
-        assertThat(result.content().get(0).failureCause()).contains("CLAMAV_UNAVAILABLE");
+        assertThat(result.content().get(0).failureCode()).isEmpty();
+        assertThat(result.content().get(0).failureCause()).isEmpty();
         assertThat(result.content().get(1).failureCode()).isEmpty();
+        verify(repository, never()).findLatestPreciseFailureCodesByFileIds(Set.of(NEWEST_FILE_ID));
     }
 
     @Test
@@ -282,6 +304,36 @@ class ListFilesUseCaseTest {
 
         assertThat(result.content()).singleElement()
                 .extracting(metadata -> metadata.canDownload())
+                .isEqualTo(false);
+    }
+
+    @Test
+    void list_shouldHideDeleteCapability_whenFileIsDeleting() {
+        StoredFile deletingFile = StoredFile.restore(
+                NEWEST_FILE_ID,
+                FIRST_OWNER_ID.toString(),
+                "deleting.pdf",
+                "application/pdf",
+                FileStatus.DELETING,
+                42L,
+                NEWEST_SHA_256,
+                "quarantine/" + NEWEST_FILE_ID + "/payload",
+                "version-1",
+                0,
+                NEWEST_CREATED_AT,
+                NEWEST_CREATED_AT,
+                null,
+                null,
+                null,
+                null);
+        when(repository.findPage(new FileListQuery()))
+                .thenReturn(new StoredFilePage(List.of(deletingFile), 1));
+
+        ListFilesResult result = listFilesUseCase.list(
+                new ListFilesCommand(new FileListQuery(), FIRST_OWNER_ID.toString(), false));
+
+        assertThat(result.content()).singleElement()
+                .extracting(metadata -> metadata.canDelete())
                 .isEqualTo(false);
     }
 

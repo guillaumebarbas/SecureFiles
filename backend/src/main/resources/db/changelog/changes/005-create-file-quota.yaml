@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-create-file-quota
+      author: securefiles
+      changes:
+        - createTable:
+            tableName: stored_file_quota
+            columns:
+              - column:
+                  name: owner_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_stored_file_quota
+              - column:
+                  name: quota_bytes
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: used_bytes
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

@@ -78,10 +78,11 @@ public final class ScanFileUseCase implements ScanFile {
         Instant completedAt = clock.instant();
         StoredFile completedFile = scanningFile.completeScan(
                 leaseId,
-            completionResult,
+                completionResult,
                 completedAt,
                 completedAt.plus(retryDelay));
-        repository.completeScan(
+        boolean completionAccepted = repository.completeScan(
+                leaseId,
                 completedFile,
                 new ScanAttempt(
                         completedFile.id(),
@@ -90,6 +91,9 @@ public final class ScanFileUseCase implements ScanFile {
                         scanResult.failureCode(),
                         scanStartedAt,
                         completedAt));
+        if (!completionAccepted) {
+            return scanNotClaimed(command.fileId());
+        }
         return new ScanFileResult(completedFile.id(), true, Optional.of(completedFile.status()));
     }
 
@@ -110,6 +114,9 @@ public final class ScanFileUseCase implements ScanFile {
                 AntivirusScanResult scanResult = Objects.requireNonNull(
                         antivirusScanner.scan(measuredContent),
                         "antivirus scan result must not be null");
+                if (scanResult.verdict() == AntivirusVerdict.RETRYABLE_FAILURE) {
+                    return scanResult;
+                }
                 verifyMeasuredContent(scanningFile, measuredContent);
                 return scanResult;
             }

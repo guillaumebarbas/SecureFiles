@@ -272,6 +272,29 @@ public final class StoredFile {
                 nextScanAt);
     }
 
+    public StoredFile failPendingScan(Instant failedAt) {
+        if (status != FileStatus.PENDING_SCAN) {
+            throw new IllegalStateException("Only a pending scan can be failed");
+        }
+        return new StoredFile(
+                id,
+                ownerId,
+                originalFilename,
+                clientContentType,
+                FileStatus.SCAN_FAILED,
+                sizeBytes,
+                sha256,
+                storageKey,
+                storageVersion,
+                scanAttemptCount,
+                createdAt,
+                Objects.requireNonNull(failedAt, "failedAt must not be null"),
+                FileFailureCodes.SCAN_ATTEMPTS_EXHAUSTED,
+                null,
+                null,
+                null);
+    }
+
     public StoredFile reject(String rejectionCode, Instant rejectedAt) {
         if (status != FileStatus.UPLOADING) {
             throw new IllegalStateException("Only an uploading file can be rejected");

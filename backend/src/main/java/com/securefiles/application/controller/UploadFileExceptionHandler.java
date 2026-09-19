@@ -92,6 +92,9 @@ public final class UploadFileExceptionHandler {
         if (code.equals(FileFailureCodes.MAX_SIZE_EXCEEDED)) {
             return HttpStatus.PAYLOAD_TOO_LARGE;
         }
+        if (code.equals(FileFailureCodes.QUOTA_EXCEEDED)) {
+            return HttpStatus.INSUFFICIENT_STORAGE;
+        }
         if (code.startsWith(FileFailureCodes.INVALID_FIELD_PREFIX)
             || code.equals(FileFailureCodes.DECLARED_SIZE_MISMATCH)
             || code.equals(FileFailureCodes.INCOMPLETE_STREAM)) {

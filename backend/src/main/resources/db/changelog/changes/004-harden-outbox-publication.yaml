@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-harden-outbox-publication
+      author: securefiles
+      changes:
+        - addColumn:
+            tableName: outbox_event
+            columns:
+              - column:
+                  name: next_publish_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: publish_lease_id
+                  type: UUID
+              - column:
+                  name: publish_lease_until
+                  type: TIMESTAMP WITH TIME ZONE
+        - sql:
+            sql: >-
+              update outbox_event
+                 set next_publish_at = occurred_at
+               where next_publish_at is null
+        - createIndex:
+            tableName: outbox_event
+            indexName: idx_outbox_event_publish_claim
+            columns:
+              - column:
+                  name: published_at
+              - column:
+                  name: next_publish_at
+              - column:
+                  name: publish_lease_until
+              - column:
+                  name: occurred_at

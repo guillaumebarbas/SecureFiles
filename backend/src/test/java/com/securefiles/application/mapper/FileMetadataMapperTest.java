@@ -25,6 +25,7 @@ class FileMetadataMapperTest {
                 FILE_ID,
                 "report.pdf",
                 "Alice Martin",
+                Optional.of("application/pdf"),
                 Optional.of(42L),
                 FileStatus.SCANNING,
                 CREATED_AT,
@@ -38,6 +39,7 @@ class FileMetadataMapperTest {
         assertThat(response.fileId()).isEqualTo(FILE_ID);
         assertThat(response.originalFilename()).isEqualTo("report.pdf");
         assertThat(response.author()).isEqualTo("Alice Martin");
+        assertThat(response.clientContentType()).isEqualTo("application/pdf");
         assertThat(response.sizeBytes()).isEqualTo(42L);
         assertThat(response.status()).isEqualTo("SCANNING");
         assertThat(response.createdAt()).isEqualTo(CREATED_AT);

@@ -1,6 +1,8 @@
 package com.securefiles.config;
 
 import com.securefiles.infrastructure.security.JwtAuthenticationFilter;
+import com.securefiles.infrastructure.security.LoginRateLimitFilter;
+import com.securefiles.infrastructure.security.UploadRateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -21,7 +23,9 @@ public class LocalSecurityConfiguration {
     @Bean
     public SecurityFilterChain localSecurityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            LoginRateLimitFilter loginRateLimitFilter,
+            UploadRateLimitFilter uploadRateLimitFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -43,6 +47,24 @@ public class LocalSecurityConfiguration {
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                http.addFilterAfter(loginRateLimitFilter, JwtAuthenticationFilter.class);
+                http.addFilterAfter(uploadRateLimitFilter, LoginRateLimitFilter.class);
         return http.build();
     }
+
+        @Bean
+        public UploadRateLimitFilter uploadRateLimitFilter(
+                        com.securefiles.infrastructure.security.JdbcUploadRateLimiter rateLimiter,
+                        RateLimitProperties properties,
+                        java.time.Clock clock) {
+                return new UploadRateLimitFilter(rateLimiter, properties, clock);
+        }
+
+        @Bean
+        public LoginRateLimitFilter loginRateLimitFilter(
+                        com.securefiles.infrastructure.security.JdbcUploadRateLimiter rateLimiter,
+                        RateLimitProperties properties,
+                        java.time.Clock clock) {
+                return new LoginRateLimitFilter(rateLimiter, properties, clock);
+        }
 }

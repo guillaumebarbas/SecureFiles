@@ -5,8 +5,6 @@ import com.securefiles.domain.file.model.download.DownloadException;
 import com.securefiles.domain.file.port.in.DownloadFile;
 import com.securefiles.domain.file.port.in.DownloadFileCommand;
 import com.securefiles.domain.file.port.in.DownloadFileResult;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Objects;

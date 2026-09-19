@@ -16,7 +16,9 @@ public class ClamAvConfiguration {
                 properties.host(),
                 properties.port(),
                 Math.toIntExact(properties.connectTimeout().toMillis()),
+                Math.toIntExact(properties.writeTimeout().toMillis()),
                 Math.toIntExact(properties.readTimeout().toMillis()),
+                Math.toIntExact(properties.scanTimeout().toMillis()),
                 properties.chunkSize());
     }
 }

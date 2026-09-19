@@ -7,5 +7,6 @@ public enum FileStatus {
     CLEAN,
     INFECTED,
     SCAN_FAILED,
-    REJECTED
+    REJECTED,
+    DELETING
 }

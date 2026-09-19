@@ -17,9 +17,21 @@ public interface StoredFileRepository {
 
     void delete(UUID fileId);
 
+    boolean markDeleting(UUID fileId, Instant deletingAt);
+
+    List<UUID> findDeletingIds(int limit);
+
+    List<UUID> findAbandonedUploadingIds(Instant abandonedBefore, int limit);
+
+    boolean markAbandonedUploadDeleting(UUID fileId, String failureCode, Instant deletingAt);
+
+    boolean rejectUpload(UUID fileId, String failureCode, Instant rejectedAt);
+
     StoredFilePage findPage(FileListQuery query);
 
     List<StoredFile> findByOwnerId(String ownerId);
+
+    List<UUID> findExpiredScanIds(Instant recoveredAt, int limit);
 
     Map<UUID, String> findLatestPreciseFailureCodesByFileIds(Set<UUID> fileIds);
 
@@ -29,10 +41,17 @@ public interface StoredFileRepository {
             Instant claimedAt,
             Instant leaseUntil);
 
-        Optional<StoredFile> recoverExpiredScan(
+    Optional<StoredFile> recoverExpiredScan(
             UUID fileId,
             Instant recoveredAt,
             Instant nextScanAt);
 
-    void completeScan(StoredFile storedFile, com.securefiles.domain.file.model.ScanAttempt scanAttempt);
+    boolean completeScan(
+            UUID expectedLeaseId,
+            StoredFile storedFile,
+            com.securefiles.domain.file.model.ScanAttempt scanAttempt);
+
+    boolean failPendingScan(
+            StoredFile storedFile,
+            com.securefiles.domain.file.model.ScanAttempt scanAttempt);
 }

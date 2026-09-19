@@ -8,9 +8,11 @@ import com.securefiles.domain.file.model.delete.DeleteFileException;
 import com.securefiles.domain.file.port.in.DeleteFileCommand;
 import com.securefiles.domain.file.port.out.FileContentStorage;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -41,15 +44,20 @@ class DeleteFileUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        deleteFileUseCase = new DeleteFileUseCase(repository, contentStorage);
+        deleteFileUseCase = new DeleteFileUseCase(
+            repository,
+            contentStorage,
+            Clock.fixed(CREATED_AT, ZoneOffset.UTC));
     }
 
     @Test
     void delete_shouldRemoveContentAndMetadata_whenOwnerRequestsDeletion() {
         when(repository.findById(FILE_ID)).thenReturn(Optional.of(createFile("owner-1", FileStatus.CLEAN)));
+        when(repository.markDeleting(FILE_ID, CREATED_AT)).thenReturn(true);
 
         deleteFileUseCase.delete(new DeleteFileCommand(FILE_ID, "owner-1", false));
 
+        verify(repository).markDeleting(FILE_ID, CREATED_AT);
         verify(contentStorage).delete(FILE_ID);
         verify(repository).delete(FILE_ID);
     }
@@ -57,9 +65,11 @@ class DeleteFileUseCaseTest {
     @Test
     void delete_shouldRemoveContentAndMetadata_whenAdministratorRequestsDeletion() {
         when(repository.findById(FILE_ID)).thenReturn(Optional.of(createFile("owner-1", FileStatus.CLEAN)));
+        when(repository.markDeleting(FILE_ID, CREATED_AT)).thenReturn(true);
 
         deleteFileUseCase.delete(new DeleteFileCommand(FILE_ID, "administrator-1", true));
 
+        verify(repository).markDeleting(FILE_ID, CREATED_AT);
         verify(contentStorage).delete(FILE_ID);
         verify(repository).delete(FILE_ID);
     }
@@ -89,6 +99,22 @@ class DeleteFileUseCaseTest {
 
         verify(contentStorage, never()).delete(FILE_ID);
         verify(repository, never()).delete(FILE_ID);
+    }
+
+    @Test
+    void delete_shouldReportFailureAfterContentRemoval_whenMetadataDeletionFails() {
+        when(repository.findById(FILE_ID)).thenReturn(Optional.of(createFile("owner-1", FileStatus.CLEAN)));
+        when(repository.markDeleting(FILE_ID, CREATED_AT)).thenReturn(true);
+        doThrow(new IllegalStateException("database unavailable")).when(repository).delete(FILE_ID);
+
+        assertThatThrownBy(() -> deleteFileUseCase.delete(
+                new DeleteFileCommand(FILE_ID, "owner-1", false)))
+                .isInstanceOf(DeleteFileException.class)
+                .extracting(exception -> ((DeleteFileException) exception).code())
+                .isEqualTo("FILE_DELETE_FAILED");
+
+        verify(contentStorage).delete(FILE_ID);
+        verify(repository).delete(FILE_ID);
     }
 
     private StoredFile createFile(String ownerId, FileStatus status) {
