@@ -610,31 +610,12 @@ h3 {
   min-width: 0;
 }
 
-.files-page__empty-state {
-  display: grid;
-  gap: 4px;
-  padding: 20px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-control);
-  color: var(--text-secondary);
-  background: var(--surface-secondary);
-  font-size: 14px;
-}
-
-.files-page__empty-title {
-  color: var(--text-primary);
-  font-family: 'Space Grotesk', 'Avenir Next', sans-serif;
-  font-weight: 700;
-}
-
-.files-page,
 .showcase-page,
 .dashboard-page {
   width: min(1180px, 100%);
   margin: 0 auto;
 }
 
-.files-page,
 .dashboard-page {
   padding: 40px 0 72px;
 }
@@ -1630,7 +1611,6 @@ h3 {
     padding: 24px 0 48px;
   }
 
-  .files-page,
   .dashboard-page {
     padding: 24px 0 48px;
   }

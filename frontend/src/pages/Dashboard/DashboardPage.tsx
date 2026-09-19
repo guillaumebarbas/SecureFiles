@@ -16,7 +16,6 @@ import { FileUpload } from '../../shared/forms/FileUpload/FileUpload';
 import { Tag } from '../../shared/feedback/Tag';
 import { Section } from '../../shared/layout/Section/Section';
 import { Row } from '../../shared/layout/Row';
-import { fileFailureDetails } from '../../shared/constants/fileFailureCodes';
 import { FileActionsMenu } from '../../shared/files/FileActionsMenu';
 import { dashboardPageClassNames } from './style';
 
@@ -118,7 +117,6 @@ function createDashboardFileColumns(
       key: 'status',
       render: (file) => (
         <Tag
-          details={fileFailureDetails(file.failureCode, file.failureCause)}
           icon={statusIcon(file.status)}
           text={file.status}
           tone={statusTone(file.status)}
