@@ -7,5 +7,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record ScanProperties(
         Duration leaseDuration,
         int maximumAttempts,
-        Duration retryDelay) {
+        Duration retryDelay,
+        int recoveryBatchSize) {
 }

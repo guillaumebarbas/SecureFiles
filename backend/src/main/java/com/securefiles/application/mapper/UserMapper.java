@@ -10,7 +10,6 @@ import com.securefiles.domain.user.port.in.AuthenticationResult;
 import com.securefiles.domain.user.port.in.CreateUserCommand;
 import com.securefiles.domain.user.port.in.CreateUserResult;
 import com.securefiles.domain.user.port.in.UserProfileResult;
-import java.util.Comparator;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -43,7 +42,7 @@ public final class UserMapper {
                 result.userId(),
                 result.name(),
                 result.roles().stream()
-                        .map(UserRole::value)
+                    .map(role -> role.value())
                         .sorted()
                         .toList());
     }

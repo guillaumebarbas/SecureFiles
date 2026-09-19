@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-create-rate-limit-bucket
+      author: securefiles
+      changes:
+        - createTable:
+            tableName: api_rate_limit_bucket
+            columns:
+              - column:
+                  name: bucket_key
+                  type: VARCHAR(512)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_api_rate_limit_bucket
+              - column:
+                  name: window_started_millis
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: request_count
+                  type: INTEGER
+                  constraints:
+                    nullable: false

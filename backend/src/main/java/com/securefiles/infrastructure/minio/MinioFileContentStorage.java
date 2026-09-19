@@ -11,7 +11,6 @@ import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.StatObjectArgs;
 import io.minio.StatObjectResponse;
-import io.minio.messages.Item;
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.UUID;

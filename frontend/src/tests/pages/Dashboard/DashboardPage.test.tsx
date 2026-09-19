@@ -353,7 +353,7 @@ describe('DashboardPage', () => {
     expect(filterButton).toHaveFocus();
   });
 
-  it('shows the terminal failure and precise cause in the status tag tooltip', async () => {
+  it('does not display failure diagnostics from the public files response', async () => {
     mockedListFiles.mockResolvedValue(createFilesPageResponse([{
       createdAt: '2026-09-15T10:00:00Z',
       failureCause: 'CLAMAV_UNAVAILABLE',
@@ -367,18 +367,11 @@ describe('DashboardPage', () => {
     render(<DashboardPage />);
 
     const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
-    const tag = await within(table).findByText('SCAN_FAILED');
-    const tooltip = screen.getByRole('tooltip', {
-      name: 'Nombre maximal de tentatives atteint (SCAN_ATTEMPTS_EXHAUSTED). Cause : Service antivirus indisponible (CLAMAV_UNAVAILABLE)',
-    });
-
-    expect(tag).toHaveAttribute('aria-describedby', tooltip.id);
-    expect(tooltip).toHaveTextContent(
-      'Nombre maximal de tentatives atteint (SCAN_ATTEMPTS_EXHAUSTED). Cause : Service antivirus indisponible (CLAMAV_UNAVAILABLE)',
-    );
+    expect(await within(table).findByText('SCAN_FAILED')).toBeVisible();
+    expect(screen.queryByRole('tooltip', { name: /SCAN_ATTEMPTS_EXHAUSTED|CLAMAV_UNAVAILABLE/ })).not.toBeInTheDocument();
   });
 
-  it('shows a precise storage failure description in the status tag tooltip', async () => {
+  it('does not display a storage failure diagnostic from the public files response', async () => {
     mockedListFiles.mockResolvedValue(createFilesPageResponse([{
       createdAt: '2026-09-15T10:00:00Z',
       failureCode: 'STORAGE_SIZE_MISMATCH',
@@ -392,9 +385,7 @@ describe('DashboardPage', () => {
 
     const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
     await within(table).findByText('large-video.mov');
-    expect(screen.getByRole('tooltip', {
-      name: 'Taille du fichier incohérente (STORAGE_SIZE_MISMATCH)',
-    })).toBeVisible();
+    expect(screen.queryByRole('tooltip', { name: /STORAGE_SIZE_MISMATCH/ })).not.toBeInTheDocument();
   });
 
   it('shows a retry action when the recent files register cannot be loaded', async () => {

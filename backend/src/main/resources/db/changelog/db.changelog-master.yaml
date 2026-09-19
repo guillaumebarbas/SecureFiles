@@ -8,3 +8,15 @@ databaseChangeLog:
   - include:
       file: changes/003-create-stored-file-list-index.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/004-harden-outbox-publication.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/005-create-file-quota.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/006-create-rate-limit-bucket.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/007-reconcile-file-quota.yaml
+      relativeToChangelogFile: true

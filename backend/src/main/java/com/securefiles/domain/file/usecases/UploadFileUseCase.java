@@ -197,7 +197,11 @@ public final class UploadFileUseCase implements UploadFile {
     }
 
     private void acceptCompletedUpload(StoredFile pendingScanFile, FileScanRequested scanRequest) {
-        acceptancePort.accept(pendingScanFile, scanRequest);
+        if (!acceptancePort.accept(pendingScanFile, scanRequest)) {
+            throw new UploadException(
+                    FileFailureCodes.QUOTA_EXCEEDED,
+                    "The owner's storage quota has been exceeded.");
+        }
     }
 
     private UploadFileResult createUploadResult(StoredFile pendingScanFile) {
@@ -240,7 +244,7 @@ public final class UploadFileUseCase implements UploadFile {
             failure.addSuppressed(cleanupFailure);
         }
         try {
-            repository.save(uploadingFile.reject(failure.code(), clock.instant()));
+            repository.rejectUpload(uploadingFile.id(), failure.code(), clock.instant());
         } catch (RuntimeException rejectionFailure) {
             failure.addSuppressed(rejectionFailure);
         }

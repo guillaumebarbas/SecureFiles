@@ -48,7 +48,7 @@ describe('filesApi', () => {
     await expect(checkBackendHealth()).resolves.toBe('offline');
   });
 
-  it('posts the selected file as multipart form data', async () => {
+  it('prepares the CSRF cookie before posting the selected file as multipart form data', async () => {
     const file = new File(['safe content'], 'document.txt', { type: 'text/plain' });
     const response = {
       createdAt: '2026-09-15T10:00:00Z',
@@ -57,13 +57,20 @@ describe('filesApi', () => {
       sizeBytes: file.size,
       status: 'PENDING_SCAN',
     };
+    vi.mocked(axios.get).mockResolvedValue({ data: undefined } as never);
     vi.mocked(axios.post).mockResolvedValue({ data: response } as never);
 
     await expect(uploadFile(file)).resolves.toEqual(response);
 
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/csrf', { withCredentials: true });
     const [url, body] = vi.mocked(axios.post).mock.calls[0];
     expect(url).toBe('/api/v1/files');
     expect((body as FormData).get('file')).toBe(file);
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/v1/files',
+      expect.any(FormData),
+      expect.objectContaining({ withCredentials: true }),
+    );
   });
 
   it('reports upload progress and completes at one hundred percent', async () => {

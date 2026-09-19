@@ -10,6 +10,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.amqp.support.converter.SimpleMessageConverter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,6 +49,11 @@ public class RabbitMqConfiguration {
     }
 
     @Bean
+    public Queue poisonQueue(RabbitMqProperties properties) {
+        return QueueBuilder.durable(properties.poisonQueue()).build();
+    }
+
+    @Bean
     public Binding scanQueueBinding(Queue scanQueue, TopicExchange scanExchange, RabbitMqProperties properties) {
         return BindingBuilder.bind(scanQueue)
                 .to(scanExchange)
@@ -72,6 +78,16 @@ public class RabbitMqConfiguration {
     }
 
     @Bean
+    public Binding poisonQueueBinding(
+            Queue poisonQueue,
+            TopicExchange scanExchange,
+            RabbitMqProperties properties) {
+        return BindingBuilder.bind(poisonQueue)
+                .to(scanExchange)
+                .with(properties.poisonQueue());
+    }
+
+    @Bean
     public MessageConverter rabbitMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
@@ -88,6 +104,23 @@ public class RabbitMqConfiguration {
 
     @Bean
     public SimpleRabbitListenerContainerFactory scanRabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory,
+            MessageConverter messageConverter,
+            RabbitMqProperties properties) {
+        return listenerContainerFactory(connectionFactory, messageConverter, properties);
+        }
+
+        @Bean
+        public SimpleRabbitListenerContainerFactory deadLetterRabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory,
+            RabbitMqProperties properties) {
+        return listenerContainerFactory(
+            connectionFactory,
+            new SimpleMessageConverter(),
+            properties);
+        }
+
+        private SimpleRabbitListenerContainerFactory listenerContainerFactory(
             ConnectionFactory connectionFactory,
             MessageConverter messageConverter,
             RabbitMqProperties properties) {

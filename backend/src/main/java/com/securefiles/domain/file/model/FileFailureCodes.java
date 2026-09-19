@@ -4,7 +4,9 @@ public final class FileFailureCodes {
 
     public static final String ANTIVIRUS_UNAVAILABLE = "ANTIVIRUS_UNAVAILABLE";
     public static final String CLAMAV_INVALID_RESPONSE = "CLAMAV_INVALID_RESPONSE";
+    public static final String CLAMAV_SCAN_TIMEOUT = "CLAMAV_SCAN_TIMEOUT";
     public static final String CLAMAV_UNAVAILABLE = "CLAMAV_UNAVAILABLE";
+    public static final String CLAMAV_WRITE_TIMEOUT = "CLAMAV_WRITE_TIMEOUT";
     public static final String CONTENT_UNAVAILABLE = "CONTENT_UNAVAILABLE";
     public static final String FILE_DELETE_FAILED = "FILE_DELETE_FAILED";
     public static final String DECLARED_SIZE_MISMATCH = "DECLARED_SIZE_MISMATCH";
@@ -26,7 +28,10 @@ public final class FileFailureCodes {
     public static final String STORAGE_OBJECT_NOT_FOUND = "STORAGE_OBJECT_NOT_FOUND";
     public static final String STORAGE_SIZE_MISMATCH = "STORAGE_SIZE_MISMATCH";
     public static final String STORAGE_VERSION_MISMATCH = "STORAGE_VERSION_MISMATCH";
+    public static final String QUOTA_EXCEEDED = "QUOTA_EXCEEDED";
+    public static final String RABBITMQ_TRANSPORT_EXHAUSTED = "RABBITMQ_TRANSPORT_EXHAUSTED";
     public static final String UPLOAD_FAILED = "UPLOAD_FAILED";
+    public static final String UPLOAD_EXPIRED = "UPLOAD_EXPIRED";
     public static final String UPLOAD_READ_FAILED = "UPLOAD_READ_FAILED";
 
     private FileFailureCodes() {

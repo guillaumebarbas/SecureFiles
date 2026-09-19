@@ -10,7 +10,6 @@ import com.securefiles.domain.user.port.in.AuthenticateUser;
 import com.securefiles.domain.user.port.in.AuthenticationResult;
 import com.securefiles.domain.user.port.in.CreateUser;
 import com.securefiles.domain.user.port.in.LogoutUser;
-import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.util.Objects;
 import org.springframework.http.HttpHeaders;

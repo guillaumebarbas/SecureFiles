@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-reconcile-file-quota
+      author: securefiles
+      changes:
+        - sql:
+            sql: |
+              insert into stored_file_quota(owner_id, quota_bytes, used_bytes)
+              select owner_id,
+                     10737418240,
+                     coalesce(sum(size_bytes), 0)::bigint
+                from stored_file
+               where status not in ('UPLOADING', 'REJECTED')
+               group by owner_id
+              on conflict (owner_id) do nothing;
+        - sql:
+            sql: |
+              alter table stored_file_quota
+                add constraint ck_stored_file_quota_quota_non_negative
+                check (quota_bytes >= 0);
+        - sql:
+            sql: |
+              alter table stored_file_quota
+                add constraint ck_stored_file_quota_used_non_negative
+                check (used_bytes >= 0);

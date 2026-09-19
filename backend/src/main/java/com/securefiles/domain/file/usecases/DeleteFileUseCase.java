@@ -8,18 +8,23 @@ import com.securefiles.domain.file.port.in.DeleteFile;
 import com.securefiles.domain.file.port.in.DeleteFileCommand;
 import com.securefiles.domain.file.port.out.FileContentStorage;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Objects;
 
 public final class DeleteFileUseCase implements DeleteFile {
 
     private final StoredFileRepository repository;
     private final FileContentStorage contentStorage;
+    private final Clock clock;
 
     public DeleteFileUseCase(
             StoredFileRepository repository,
-            FileContentStorage contentStorage) {
+            FileContentStorage contentStorage,
+            Clock clock) {
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.contentStorage = Objects.requireNonNull(contentStorage, "contentStorage must not be null");
+        this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
     @Override
@@ -28,6 +33,7 @@ public final class DeleteFileUseCase implements DeleteFile {
         StoredFile storedFile = findFile(command);
         authorizeDeletion(storedFile, command);
         ensureStatusCanBeDeleted(storedFile);
+        markDeleting(storedFile, command.fileId());
         deleteContent(command);
         deleteMetadata(command);
     }
@@ -53,6 +59,23 @@ public final class DeleteFileUseCase implements DeleteFile {
     private void deleteContent(DeleteFileCommand command) {
         try {
             contentStorage.delete(command.fileId());
+        } catch (RuntimeException exception) {
+            throw deletionFailed(exception);
+        }
+    }
+
+    private void markDeleting(StoredFile storedFile, java.util.UUID fileId) {
+        if (storedFile.status() == FileStatus.DELETING) {
+            return;
+        }
+        try {
+            if (!repository.markDeleting(fileId, Instant.now(clock))) {
+                throw new DeleteFileException(
+                        FileFailureCodes.FILE_NOT_AVAILABLE,
+                        "The file is already being changed.");
+            }
+        } catch (DeleteFileException exception) {
+            throw exception;
         } catch (RuntimeException exception) {
             throw deletionFailed(exception);
         }

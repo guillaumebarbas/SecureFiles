@@ -8,5 +8,5 @@ public interface FileAcceptancePort {
     /**
      * Atomically accepts the completed file and records its scan request.
      */
-    void accept(StoredFile storedFile, FileScanRequested scanRequest);
+    boolean accept(StoredFile storedFile, FileScanRequested scanRequest);
 }

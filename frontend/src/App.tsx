@@ -9,7 +9,6 @@ import {
   type UserProfile,
 } from './api/filesApi';
 import { DashboardPage, type DashboardPageProps } from './pages/Dashboard/DashboardPage';
-import { FilesPage } from './pages/Files/FilesPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 import { SharedComponentsShowcasePage } from './pages/SharedComponentsShowcase/SharedComponentsShowcasePage';
 import type { BackendStatusValue } from './shared/layout/BackendStatus/style';
@@ -19,7 +18,7 @@ import { SideNavBar } from './shared/layout/SideNavBar/SideNavBar';
 import type { NavItemDefinition } from './shared/layout/NavItem/NavItem';
 import { appClassNames } from './app/style';
 
-export type AppRoute = '/' | '/components' | '/files' | '/profile';
+export type AppRoute = '/' | '/components' | '/profile';
 
 const applicationVersion = '0.1.0';
 
@@ -38,10 +37,6 @@ const routeMetadata: Record<AppRoute, { eyebrow: string; title: string }> = {
     eyebrow: 'Bibliothèque partagée',
     title: 'Composants réutilisables',
   },
-  '/files': {
-    eyebrow: 'Registre des fichiers',
-    title: 'Fichiers',
-  },
   '/profile': {
     eyebrow: 'Compte',
     title: 'Profil',
@@ -50,7 +45,7 @@ const routeMetadata: Record<AppRoute, { eyebrow: string; title: string }> = {
 
 function routeFromPathname(pathname: string): AppRoute {
   if (pathname === '/files') {
-    return '/files';
+    return '/';
   }
 
   if (pathname === '/components') {
@@ -77,7 +72,7 @@ function renderCurrentPage(route: AppRoute, dashboardProps: DashboardPageProps) 
     return <ProfilePage />;
   }
 
-  return <FilesPage />;
+  return <DashboardPage {...dashboardProps} />;
 }
 
 export function App() {

@@ -7,7 +7,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+import java.sql.Types;
 import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -15,6 +19,9 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -43,6 +50,7 @@ import org.awaitility.core.ConditionTimeoutException;
     "securefiles.rabbitmq.retry-queue=securefiles.integration.scan.retry",
     "securefiles.rabbitmq.dead-letter-queue=securefiles.integration.scan.dlq",
     "securefiles.rabbitmq.relay-interval-millis=100",
+    "securefiles.rabbitmq.maximum-dead-letter-redrives=1",
     "securefiles.scan.lease-duration=PT30S",
     "securefiles.scan.retry-delay=PT1S"
 })
@@ -50,8 +58,11 @@ class FileScanFlowIntegrationTest {
 
     private static final long LARGE_FILE_SIZE_BYTES = 19_553_061L;
     private static final int STREAM_BLOCK_SIZE_BYTES = 8 * 1024;
+    private static final String INTEGRATION_PASSWORD = "integration-password";
     private static final String EICAR_TEXT_PATH_ENVIRONMENT_VARIABLE = "SECUREFILES_EICAR_TEXT_PATH";
     private static final String EICAR_ZIP_PATH_ENVIRONMENT_VARIABLE = "SECUREFILES_EICAR_ZIP_PATH";
+    private static final String FILE_ID_HEADER = "securefiles-file-id";
+    private static final String REDRIVE_COUNT_HEADER = "securefiles-redrive-count";
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -59,13 +70,18 @@ class FileScanFlowIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
     @LocalServerPort
     private int serverPort;
 
     @Test
     void upload_shouldReachClean_whenScanInfrastructureIsAvailable() {
+        String authenticationCookie = authenticationCookie();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.set(HttpHeaders.COOKIE, authenticationCookie);
         MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("file", new ClassPathResource("integration/safe-file.txt"));
 
@@ -86,7 +102,12 @@ class FileScanFlowIntegrationTest {
                 .atMost(Duration.ofSeconds(30))
                 .pollInterval(Duration.ofMillis(250))
                 .until(
-                    () -> restTemplate.getForObject(apiUrl() + "/" + fileId, JsonNode.class),
+                    () -> restTemplate.exchange(
+                                    apiUrl() + "/" + fileId,
+                                    org.springframework.http.HttpMethod.GET,
+                                    authenticatedEntity(authenticationCookie),
+                                    JsonNode.class)
+                            .getBody(),
                     response -> isTerminal(response.path("status").asText()));
             } catch (ConditionTimeoutException exception) {
                 throw new AssertionError(buildTerminalDiagnostic(fileId), exception);
@@ -97,6 +118,7 @@ class FileScanFlowIntegrationTest {
 
     @Test
     void upload_shouldReachClean_whenMultipartStorageIsUsed() throws Exception {
+        String authenticationCookie = authenticationCookie();
         Path largeFile = Files.createTempFile("securefiles-large-upload-", ".mov");
         try {
             byte[] streamingBlock = new byte[STREAM_BLOCK_SIZE_BYTES];
@@ -111,6 +133,7 @@ class FileScanFlowIntegrationTest {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            headers.set(HttpHeaders.COOKIE, authenticationCookie);
             MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
             requestBody.add("file", new FileSystemResource(largeFile.toFile()));
 
@@ -133,7 +156,12 @@ class FileScanFlowIntegrationTest {
                         .atMost(Duration.ofSeconds(60))
                         .pollInterval(Duration.ofMillis(250))
                         .until(
-                                () -> restTemplate.getForObject(apiUrl() + "/" + fileId, JsonNode.class),
+                                () -> restTemplate.exchange(
+                                        apiUrl() + "/" + fileId,
+                                        org.springframework.http.HttpMethod.GET,
+                                        authenticatedEntity(authenticationCookie),
+                                        JsonNode.class)
+                                    .getBody(),
                                 response -> isTerminal(response.path("status").asText()));
             } catch (ConditionTimeoutException exception) {
                 throw new AssertionError(buildTerminalDiagnostic(fileId), exception);
@@ -155,13 +183,40 @@ class FileScanFlowIntegrationTest {
         assertUploadedFileReachesInfected(externalTestFile(EICAR_ZIP_PATH_ENVIRONMENT_VARIABLE));
     }
 
+    @Test
+    void deadLetter_shouldFailPendingScan_whenCorrelatedMessageCannotBeDecoded() {
+        UUID fileId = UUID.randomUUID();
+        createPendingScanFile(fileId);
+        try {
+            rabbitTemplate.send(
+                    "securefiles.integration.scan",
+                    "securefiles.integration.scan.dlq",
+                    malformedDeadLetterMessage(fileId));
+
+            String status = await()
+                    .atMost(Duration.ofSeconds(10))
+                    .pollInterval(Duration.ofMillis(250))
+                    .until(() -> fileStatus(fileId), "SCAN_FAILED"::equals);
+
+            assertThat(status).isEqualTo("SCAN_FAILED");
+            assertThat(querySingleRow(
+                    "select failure_code from stored_file where id = ?",
+                    fileId).get("failure_code"))
+                    .isEqualTo("SCAN_ATTEMPTS_EXHAUSTED");
+        } finally {
+            jdbcTemplate.update("delete from stored_file where id = ?", fileId);
+        }
+    }
+
     private void assertUploadedFileReachesInfected(Path file) {
         assertUploadedFileReachesStatus(file, "INFECTED", Duration.ofSeconds(30));
     }
 
     private void assertUploadedFileReachesStatus(Path file, String expectedStatus, Duration timeout) {
+        String authenticationCookie = authenticationCookie();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.set(HttpHeaders.COOKIE, authenticationCookie);
         MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("file", new FileSystemResource(file.toFile()));
 
@@ -182,7 +237,12 @@ class FileScanFlowIntegrationTest {
                 .atMost(timeout)
                     .pollInterval(Duration.ofMillis(250))
                     .until(
-                            () -> restTemplate.getForObject(apiUrl() + "/" + fileId, JsonNode.class),
+                                () -> restTemplate.exchange(
+                                        apiUrl() + "/" + fileId,
+                                        org.springframework.http.HttpMethod.GET,
+                                        authenticatedEntity(authenticationCookie),
+                                        JsonNode.class)
+                                    .getBody(),
                             response -> isTerminal(response.path("status").asText()));
         } catch (ConditionTimeoutException exception) {
             throw new AssertionError(buildTerminalDiagnostic(fileId), exception);
@@ -215,6 +275,54 @@ class FileScanFlowIntegrationTest {
         return file;
     }
 
+
+    private Message malformedDeadLetterMessage(UUID fileId) {
+        MessageProperties properties = new MessageProperties();
+        properties.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        properties.setHeader(FILE_ID_HEADER, fileId.toString());
+        properties.setHeader(REDRIVE_COUNT_HEADER, 1);
+        return new Message("not-a-scan-message".getBytes(StandardCharsets.UTF_8), properties);
+    }
+
+    private void createPendingScanFile(UUID fileId) {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        jdbcTemplate.update(
+                """
+                insert into stored_file (
+                    id, owner_id, original_filename, client_content_type, status,
+                    scan_attempt_count, created_at, updated_at, entity_version)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                new Object[] {
+                    fileId,
+                    "dead-letter-integration-owner",
+                    "malformed-message.bin",
+                    "application/octet-stream",
+                    "PENDING_SCAN",
+                    0,
+                    now,
+                    now,
+                    0L
+                },
+                new int[] {
+                    Types.OTHER,
+                    Types.VARCHAR,
+                    Types.VARCHAR,
+                    Types.VARCHAR,
+                    Types.VARCHAR,
+                    Types.INTEGER,
+                    Types.TIMESTAMP_WITH_TIMEZONE,
+                    Types.TIMESTAMP_WITH_TIMEZONE,
+                    Types.BIGINT
+                });
+    }
+
+    private String fileStatus(UUID fileId) {
+        return jdbcTemplate.queryForObject(
+                "select status from stored_file where id = ?",
+                String.class,
+                fileId);
+    }
     private String buildTerminalDiagnostic(UUID fileId) {
         Map<String, Object> file = querySingleRow(
             "select status, scan_attempt_count, scan_lease_until, next_scan_at, "
@@ -248,5 +356,42 @@ class FileScanFlowIntegrationTest {
 
     private String apiUrl() {
         return "http://localhost:" + serverPort + "/api/v1/files";
+    }
+
+    private String authenticationCookie() {
+        String userName = "scan-integration-" + UUID.randomUUID();
+        ResponseEntity<JsonNode> registrationResponse = restTemplate.postForEntity(
+                "http://localhost:" + serverPort + "/api/v1/auth/register",
+                jsonEntity(Map.of(
+                        "name", userName,
+                        "password", INTEGRATION_PASSWORD,
+                        "roles", List.of("utilisateur"))),
+                JsonNode.class);
+        assertThat(registrationResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        ResponseEntity<JsonNode> loginResponse = restTemplate.postForEntity(
+                "http://localhost:" + serverPort + "/api/v1/auth/login",
+                jsonEntity(Map.of("name", userName, "password", INTEGRATION_PASSWORD)),
+                JsonNode.class);
+        assertThat(loginResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        return cookiePair(loginResponse);
+    }
+
+    private HttpEntity<Map<String, Object>> jsonEntity(Map<String, Object> body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return new HttpEntity<>(body, headers);
+    }
+
+    private HttpEntity<Void> authenticatedEntity(String authenticationCookie) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.COOKIE, authenticationCookie);
+        return new HttpEntity<>(headers);
+    }
+
+    private String cookiePair(ResponseEntity<?> response) {
+        String setCookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+        assertThat(setCookie).isNotBlank();
+        return setCookie.substring(0, setCookie.indexOf(';'));
     }
 }

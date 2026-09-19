@@ -21,6 +21,7 @@ export type FileMetadataResponse = Omit<UploadFileResponse, 'sizeBytes'> & {
   author?: string;
   canDelete?: boolean;
   canDownload?: boolean;
+  clientContentType?: string | null;
   failureCode?: string | null;
   failureCause?: string | null;
   sizeBytes: number | null;
@@ -135,6 +136,8 @@ export async function uploadFile(
   file: File,
   options: UploadFileOptions = {},
 ): Promise<UploadFileResponse> {
+  await prepareAuthRequest();
+
   const formData = new FormData();
   formData.append('file', file);
 
@@ -143,6 +146,7 @@ export async function uploadFile(
       onUploadProgress: (event) => {
         options.onProgress?.(calculateUploadProgress(event.loaded, event.total, file.size));
       },
+      withCredentials: true,
     });
     options.onProgress?.(100);
     return response.data;

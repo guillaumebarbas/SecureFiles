@@ -9,7 +9,8 @@ import java.util.UUID;
 public record GetFileMetadataResult(
         UUID fileId,
         String originalFilename,
-    String author,
+        String author,
+        Optional<String> clientContentType,
         Optional<Long> sizeBytes,
         FileStatus status,
         Instant createdAt,
@@ -26,7 +27,7 @@ public record GetFileMetadataResult(
             FileStatus status,
             Instant createdAt,
             Optional<String> failureCode) {
-        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, Optional.empty(), false, false);
+        this(fileId, originalFilename, author, Optional.empty(), sizeBytes, status, createdAt, failureCode, Optional.empty(), false, false);
     }
 
     public GetFileMetadataResult(
@@ -38,13 +39,44 @@ public record GetFileMetadataResult(
             Instant createdAt,
             Optional<String> failureCode,
             Optional<String> failureCause) {
-        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, failureCause, false, false);
+        this(fileId, originalFilename, author, Optional.empty(), sizeBytes, status, createdAt, failureCode, failureCause, false, false);
+    }
+
+    public GetFileMetadataResult(
+            UUID fileId,
+            String originalFilename,
+            String author,
+            Optional<Long> sizeBytes,
+            FileStatus status,
+            Instant createdAt,
+            Optional<String> failureCode,
+            Optional<String> failureCause,
+            boolean canDownload,
+            boolean canDelete) {
+        this(
+                fileId,
+                originalFilename,
+                author,
+                Optional.empty(),
+                sizeBytes,
+                status,
+                createdAt,
+                failureCode,
+                failureCause,
+                canDownload,
+                canDelete);
     }
 
     public GetFileMetadataResult {
         Objects.requireNonNull(fileId, "fileId must not be null");
         Objects.requireNonNull(originalFilename, "originalFilename must not be null");
         Objects.requireNonNull(author, "author must not be null");
+        Objects.requireNonNull(clientContentType, "clientContentType must not be null");
+        clientContentType.ifPresent(contentType -> {
+            if (contentType.isBlank()) {
+                throw new IllegalArgumentException("clientContentType must not be blank");
+            }
+        });
         Objects.requireNonNull(sizeBytes, "sizeBytes must not be null");
         sizeBytes.ifPresent(size -> {
             if (size < 0) {

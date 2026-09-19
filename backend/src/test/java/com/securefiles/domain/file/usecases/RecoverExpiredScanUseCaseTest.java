@@ -5,7 +5,7 @@ import com.securefiles.domain.file.model.StorageReceipt;
 import com.securefiles.domain.file.model.StoredFile;
 import com.securefiles.domain.file.port.in.RecoverExpiredScanCommand;
 import com.securefiles.domain.file.port.in.RecoverExpiredScanResult;
-import com.securefiles.domain.file.port.out.StoredFileRepository;
+import com.securefiles.domain.file.port.out.ExpiredScanRecoveryPort;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -27,18 +27,20 @@ import static org.mockito.Mockito.when;
 class RecoverExpiredScanUseCaseTest {
 
     private static final UUID FILE_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        private static final UUID EVENT_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final Instant NOW = Instant.parse("2026-09-15T10:00:00Z");
 
     @Mock
-    private StoredFileRepository repository;
+        private ExpiredScanRecoveryPort recoveryPort;
 
     private RecoverExpiredScanUseCase recoverExpiredScanUseCase;
 
     @BeforeEach
     void setUp() {
         recoverExpiredScanUseCase = new RecoverExpiredScanUseCase(
-                repository,
+                recoveryPort,
                 Clock.fixed(NOW, ZoneOffset.UTC),
+                () -> EVENT_ID,
                 Duration.ofSeconds(60));
     }
 
@@ -60,7 +62,8 @@ class RecoverExpiredScanUseCaseTest {
                         NOW.minusSeconds(60),
                         NOW.minusSeconds(120));
         StoredFile recoveredFile = pendingScanFile.recoverExpiredScan(NOW, NOW.plusSeconds(60));
-        when(repository.recoverExpiredScan(eq(FILE_ID), eq(NOW), eq(NOW.plusSeconds(60))))
+        when(recoveryPort.recoverExpiredScan(
+                        eq(FILE_ID), eq(EVENT_ID), eq(NOW), eq(NOW.plusSeconds(60))))
                 .thenReturn(Optional.of(recoveredFile));
 
         RecoverExpiredScanResult result = recoverExpiredScanUseCase.recover(
@@ -68,12 +71,13 @@ class RecoverExpiredScanUseCaseTest {
 
         assertThat(result.recovered()).isTrue();
         assertThat(result.status()).contains(FileStatus.PENDING_SCAN);
-        verify(repository).recoverExpiredScan(FILE_ID, NOW, NOW.plusSeconds(60));
+        verify(recoveryPort).recoverExpiredScan(FILE_ID, EVENT_ID, NOW, NOW.plusSeconds(60));
     }
 
     @Test
     void recover_shouldReturnUnchanged_whenRepositoryCannotRecoverLease() {
-        when(repository.recoverExpiredScan(eq(FILE_ID), eq(NOW), eq(NOW.plusSeconds(60))))
+        when(recoveryPort.recoverExpiredScan(
+                        eq(FILE_ID), eq(EVENT_ID), eq(NOW), eq(NOW.plusSeconds(60))))
                 .thenReturn(Optional.empty());
 
         RecoverExpiredScanResult result = recoverExpiredScanUseCase.recover(
@@ -81,6 +85,6 @@ class RecoverExpiredScanUseCaseTest {
 
         assertThat(result.recovered()).isFalse();
         assertThat(result.status()).isEmpty();
-        verify(repository).recoverExpiredScan(FILE_ID, NOW, NOW.plusSeconds(60));
+        verify(recoveryPort).recoverExpiredScan(FILE_ID, EVENT_ID, NOW, NOW.plusSeconds(60));
     }
 }

@@ -10,13 +10,14 @@ Stable
 
 ## Public API / Contracts
 
-- [GET /api/v1/files](../../backend/src/main/java/com/securefiles/application/controller/ListFilesController.java) accepts `page` starting at `1` and `size` between `1` and `50`, defaulting to `1` and `10`.
+- [GET /api/v1/files](../../backend/src/main/java/com/securefiles/application/controller/ListFilesController.java) accepts `page` starting at `1` and `size` between `1` and `50`, defaulting to `1` and `10`; its calculated offset cannot exceed `10,000`.
 - `sort` is allowlisted to `name`, `author`, `size`, and `createdAt`; `direction` accepts `asc` or `desc`.
 - Repeated `status` parameters have OR semantics. An absent status filter includes all seven canonical statuses.
 - The response envelope contains `content`, `page`, `size`, `totalElements`, `totalPages`, `hasNext`, and `hasPrevious`.
 - Results use the requested order with the stable `id DESC` tie-breaker; filtering and ordering happen before pagination and counting.
 - An out-of-range page returns an empty `200` envelope.
 - Invalid pagination parameters return `400 Bad Request` with the stable `INVALID_PAGINATION` code. Invalid sort, direction, or status values return `400 Bad Request` with `INVALID_LIST_QUERY`.
+- Each row exposes the nullable client-declared MIME type in `clientContentType`. The public list suppresses scan diagnostics: `failureCode` and `failureCause` are always `null`, while owner-only metadata retains them.
 
 ## Quick usage
 
@@ -59,6 +60,7 @@ The Dashboard sends the active page, page size, sort and selected statuses to th
 ## Changelog
 
 - 2026-09-18 - Added backend pagination, server-side sorting and status filtering for recent files, then connected the Dashboard to controlled server navigation.
+- 2026-09-19 - Bounded public deep pagination, transported the client-declared MIME type, and removed scan diagnostics from the public list.
 
 ## Notes
 

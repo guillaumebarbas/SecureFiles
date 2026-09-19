@@ -3,6 +3,7 @@ package com.securefiles.domain.file.usecases;
 import com.securefiles.domain.file.model.FileStatus;
 import com.securefiles.domain.file.model.FileFailureCodes;
 import com.securefiles.domain.file.model.StorageMetadata;
+import com.securefiles.domain.file.model.StorageObjectNotFoundException;
 import com.securefiles.domain.file.model.StoredFile;
 import com.securefiles.domain.file.model.download.DownloadException;
 import com.securefiles.domain.file.port.in.DownloadFile;
@@ -42,6 +43,8 @@ public final class DownloadFileUseCase implements DownloadFile {
             content = Objects.requireNonNull(
                     contentStorage.openStream(storedFile.id()),
                     "content stream must not be null");
+        } catch (StorageObjectNotFoundException exception) {
+            throw fileNotFound();
         } catch (RuntimeException exception) {
             throw new DownloadException(
                     FileFailureCodes.CONTENT_UNAVAILABLE,
@@ -60,6 +63,8 @@ public final class DownloadFileUseCase implements DownloadFile {
         StorageMetadata metadata;
         try {
             metadata = contentStorage.head(storedFile.id());
+        } catch (StorageObjectNotFoundException exception) {
+            throw fileNotFound();
         } catch (RuntimeException exception) {
             throw new DownloadException(
                     FileFailureCodes.CONTENT_UNAVAILABLE,

@@ -1,6 +1,7 @@
 package com.securefiles.domain.file.usecases;
 
 import com.securefiles.domain.file.model.AntivirusScanResult;
+import com.securefiles.domain.file.model.FileFailureCodes;
 import com.securefiles.domain.file.model.FileStatus;
 import com.securefiles.domain.file.model.ScanAttempt;
 import com.securefiles.domain.file.model.StorageObjectNotFoundException;
@@ -31,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -66,6 +68,7 @@ class ScanFileUseCaseTest {
                 Duration.ofSeconds(30),
                 3,
                 Duration.ofSeconds(60));
+        lenient().when(repository.completeScan(any(UUID.class), any(), any())).thenReturn(true);
     }
 
     @Test
@@ -94,7 +97,7 @@ class ScanFileUseCaseTest {
         assertThat(result.claimed()).isTrue();
         assertThat(result.status()).contains(FileStatus.CLEAN);
         ArgumentCaptor<StoredFile> storedFile = ArgumentCaptor.forClass(StoredFile.class);
-        verify(repository).completeScan(storedFile.capture(), any());
+        verify(repository).completeScan(eq(LEASE_ID), storedFile.capture(), any());
         assertThat(storedFile.getValue().status()).isEqualTo(FileStatus.CLEAN);
     }
 
@@ -112,7 +115,7 @@ class ScanFileUseCaseTest {
         assertThat(result.claimed()).isFalse();
         assertThat(result.status()).isEmpty();
         verifyNoInteractions(contentStorage, antivirusScanner);
-        verify(repository, never()).completeScan(any(), any());
+        verify(repository, never()).completeScan(any(UUID.class), any(), any());
     }
 
     @Test
@@ -140,7 +143,7 @@ class ScanFileUseCaseTest {
         assertThat(result.claimed()).isFalse();
         assertThat(result.status()).contains(FileStatus.PENDING_SCAN);
         verifyNoInteractions(contentStorage, antivirusScanner);
-        verify(repository, never()).completeScan(any(), any());
+        verify(repository, never()).completeScan(any(UUID.class), any(), any());
     }
 
     @Test
@@ -165,8 +168,34 @@ class ScanFileUseCaseTest {
 
         assertThat(result.status()).contains(FileStatus.PENDING_SCAN);
         ArgumentCaptor<StoredFile> storedFile = ArgumentCaptor.forClass(StoredFile.class);
-        verify(repository).completeScan(storedFile.capture(), any());
+        verify(repository).completeScan(eq(LEASE_ID), storedFile.capture(), any());
         assertThat(storedFile.getValue().failureCode()).contains("ANTIVIRUS_UNAVAILABLE");
+    }
+
+    @Test
+    void scan_shouldPreserveGlobalTimeoutCode_whenAntivirusStopsBeforeReadingTheCompleteContent() {
+        StoredFile scanningFile = createPendingScanFile().claimForScan(
+                LEASE_ID,
+                STARTED_AT.plusSeconds(30),
+                STARTED_AT);
+        when(repository.claimPendingScan(
+                eq(FILE_ID),
+                eq(LEASE_ID),
+                eq(STARTED_AT),
+                eq(STARTED_AT.plusSeconds(30))))
+                .thenReturn(Optional.of(scanningFile));
+        when(contentStorage.head(FILE_ID)).thenReturn(new StorageMetadata(12L, "version-1"));
+        when(contentStorage.openStream(FILE_ID)).thenReturn(
+                new ByteArrayInputStream("safe content".getBytes()));
+        when(antivirusScanner.scan(any(InputStream.class)))
+                .thenReturn(AntivirusScanResult.retryableFailure(FileFailureCodes.CLAMAV_SCAN_TIMEOUT));
+
+        ScanFileResult result = scanFileUseCase.scan(new ScanFileCommand(FILE_ID));
+
+        assertThat(result.status()).contains(FileStatus.PENDING_SCAN);
+        ArgumentCaptor<ScanAttempt> scanAttempt = ArgumentCaptor.forClass(ScanAttempt.class);
+        verify(repository).completeScan(eq(LEASE_ID), any(), scanAttempt.capture());
+        assertThat(scanAttempt.getValue().failureCode()).isEqualTo(FileFailureCodes.CLAMAV_SCAN_TIMEOUT);
     }
 
     @Test
@@ -187,7 +216,7 @@ class ScanFileUseCaseTest {
 
         assertThat(result.status()).contains(FileStatus.SCAN_FAILED);
         ArgumentCaptor<StoredFile> storedFile = ArgumentCaptor.forClass(StoredFile.class);
-        verify(repository).completeScan(storedFile.capture(), any());
+        verify(repository).completeScan(eq(LEASE_ID), storedFile.capture(), any());
         assertThat(storedFile.getValue().failureCode()).contains("STORAGE_OBJECT_NOT_FOUND");
     }
 
@@ -209,9 +238,38 @@ class ScanFileUseCaseTest {
 
         assertThat(result.status()).contains(FileStatus.SCAN_FAILED);
         ArgumentCaptor<StoredFile> storedFile = ArgumentCaptor.forClass(StoredFile.class);
-        verify(repository).completeScan(storedFile.capture(), any());
+        verify(repository).completeScan(eq(LEASE_ID), storedFile.capture(), any());
         assertThat(storedFile.getValue().failureCode()).contains("STORAGE_SIZE_MISMATCH");
     }
+
+        @Test
+        void scan_shouldNotReportCompletedStatus_whenLeaseCompletionIsRejected() throws Exception {
+                StoredFile scanningFile = createPendingScanFile().claimForScan(
+                                LEASE_ID,
+                                STARTED_AT.plusSeconds(30),
+                                STARTED_AT);
+                when(repository.claimPendingScan(
+                                eq(FILE_ID),
+                                eq(LEASE_ID),
+                                eq(STARTED_AT),
+                                eq(STARTED_AT.plusSeconds(30))))
+                                .thenReturn(Optional.of(scanningFile));
+                when(contentStorage.head(FILE_ID)).thenReturn(new StorageMetadata(12L, "version-1"));
+                when(contentStorage.openStream(FILE_ID)).thenReturn(
+                                new ByteArrayInputStream("safe content".getBytes()));
+                when(antivirusScanner.scan(any(InputStream.class))).thenAnswer(invocation -> {
+                        InputStream content = invocation.getArgument(0);
+                        content.transferTo(OutputStream.nullOutputStream());
+                        return AntivirusScanResult.clean();
+                });
+                when(repository.completeScan(any(UUID.class), any(), any())).thenReturn(false);
+                when(repository.findById(FILE_ID)).thenReturn(Optional.of(createPendingScanFile()));
+
+                ScanFileResult result = scanFileUseCase.scan(new ScanFileCommand(FILE_ID));
+
+                assertThat(result.claimed()).isFalse();
+                assertThat(result.status()).contains(FileStatus.PENDING_SCAN);
+        }
 
         @Test
         void scan_shouldPreserveOriginalFailureCodeInAttempt_whenAttemptsAreExhausted() throws Exception {
@@ -252,7 +310,7 @@ class ScanFileUseCaseTest {
                 assertThat(result.status()).contains(FileStatus.SCAN_FAILED);
                 ArgumentCaptor<StoredFile> storedFile = ArgumentCaptor.forClass(StoredFile.class);
                 ArgumentCaptor<ScanAttempt> scanAttempt = ArgumentCaptor.forClass(ScanAttempt.class);
-                verify(repository).completeScan(storedFile.capture(), scanAttempt.capture());
+                verify(repository).completeScan(eq(LEASE_ID), storedFile.capture(), scanAttempt.capture());
                 assertThat(storedFile.getValue().failureCode()).contains("SCAN_ATTEMPTS_EXHAUSTED");
                 assertThat(scanAttempt.getValue().failureCode()).isEqualTo("CLAMAV_UNAVAILABLE");
         }
@@ -281,7 +339,7 @@ class ScanFileUseCaseTest {
         assertThat(result.status()).contains(FileStatus.SCAN_FAILED);
         verifyNoInteractions(contentStorage, antivirusScanner);
         ArgumentCaptor<StoredFile> storedFile = ArgumentCaptor.forClass(StoredFile.class);
-        verify(repository).completeScan(storedFile.capture(), any());
+        verify(repository).completeScan(eq(LEASE_ID), storedFile.capture(), any());
         assertThat(storedFile.getValue().failureCode()).contains("SCAN_MESSAGE_MISMATCH");
     }
 

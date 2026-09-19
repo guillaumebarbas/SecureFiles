@@ -1,6 +1,7 @@
 package com.securefiles.domain.file.usecases;
 
 import com.securefiles.domain.file.model.StorageMetadata;
+import com.securefiles.domain.file.model.StorageObjectNotFoundException;
 import com.securefiles.domain.file.model.StorageReceipt;
 import com.securefiles.domain.file.model.StoredFile;
 import com.securefiles.domain.file.model.download.DownloadException;
@@ -108,6 +109,33 @@ class DownloadFileUseCaseTest {
 
         verify(contentStorage, never()).openStream(FILE_ID);
     }
+
+        @Test
+        void download_shouldReportFileNotFound_whenStoredObjectIsMissingDuringMetadataVerification() {
+                when(repository.findById(FILE_ID)).thenReturn(Optional.of(createCleanFile()));
+                when(contentStorage.head(FILE_ID)).thenThrow(new StorageObjectNotFoundException());
+
+                assertThatThrownBy(() -> downloadFileUseCase.download(
+                                new DownloadFileCommand(FILE_ID, "owner-1")))
+                                .isInstanceOf(DownloadException.class)
+                                .extracting(exception -> ((DownloadException) exception).code())
+                                .isEqualTo("FILE_NOT_FOUND");
+
+                verify(contentStorage, never()).openStream(FILE_ID);
+        }
+
+        @Test
+        void download_shouldReportFileNotFound_whenStoredObjectIsMissingDuringStreamOpening() {
+                when(repository.findById(FILE_ID)).thenReturn(Optional.of(createCleanFile()));
+                when(contentStorage.head(FILE_ID)).thenReturn(new StorageMetadata(12L, "version-1"));
+                when(contentStorage.openStream(FILE_ID)).thenThrow(new StorageObjectNotFoundException());
+
+                assertThatThrownBy(() -> downloadFileUseCase.download(
+                                new DownloadFileCommand(FILE_ID, "owner-1")))
+                                .isInstanceOf(DownloadException.class)
+                                .extracting(exception -> ((DownloadException) exception).code())
+                                .isEqualTo("FILE_NOT_FOUND");
+        }
 
     private StoredFile createPendingScanFile() {
         return StoredFile.startUpload(

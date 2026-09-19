@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkBackendHealth,
-  getDownloadUrl,
   getCurrentUser,
   getUploadConfiguration,
   listFiles,
@@ -17,8 +16,8 @@ import { App } from '../App';
 
 vi.mock('../api/filesApi', () => ({
   checkBackendHealth: vi.fn(),
-  getDownloadUrl: vi.fn(),
   getCurrentUser: vi.fn(),
+  getDownloadUrl: vi.fn(),
   getUploadConfiguration: vi.fn(),
   listFiles: vi.fn(),
   loginUser: vi.fn(),
@@ -27,7 +26,6 @@ vi.mock('../api/filesApi', () => ({
 }));
 
 const mockedCheckBackendHealth = vi.mocked(checkBackendHealth);
-const mockedGetDownloadUrl = vi.mocked(getDownloadUrl);
 const mockedGetCurrentUser = vi.mocked(getCurrentUser);
 const mockedGetUploadConfiguration = vi.mocked(getUploadConfiguration);
 const mockedListFiles = vi.mocked(listFiles);
@@ -49,7 +47,6 @@ describe('App', () => {
   beforeEach(() => {
     window.history.replaceState({}, '', '/');
     mockedCheckBackendHealth.mockResolvedValue('online');
-    mockedGetDownloadUrl.mockReturnValue('/api/v1/files/showcase-file-actions/content');
     mockedGetCurrentUser.mockRejectedValue(new Error('Not authenticated'));
     mockedGetUploadConfiguration.mockResolvedValue({ maximumSizeBytes: 1024 });
     mockedListFiles.mockResolvedValue(emptyFilesPage);
@@ -71,6 +68,16 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Se connecter' })).toBeVisible();
     expect(await screen.findByRole('button', { name: 'Service online' })).toBeVisible();
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('renders the dashboard for the legacy files route', () => {
+    window.history.replaceState({}, '', '/files');
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
+    expect(screen.getByRole('table', { name: 'Fichiers uploadés' })).toBeVisible();
+    expect(screen.queryByText('Le registre est prêt.')).not.toBeInTheDocument();
   });
 
   it('loads the recent files register when the visitor has no session', async () => {

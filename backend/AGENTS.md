@@ -124,6 +124,8 @@ Regles principales :
 
 - `UPLOADING` est reserve au transfert non termine et doit etre nettoye ou rejete en
   cas d'expiration.
+- `DELETING` est un etat interne de maintenance : il n'est pas listable ni telechargeable
+  et un reaper reprend la suppression apres une interruption.
 - `PENDING_SCAN` signifie que les octets sont ecrits, que la taille et le SHA-256 sont
   connus et que la version/ETag du stockage est conservee.
 - Un worker reserve atomiquement `PENDING_SCAN -> SCANNING`.

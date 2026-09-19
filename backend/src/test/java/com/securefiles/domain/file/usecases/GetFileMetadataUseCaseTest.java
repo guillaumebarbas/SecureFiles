@@ -71,6 +71,33 @@ class GetFileMetadataUseCaseTest {
     }
 
     @Test
+    void get_shouldHideDeleteCapability_whenFileIsDeleting() {
+        StoredFile deletingFile = StoredFile.restore(
+                FILE_ID,
+                "owner-1",
+                "report.pdf",
+                "application/pdf",
+                FileStatus.DELETING,
+                12L,
+                SHA_256,
+                "quarantine/11111111-1111-1111-1111-111111111111/payload",
+                "version-1",
+                0,
+                CREATED_AT,
+                CREATED_AT,
+                null,
+                null,
+                null,
+                null);
+        when(repository.findById(FILE_ID)).thenReturn(Optional.of(deletingFile));
+
+        GetFileMetadataResult result = getFileMetadataUseCase.get(
+                new GetFileMetadataCommand(FILE_ID, "owner-1"));
+
+        assertThat(result.canDelete()).isFalse();
+    }
+
+    @Test
     void get_shouldExposeAttemptsExhaustionAndPreciseCause_whenScanAttemptsAreExhausted() {
         when(repository.findById(FILE_ID)).thenReturn(Optional.of(createScanFailedFile()));
         when(repository.findLatestPreciseFailureCodesByFileIds(Set.of(FILE_ID)))

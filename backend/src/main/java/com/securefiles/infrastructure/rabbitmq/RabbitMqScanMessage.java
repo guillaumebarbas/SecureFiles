@@ -10,7 +10,7 @@ public record RabbitMqScanMessage(
         String sha256,
         String storageKey,
         String storageVersion,
-        int attempt) {
+        int publicationAttempt) {
 
     public RabbitMqScanMessage {
         Objects.requireNonNull(eventId, "eventId must not be null");
@@ -27,8 +27,8 @@ public record RabbitMqScanMessage(
         if (storageVersion == null || storageVersion.isBlank()) {
             throw new IllegalArgumentException("storageVersion must not be blank");
         }
-        if (attempt < 1) {
-            throw new IllegalArgumentException("attempt must be positive");
+        if (publicationAttempt < 1) {
+            throw new IllegalArgumentException("publicationAttempt must be positive");
         }
     }
 }

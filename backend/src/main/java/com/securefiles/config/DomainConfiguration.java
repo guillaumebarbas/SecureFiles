@@ -11,16 +11,19 @@ import com.securefiles.domain.file.port.in.GetFileMetadata;
 import com.securefiles.domain.file.port.in.GetUploadConfiguration;
 import com.securefiles.domain.file.port.in.DownloadFile;
 import com.securefiles.domain.file.port.in.DeleteFile;
+import com.securefiles.domain.file.port.in.FailScan;
 import com.securefiles.domain.file.port.in.ListFiles;
 import com.securefiles.domain.file.port.in.RecoverExpiredScan;
 import com.securefiles.domain.file.port.in.ScanFile;
 import com.securefiles.domain.file.port.in.UploadFile;
 import com.securefiles.domain.file.port.out.AntivirusScanner;
+import com.securefiles.domain.file.port.out.ExpiredScanRecoveryPort;
 import com.securefiles.domain.file.port.out.FileAcceptancePort;
 import com.securefiles.domain.file.port.out.FileContentStorage;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
 import com.securefiles.domain.file.usecases.DownloadFileUseCase;
 import com.securefiles.domain.file.usecases.DeleteFileUseCase;
+import com.securefiles.domain.file.usecases.FailScanUseCase;
 import com.securefiles.domain.file.usecases.GetFileMetadataUseCase;
 import com.securefiles.domain.file.usecases.GetUploadConfigurationUseCase;
 import com.securefiles.domain.file.usecases.ListFilesUseCase;
@@ -55,7 +58,10 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({
     ScanProperties.class,
     UploadProperties.class,
-    AuthenticationProperties.class
+    AuthenticationProperties.class,
+    StorageMaintenanceProperties.class,
+    QuotaProperties.class,
+    RateLimitProperties.class
 })
 public class DomainConfiguration {
 
@@ -150,10 +156,21 @@ public class DomainConfiguration {
 
     @Bean
     public RecoverExpiredScan recoverExpiredScan(
-            StoredFileRepository repository,
+            ExpiredScanRecoveryPort recoveryPort,
             Clock applicationClock,
             ScanProperties properties) {
-        return new RecoverExpiredScanUseCase(repository, applicationClock, properties.retryDelay());
+        return new RecoverExpiredScanUseCase(
+                recoveryPort,
+                applicationClock,
+                UUID::randomUUID,
+                properties.retryDelay());
+    }
+
+    @Bean
+    public FailScan failScan(
+            StoredFileRepository repository,
+            Clock applicationClock) {
+        return new FailScanUseCase(repository, applicationClock);
     }
 
     @Bean
@@ -166,8 +183,9 @@ public class DomainConfiguration {
     @Bean
     public DeleteFile deleteFile(
             StoredFileRepository repository,
-            FileContentStorage contentStorage) {
-        return new DeleteFileUseCase(repository, contentStorage);
+            FileContentStorage contentStorage,
+            Clock applicationClock) {
+        return new DeleteFileUseCase(repository, contentStorage, applicationClock);
     }
 
     @Bean

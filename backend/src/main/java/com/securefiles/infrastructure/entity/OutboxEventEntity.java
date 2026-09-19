@@ -42,6 +42,15 @@ public class OutboxEventEntity {
     @Column(name = "publish_attempts", nullable = false)
     private int publishAttempts;
 
+    @Column(name = "next_publish_at")
+    private Instant nextPublishAt;
+
+    @Column(name = "publish_lease_id")
+    private UUID publishLeaseId;
+
+    @Column(name = "publish_lease_until")
+    private Instant publishLeaseUntil;
+
     protected OutboxEventEntity() {
     }
 
@@ -63,6 +72,7 @@ public class OutboxEventEntity {
         this.storageVersion = storageVersion;
         this.occurredAt = occurredAt;
         this.publishAttempts = 0;
+        this.nextPublishAt = occurredAt;
     }
 
     public UUID getEventId() {
@@ -103,6 +113,18 @@ public class OutboxEventEntity {
 
     public int getPublishAttempts() {
         return publishAttempts;
+    }
+
+    public Instant getNextPublishAt() {
+        return nextPublishAt;
+    }
+
+    public UUID getPublishLeaseId() {
+        return publishLeaseId;
+    }
+
+    public Instant getPublishLeaseUntil() {
+        return publishLeaseUntil;
     }
 
     public void markPublished(Instant publishedAt) {

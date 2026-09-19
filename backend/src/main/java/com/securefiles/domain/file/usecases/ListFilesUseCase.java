@@ -1,6 +1,5 @@
 package com.securefiles.domain.file.usecases;
 
-import com.securefiles.domain.file.model.FileFailureCodes;
 import com.securefiles.domain.file.model.StoredFile;
 import com.securefiles.domain.file.port.in.GetFileMetadataResult;
 import com.securefiles.domain.file.port.in.ListFiles;
@@ -13,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -35,9 +33,8 @@ public final class ListFilesUseCase implements ListFiles {
         StoredFilePage storedFilePage = repository.findPage(command.listQuery());
         List<StoredFile> storedFiles = storedFilePage.content();
         Map<String, String> authors = findAuthors(storedFiles);
-        Map<UUID, String> preciseFailureCauses = findPreciseFailureCauses(storedFiles);
         List<GetFileMetadataResult> content = storedFiles.stream()
-            .map(storedFile -> toMetadataResult(storedFile, authors, preciseFailureCauses, command))
+            .map(storedFile -> toMetadataResult(storedFile, authors, command))
                 .toList();
         return toPageResult(command, storedFilePage, content);
     }
@@ -66,31 +63,20 @@ public final class ListFilesUseCase implements ListFiles {
             .collect(Collectors.toUnmodifiableMap(ownerId -> ownerId, this::resolveAuthor));
     }
 
-    private Map<UUID, String> findPreciseFailureCauses(List<StoredFile> storedFiles) {
-        Set<UUID> failedFileIds = storedFiles.stream()
-                .filter(this::requiresPreciseFailureCode)
-            .map(storedFile -> Objects.requireNonNull(storedFile, "storedFile must not be null").id())
-                .collect(Collectors.toSet());
-        if (failedFileIds.isEmpty()) {
-            return Map.of();
-        }
-        return repository.findLatestPreciseFailureCodesByFileIds(failedFileIds);
-    }
-
     private GetFileMetadataResult toMetadataResult(
             StoredFile storedFile,
             Map<String, String> authors,
-            Map<UUID, String> preciseFailureCauses,
             ListFilesCommand command) {
         return new GetFileMetadataResult(
                 storedFile.id(),
                 storedFile.originalFilename(),
                 authors.getOrDefault(storedFile.ownerId(), UNKNOWN_AUTHOR),
+                storedFile.clientContentType(),
                 storedFile.sizeBytes(),
                 storedFile.status(),
                 storedFile.createdAt(),
-                storedFile.failureCode(),
-                resolveFailureCause(storedFile, preciseFailureCauses),
+                Optional.empty(),
+                Optional.empty(),
                 canDownload(storedFile, command),
                 canDelete(storedFile, command));
     }
@@ -102,7 +88,8 @@ public final class ListFilesUseCase implements ListFiles {
 
     private boolean canDelete(StoredFile storedFile, ListFilesCommand command) {
         boolean deletableStatus = storedFile.status() != com.securefiles.domain.file.model.FileStatus.UPLOADING
-                && storedFile.status() != com.securefiles.domain.file.model.FileStatus.SCANNING;
+                && storedFile.status() != com.securefiles.domain.file.model.FileStatus.SCANNING
+                && storedFile.status() != com.securefiles.domain.file.model.FileStatus.DELETING;
         return deletableStatus && (command.administrator() || isOwner(storedFile, command));
     }
 
@@ -120,17 +107,4 @@ public final class ListFilesUseCase implements ListFiles {
         }
     }
 
-    private Optional<String> resolveFailureCause(
-            StoredFile storedFile,
-            Map<UUID, String> preciseFailureCauses) {
-        if (!requiresPreciseFailureCode(storedFile)) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(preciseFailureCauses.get(storedFile.id()))
-                .filter(cause -> !FileFailureCodes.SCAN_ATTEMPTS_EXHAUSTED.equals(cause));
-    }
-
-    private boolean requiresPreciseFailureCode(StoredFile storedFile) {
-        return storedFile.failureCode().filter(FileFailureCodes.SCAN_ATTEMPTS_EXHAUSTED::equals).isPresent();
-    }
 }

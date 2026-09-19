@@ -8,7 +8,6 @@ import com.securefiles.domain.file.port.in.GetFileMetadata;
 import com.securefiles.domain.file.port.in.GetFileMetadataCommand;
 import com.securefiles.domain.file.port.in.GetFileMetadataResult;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
-import com.securefiles.domain.user.model.User;
 import com.securefiles.domain.user.port.out.UserRepository;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,6 +38,7 @@ public final class GetFileMetadataUseCase implements GetFileMetadata {
                 storedFile.id(),
                 storedFile.originalFilename(),
                 resolveAuthor(storedFile.ownerId()),
+                storedFile.clientContentType(),
                 storedFile.sizeBytes(),
                 storedFile.status(),
                 storedFile.createdAt(),
@@ -49,7 +49,9 @@ public final class GetFileMetadataUseCase implements GetFileMetadata {
     }
 
     private boolean isDeletable(StoredFile storedFile) {
-        return storedFile.status() != FileStatus.UPLOADING && storedFile.status() != FileStatus.SCANNING;
+        return storedFile.status() != FileStatus.UPLOADING
+                && storedFile.status() != FileStatus.SCANNING
+                && storedFile.status() != FileStatus.DELETING;
     }
 
     private Optional<String> resolveFailureCause(StoredFile storedFile) {
@@ -64,7 +66,7 @@ public final class GetFileMetadataUseCase implements GetFileMetadata {
     private String resolveAuthor(String ownerId) {
         try {
             return userRepository.findById(UUID.fromString(ownerId))
-                    .map(User::name)
+                    .map(user -> user.name())
                     .orElse(ownerId);
         } catch (IllegalArgumentException exception) {
             return ownerId;

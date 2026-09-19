@@ -33,7 +33,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -70,6 +69,7 @@ class UploadFileUseCaseTest {
 
     @Test
     void upload_shouldReturnPendingScanAndRequestScan_whenContentStorageConsumesStream() throws Exception {
+        when(acceptancePort.accept(any(StoredFile.class), any(FileScanRequested.class))).thenReturn(true);
         when(contentStorage.store(eq(FILE_ID), any(InputStream.class))).thenAnswer(invocation -> {
             InputStream content = invocation.getArgument(1);
             content.transferTo(OutputStream.nullOutputStream());
@@ -120,7 +120,8 @@ class UploadFileUseCaseTest {
 
         verify(contentStorage).delete(FILE_ID);
         verify(acceptancePort, never()).accept(any(), any());
-        verify(repository, times(2)).save(any(StoredFile.class));
+        verify(repository).save(any(StoredFile.class));
+        verify(repository).rejectUpload(eq(FILE_ID), eq("DECLARED_SIZE_MISMATCH"), eq(CREATED_AT));
     }
 
     @Test
@@ -137,7 +138,8 @@ class UploadFileUseCaseTest {
 
         verify(contentStorage).delete(FILE_ID);
         verify(acceptancePort, never()).accept(any(), any());
-        verify(repository, times(2)).save(any(StoredFile.class));
+        verify(repository).save(any(StoredFile.class));
+        verify(repository).rejectUpload(eq(FILE_ID), eq("UPLOAD_FAILED"), eq(CREATED_AT));
     }
 
     @Test
@@ -153,7 +155,8 @@ class UploadFileUseCaseTest {
 
         verify(contentStorage).delete(FILE_ID);
         verify(acceptancePort, never()).accept(any(), any());
-        verify(repository, times(2)).save(any(StoredFile.class));
+        verify(repository).save(any(StoredFile.class));
+        verify(repository).rejectUpload(eq(FILE_ID), eq("INCOMPLETE_STREAM"), eq(CREATED_AT));
     }
 
     @Test
@@ -216,7 +219,30 @@ class UploadFileUseCaseTest {
                 .isEqualTo("UPLOAD_FAILED");
 
         verify(contentStorage).delete(FILE_ID);
-        verify(repository, times(2)).save(any(StoredFile.class));
+        verify(repository).save(any(StoredFile.class));
+        verify(repository).rejectUpload(eq(FILE_ID), eq("UPLOAD_FAILED"), eq(CREATED_AT));
+    }
+
+    @Test
+    void upload_shouldRejectAndCleanup_whenQuotaDoesNotAcceptTheFile() throws Exception {
+        when(contentStorage.store(eq(FILE_ID), any(InputStream.class))).thenAnswer(invocation -> {
+            InputStream content = invocation.getArgument(1);
+            content.transferTo(OutputStream.nullOutputStream());
+            return STORAGE_RECEIPT;
+        });
+        when(contentStorage.head(FILE_ID)).thenReturn(new StorageMetadata(3L, "version-1"));
+        when(acceptancePort.accept(any(StoredFile.class), any(FileScanRequested.class))).thenReturn(false);
+
+        assertThatThrownBy(() -> uploadFileUseCase.upload(
+                new UploadFileCommand("owner-1", "report.pdf", "application/pdf"),
+                new ByteArrayInputStream(new byte[] {1, 2, 3})))
+                .isInstanceOf(UploadException.class)
+                .extracting(exception -> ((UploadException) exception).code())
+                .isEqualTo("QUOTA_EXCEEDED");
+
+        verify(contentStorage).delete(FILE_ID);
+        verify(repository).save(any(StoredFile.class));
+        verify(repository).rejectUpload(eq(FILE_ID), eq("QUOTA_EXCEEDED"), eq(CREATED_AT));
     }
 
     @Test

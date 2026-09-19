@@ -7,7 +7,8 @@ import java.util.UUID;
 public record FileMetadataResponseDto(
         UUID fileId,
         String originalFilename,
-    String author,
+        String clientContentType,
+        String author,
         Long sizeBytes,
         String status,
         Instant createdAt,
@@ -19,29 +20,34 @@ public record FileMetadataResponseDto(
     public FileMetadataResponseDto(
             UUID fileId,
             String originalFilename,
+            String clientContentType,
             String author,
             Long sizeBytes,
             String status,
             Instant createdAt,
             String failureCode) {
-        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, null, false, false);
+        this(fileId, originalFilename, clientContentType, author, sizeBytes, status, createdAt, failureCode, null, false, false);
     }
 
     public FileMetadataResponseDto(
             UUID fileId,
             String originalFilename,
+            String clientContentType,
             String author,
             Long sizeBytes,
             String status,
             Instant createdAt,
             String failureCode,
             String failureCause) {
-        this(fileId, originalFilename, author, sizeBytes, status, createdAt, failureCode, failureCause, false, false);
+        this(fileId, originalFilename, clientContentType, author, sizeBytes, status, createdAt, failureCode, failureCause, false, false);
     }
 
     public FileMetadataResponseDto {
         Objects.requireNonNull(fileId, "fileId must not be null");
         Objects.requireNonNull(originalFilename, "originalFilename must not be null");
+        if (clientContentType != null && clientContentType.isBlank()) {
+            throw new IllegalArgumentException("clientContentType must not be blank");
+        }
         Objects.requireNonNull(author, "author must not be null");
         if (sizeBytes != null && sizeBytes < 0) {
             throw new IllegalArgumentException("sizeBytes must not be negative");
