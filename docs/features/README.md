@@ -30,6 +30,7 @@ Merge the feature branches in this order:
 15. `15-secure-file-resilience.md` from `feat/secure-file-resilience` hardens scan timeouts, leases, broker redrive, deletion recovery, quotas, rate limiting, and public metadata exposure.
 16. `16-secure-file-lifecycle.md` from `feat/secure-file-lifecycle` separates clean-file quota accounting, adds the storage progress view, and keeps upload statuses synchronized without navigation.
 17. `17-securefiles-documentation.md` from `feature/securefiles-documentation` reorganizes the native draw.io workflow, adds console screenshots, and simplifies the main README.
+18. `18-securefiles-download-diagrams.md` from `feature/securefiles-download-diagrams` adds detailed and simplified download sequence diagrams and aligns the upload sequence documentation.
 
 The summaries remain with the branch that delivers the corresponding
 implementation. After merging the branches in sequence, this directory gives
