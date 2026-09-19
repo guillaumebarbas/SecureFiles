@@ -27,6 +27,7 @@ Merge the feature branches in this order:
 12. `12-file-management-rest.md` from `feature/file-management-rest` adds file metadata capabilities, authorized deletion, and shared frontend file actions.
 13. `13-project-initialization-workflow.md` from `feature/project-initialization` centralizes local project initialization and front/back launch commands.
 14. `14-secure-download-and-action-menu.md` from `fix/project-initialization-startup` allows authenticated cross-owner downloads of `CLEAN` files and keeps file action menus within the viewport.
+15. `15-secure-file-resilience.md` from `feat/secure-file-resilience` hardens scan timeouts, leases, broker redrive, deletion recovery, quotas, rate limiting, and public metadata exposure.
 
 The summaries remain with the branch that delivers the corresponding
 implementation. After merging the branches in sequence, this directory gives

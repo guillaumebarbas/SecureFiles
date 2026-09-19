@@ -4,7 +4,8 @@ Micro-service de depot et de distribution de fichiers securises, realise pour un
 
 ## Etat actuel
 
-La reconstruction couvre maintenant le premier flux complet d'upload et de scan du backend :
+La reconstruction couvre maintenant le flux complet d'upload, de scan, de distribution et de
+maintenance du backend :
 
 - le domaine contient le use case d'upload, ses ports et ses invariants de streaming ;
 - le domaine contient aussi la creation d'utilisateur, l'authentification par session et
@@ -14,6 +15,8 @@ La reconstruction couvre maintenant le premier flux complet d'upload et de scan 
 - `application/controller` contient le point d'entree `POST /api/v1/files` ;
 - les adaptateurs PostgreSQL/JPA, stockage objet MinIO, ClamAV et RabbitMQ/Outbox sont
    presents et relies par la configuration Spring.
+- les leases, l'Outbox, les quotas, le rate limiting et les reapers recuperent les traitements
+   interrompus sans contourner le fail closed.
 
 La suite `mvn test` est executable sans dependance externe. Le demarrage Spring et le flux
 complet necessitent PostgreSQL, MinIO, RabbitMQ et ClamAV.
@@ -29,6 +32,10 @@ UPLOADING -> PENDING_SCAN -> SCANNING -> CLEAN
 UPLOADING -> REJECTED
 ```
 
+`DELETING` est un statut interne de maintenance : une suppression le marque avant de retirer
+l'objet puis les metadonnees. Il n'est pas listable par l'API publique et un reaper reprend les
+suppressions interrompues.
+
 Un fichier nouvellement recu est depose dans un espace de quarantaine, puis analyse par ClamAV. Tant que le resultat n'est pas `CLEAN`, l'API de contenu renvoie `409 Conflict`. Les erreurs de connexion ou de protocole antivirus sont traitees comme un refus, jamais comme un fichier sain.
 
 Les octets sont conserves sur un volume de fichiers et non dans PostgreSQL. PostgreSQL contient l'identifiant, le nom original nettoye, le type MIME declare, la taille, le hash SHA-256, le statut et les dates. Cette separation evite de faire grossir les lignes SQL et permet de remplacer le volume local par S3/MinIO sans changer le domaine.
@@ -40,7 +47,7 @@ SecureFiles/
 ├── backend/
 │   ├── pom.xml              # dependances et build Maven
 │   └── src/                 # domaine, application et infrastructure
-├── frontend/                # console React + Vite a reconstruire
+├── frontend/                # console React + Vite
 │   ├── package.json         # dependances et scripts npm
 │   └── src/                 # code applicatif et tests dans src/tests/
 ├── docs/diagrams/           # sources draw.io natives et apercus PNG
@@ -72,7 +79,8 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
 - `GET /api/v1/files/config` : expose la politique publique d'upload sous la forme `{ "maximumSizeBytes": <entier> }`. La reponse ne contient ni variable d'environnement ni configuration sensible.
 - `GET /api/v1/files?page=1&size=10&sort=createdAt&direction=desc` : liste publiquement
    une page de metadonnees de fichiers. `page` commence a `1`, `size` vaut `10` par defaut
-   et est limite a `50`. Les valeurs de `sort` sont limitees a `name`, `author`, `size` et
+   et est limite a `50`. L'offset calcule `(page - 1) * size` ne peut pas depasser `10 000`.
+   Les valeurs de `sort` sont limitees a `name`, `author`, `size` et
    `createdAt`. `direction` accepte `asc` ou `desc`. Chaque requete ajoute `id DESC` comme
    departage deterministe, quel que soit le tri choisi.
    Le filtre `status` peut etre repete, par exemple
@@ -85,10 +93,10 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
    La reponse est une enveloppe `{ "content": [], "page": 1, "size": 10,
    "totalElements": 0, "totalPages": 0, "hasNext": false, "hasPrevious": false }`.
    Seuls les fichiers de la page demandee sont charges et enrichis. La reponse ne contient
-   ni contenu, ni hash, ni cle MinIO. Chaque element expose l'auteur resolu dans `author`
-   et peut exposer un `failureCode` nullable et stable lorsqu'un traitement a echoue. Lorsque
-   `failureCode` vaut `SCAN_ATTEMPTS_EXHAUSTED`, `failureCause` contient la derniere cause precise
-   enregistree, par exemple `CLAMAV_UNAVAILABLE`. Une
+   ni contenu, ni hash, ni cle MinIO. Chaque element expose l'auteur resolu dans `author` et
+   le type MIME declare nullable dans `clientContentType`. Les champs `failureCode` et
+   `failureCause` sont toujours `null` dans cette liste publique, y compris lorsqu'un scan
+   echoue. Une
    page hors limite renvoie une enveloppe vide avec le statut `200`. Une pagination invalide
    renvoie `INVALID_PAGINATION`; un tri, une direction ou un statut invalide renvoie
    `INVALID_LIST_QUERY`, dans les deux cas avec le statut `400`. Chaque element expose aussi
@@ -97,6 +105,11 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
    `canDelete` vaut `true` pour son proprietaire ou un administrateur, sauf lorsque le
    fichier est `UPLOADING` ou `SCANNING`. Ces indicateurs servent a construire l'interface ; les
    controles d'acces restent appliques par les use cases des endpoints.
+   Cette exposition publique est une decision explicite du MVP : seuls le nom nettoye, la
+   taille, le type MIME declare, l'auteur resolu, le statut et les capacites sont exposes.
+   Les octets, le hash SHA-256, la cle de stockage et les diagnostics internes ne sont pas
+   publics. Un deploiement traitant des noms ou auteurs confidentiels doit proteger cette
+   liste par authentification avant mise en production.
 - `DELETE /api/v1/files/{id}` : supprime le contenu prive, les metadonnees et les evenements Outbox
    associes pour le proprietaire authentifie ou un administrateur (`ROLE_ADMIN`). La reponse est
    `204 No Content`. Un fichier absent ou inaccessible renvoie `404 Not Found` avec `FILE_NOT_FOUND`.
@@ -104,9 +117,14 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
    `FILE_NOT_AVAILABLE`. Une erreur de stockage ou de persistance renvoie `500 Internal Server Error`
    avec `FILE_DELETE_FAILED`. Le backend reste la source d'autorite : les capacites de la liste ne
    remplacent pas l'autorisation de cette route.
+   La suppression revendique d'abord l'etat interne `DELETING`, qui est exclu des listes et
+   des telechargements. Le stockage puis les metadonnees sont supprimes de maniere repriseable
+   par un reaper ; il n'existe toujours pas de transaction distribuee MinIO/PostgreSQL, donc
+   une panne peut laisser un objet orphelin et doit etre traitee par reconciliation.
 - `GET /api/v1/files/{id}` : lit les metadonnees et le statut courant du fichier pour
-   son proprietaire, avec un `failureCode` nullable lorsqu'une erreur est connue. Si les tentatives
-   de scan sont epuisees, `failureCause` expose en plus la derniere cause precise. Un fichier
+   son proprietaire, y compris le type MIME declare dans `clientContentType` et un `failureCode`
+   nullable lorsqu'une erreur est connue. Si les tentatives de scan sont epuisees,
+   `failureCause` expose en plus la derniere cause precise. Un fichier
    absent ou inaccessible renvoie `404`; cette reponse n'expose ni les octets ni la cle de
    stockage.
 - `GET /api/v1/files/{id}/content` : streame le contenu pour tout utilisateur authentifie lorsque
@@ -119,7 +137,10 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
    `400 Bad Request` avec le code `INVALID_PASSWORD`.
 - `POST /api/v1/auth/login` : ouvre une session de 30 jours, persiste son identifiant et
    renvoie le profil. Le JWT est uniquement transmis dans le cookie HttpOnly
-   `SECUREFILES_AUTH` par defaut.
+   `SECUREFILES_AUTH` par defaut. La route est limitee par IP source a cinq requetes par
+   minute par defaut. Un depassement renvoie `429 Too Many Requests`, le code stable
+   `LOGIN_RATE_LIMIT_EXCEEDED` et `Retry-After`; une indisponibilite du compteur renvoie
+   `503` avec `LOGIN_RATE_LIMIT_UNAVAILABLE`.
 - `GET /api/v1/users/me` : renvoie le profil de l'utilisateur authentifie. Sans session
    valide, il renvoie `204 No Content` plutot que `401 Unauthorized`. Le JWT est verifie
    cryptographiquement et la session doit encore etre active en base lorsqu'il est present.
@@ -130,6 +151,21 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
 Le controller transmet l'upload au port entrant du domaine. Le stockage, la persistance,
 ClamAV et la publication RabbitMQ sont des adaptateurs separes ; une Outbox PostgreSQL est
 persistee avant toute publication RabbitMQ et n'est marquee publiee qu'apres confirmation du broker.
+
+Les nouveaux mots de passe sont pre-hashes en SHA-256 UTF-8 avant BCrypt dans un format
+versionne. Cela evite la limite historique de 72 octets de BCrypt tout en conservant la
+verification des anciens hashes BCrypt bruts. Le contrat HTTP reste de 8 a 255 caracteres.
+
+Les compteurs de tentative sont independants : `publish_attempts` mesure les tentatives de
+publication Outbox, `scan_attempt_count` mesure les reservations metier de scan et les
+redeliveries RabbitMQ sont bornees par `RABBITMQ_MAXIMUM_TRANSPORT_RETRIES` (3 par defaut).
+Apres epuisement, le message est publie dans la DLQ configuree ; la queue de retry ne peut
+donc plus boucler indefiniment. Lorsque la limite de redrive DLQ est atteinte, un fichier
+encore `PENDING_SCAN` passe a `SCAN_FAILED` avec `SCAN_ATTEMPTS_EXHAUSTED` et la cause
+precise `RABBITMQ_TRANSPORT_EXHAUSTED`; le message n'est acquitte qu'apres cette persistance.
+L'Outbox attache `securefiles-file-id` au message afin de conserver cette correlation meme si
+le JSON est indecodable. Un message sans correlation exploitable est publie dans la queue
+poison durable `RABBITMQ_POISON_QUEUE` avant son acquittement, pour analyse hors du flux de scan.
 
 ## Demarrage local
 
@@ -224,6 +260,15 @@ etre demarrees avant son execution :
 ```bash
 cd backend
 SECUREFILES_INTEGRATION=true mvn -Dtest=FileScanFlowIntegrationTest test
+```
+
+Le test `UserAuthenticationFlowIntegrationTest` verifie l'inscription, la session, le
+refus d'un suffixe different au-dela de 72 octets et la revocation :
+
+```bash
+cd backend
+SECUREFILES_AUTH_INTEGRATION=true \
+mvn -Dtest=UserAuthenticationFlowIntegrationTest test
 ```
 
 Si une variable `DATABASE_URL` existe deja dans le shell, elle peut cibler une autre base.
@@ -321,6 +366,14 @@ pas etre lue ou si le fichier la depasse, et propose une relance de lecture. Cet
 verification ameliore l'experience utilisateur; un client HTTP direct reste controle par
 Spring et par la verification streamee du domaine.
 
+### Delai global ClamAV
+
+Chaque analyse ClamAV est bornee par `CLAMAV_SCAN_TIMEOUT`, avec une valeur par defaut de
+`PT4M`, inferieure a la lease de scan par defaut `PT5M`. Ce budget couvre la connexion, la
+lecture du stockage, l'ecriture `INSTREAM` et la lecture de la reponse. A expiration, le flux
+et le socket sont fermes, le fichier reste indisponible et la tentative conserve la cause
+stable `CLAMAV_SCAN_TIMEOUT`; aucun timeout ne peut produire `CLEAN`.
+
 ### Initialisation et alias de lancement
 
 Depuis la racine du depot :
@@ -378,23 +431,37 @@ isole, jamais un malware reel.
 ## Decisions de securite et de capacite
 
 - **Fail closed** : `PENDING_SCAN`, `SCANNING`, `INFECTED` et `SCAN_FAILED` sont tous non telechargeables.
-- **Flux** : l'upload, l'analyse ClamAV `INSTREAM` et le download utilisent des flux ; la limite multipart borne les abus HTTP.
+- **Flux** : l'upload, l'analyse ClamAV `INSTREAM` et le download utilisent des flux ; la limite multipart borne les abus HTTP. Le budget global `CLAMAV_SCAN_TIMEOUT` arrete une analyse qui ne progresse plus.
 - **Integrite** : un SHA-256 est calcule au depot et conserve en base pour verifier un objet avant scan. La taille et la version canonique MinIO sont relues apres l'ecriture; une divergence bloque le fichier avant `PENDING_SCAN`.
 - **Codes de defaillance** : les codes stables sont centralises dans le domaine et reproduits dans la console pour afficher un diagnostic securise sans exposer une exception brute.
 - **Noms** : le chemin fourni par le client est reduit a un nom de fichier, sans traversal.
-- **Observabilite** : Actuator expose le healthcheck ; les metriques de latence, taille, statut de scan et taux d'erreur sont a ajouter avant production.
+- **Metadonnees publiques** : la liste recente est publique par choix MVP, avec une surface
+  limitee aux metadonnees declarees ci-dessus ; elle ne doit pas etre utilisee pour des noms
+  ou auteurs confidentiels sans changement de politique.
+- **Observabilite** : Actuator expose le healthcheck ; les reapers, le rate limiting et les
+   erreurs de scan journalisent des identifiants techniques sans contenu sensible. Les metriques
+   de latence, taille, statut de scan, profondeur des queues et taux d'erreur restent a ajouter
+   avant production.
 - **Acces** : les sessions JWT sont liees a une session persistante et revoquees au logout ;
-   une autorisation par tenant, des quotas et un fournisseur d'identite externe restent a
-   evaluer avant exposition publique.
+   la liste et le download restent volontairement accessibles selon les decisions MVP existantes.
+   Les quotas sont actuellement calcules par proprietaire ; une autorisation par tenant et un
+   fournisseur d'identite externe restent a evaluer avant exposition publique.
+- **Capacite** : le quota de stockage par proprietaire est reserve atomiquement avant `PENDING_SCAN`.
+   Le rate limiting des uploads et des connexions est partage par PostgreSQL et renvoie `429`
+   lorsque le bucket correspondant est depasse ; les buckets de connexion sont namespaces par
+   IP et ne se melangent pas avec ceux d'upload. Les compteurs expires sont purges par un reaper.
+- **Suppression** : `DELETE` revendique `DELETING` avant de retirer l'objet et les metadonnees.
+   Les reapers reprennent les suppressions et uploads abandonnes, mais la reconciliation des objets
+   orphelins reste necessaire avant une garantie de disponibilite de production.
 
 ## Suite recommandee
 
 1. Remplacer MinIO local par un stockage objet prive de production avec URLs signees emises uniquement apres validation.
-2. Ajouter authentification, quotas par tenant, rate limiting et antivirus redondant.
-3. Durcir la politique de retry et de dead-letter avec une reconciliation et un nettoyage des objets orphelins.
-4. Ajouter quotas par tenant, rate limiting, observabilite et contrats d'exploitation des
-   adaptateurs ; aucune regle metier ne doit migrer dans ces composants.
-5. Ajouter retention, suppression, chiffrement au repos et audit des acces.
+2. Ajouter une reconciliation et un nettoyage des metadonnees ou objets orphelins apres les
+   suppressions partielles.
+3. Ajouter des metriques, traces, alertes et runbooks pour les queues, leases, scans, quotas et DLQ.
+4. Ajouter des tests de charge, de panne, de redemarrage et de restauration sur les dependances externes.
+5. Ajouter retention, chiffrement au repos, rotation des secrets et audit des acces.
 
 ## Agent importe
 
