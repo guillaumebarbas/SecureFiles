@@ -1,0 +1,91 @@
+<mxfile host="app.diagrams.net" modified="2026-09-19T00:00:00.000Z" agent="SecureFilesAgent" version="24.7.17">
+  <diagram id="securefiles-architecture" name="SecureFiles Architecture">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="layer-client" value="Client Layer" style="swimlane;html=1;rounded=0;horizontal=0;fillColor=#EAF0FF;strokeColor=#3967F6;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="280" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="layer-application" value="Application Layer" style="swimlane;html=1;rounded=0;horizontal=0;fillColor=#EEF3FB;strokeColor=#6D7890;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="330" y="20" width="700" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="layer-domain" value="Domain Layer" style="swimlane;html=1;rounded=0;horizontal=0;fillColor=#F4F7FB;strokeColor=#17233D;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="330" y="470" width="700" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="layer-infrastructure" value="Infrastructure Layer" style="swimlane;html=1;rounded=0;horizontal=0;fillColor=#FFF6E5;strokeColor=#D8911F;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="20" width="700" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="layer-data" value="Data Stores" style="swimlane;html=1;rounded=0;horizontal=0;fillColor=#F4F7FB;strokeColor=#6D7890;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="470" width="330" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="layer-external" value="External Services" style="swimlane;html=1;rounded=0;horizontal=0;fillColor=#FDECEF;strokeColor=#DF3E55;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="470" width="340" height="300" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d-browser" value="React console" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#3967F6;" vertex="1" parent="1">
+          <mxGeometry x="70" y="105" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d-rest" value="Spring REST controllers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#3967F6;" vertex="1" parent="1">
+          <mxGeometry x="380" y="90" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d-mapping" value="DTO mappers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6D7890;" vertex="1" parent="1">
+          <mxGeometry x="620" y="90" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d-security" value="Spring Security filters" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DF3E55;" vertex="1" parent="1">
+          <mxGeometry x="840" y="90" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d-file-usecases" value="File use cases" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#17233D;" vertex="1" parent="1">
+          <mxGeometry x="400" y="260" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d-user-usecases" value="User and session use cases" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#17233D;" vertex="1" parent="1">
+          <mxGeometry x="640" y="260" width="210" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d-ports" value="Hexagonal ports" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#17233D;" vertex="1" parent="1">
+          <mxGeometry x="880" y="260" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d-jpa" value="JPA and Liquibase adapters" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D8911F;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="90" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d-storage" value="MinIO content adapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D8911F;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="200" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d-messaging" value="Outbox and RabbitMQ adapters" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D8911F;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="310" width="230" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d-scanner" value="ClamAV adapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D8911F;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="90" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d-postgres" value="PostgreSQL 16" style="shape=cylinder;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6D7890;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="570" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d-minio" value="MinIO object storage" style="shape=cylinder;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6D7890;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="680" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d-rabbit" value="RabbitMQ 3.13" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DF3E55;" vertex="1" parent="1">
+          <mxGeometry x="1490" y="570" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d-clamav" value="ClamAV 1.4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DF3E55;" vertex="1" parent="1">
+          <mxGeometry x="1490" y="680" width="190" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-browser-rest" value="HTTP" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-browser" target="d-rest"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-rest-mapping" value="maps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-rest" target="d-mapping"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-mapping-file" value="file ports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-mapping" target="d-file-usecases"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-mapping-user" value="user ports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-mapping" target="d-user-usecases"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-security-rest" value="auth" style="dashed=1;edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-security" target="d-rest"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-file-ports" value="outbound ports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-file-usecases" target="d-ports"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-user-ports" value="outbound ports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-user-usecases" target="d-ports"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-ports-jpa" value="metadata and Outbox" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-ports" target="d-jpa"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-ports-storage" value="streamed bytes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-ports" target="d-storage"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-ports-scanner" value="scan stream" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-ports" target="d-scanner"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-jpa-postgres" value="metadata and status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-jpa" target="d-postgres"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-storage-minio" value="object streams" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-storage" target="d-minio"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-jpa-messaging" value="pending Outbox" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-jpa" target="d-messaging"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-messaging-rabbit" value="scan event" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-messaging" target="d-rabbit"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-rabbit-messaging" value="delivered event" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-rabbit" target="d-messaging"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e-scanner-clamav" value="INSTREAM" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="d-scanner" target="d-clamav"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

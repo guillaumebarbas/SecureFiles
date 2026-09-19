@@ -1,0 +1,102 @@
+<mxfile host="app.diagrams.net" modified="2026-09-19T00:00:00.000Z" agent="SecureFilesAgent" version="1.6.0" type="device">
+  <diagram name="Upload file states simplified" id="upload-file-states-simplified">
+    <mxGraphModel dx="1300" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="SecureFiles - Upload file states (simplified)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="35" y="20" width="800" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Complete uploads wait in PENDING_SCAN until the asynchronous scan reaches a terminal verdict." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="35" y="65" width="1050" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="state-initial" value="" style="ellipse;aspect=fixed;whiteSpace=wrap;html=1;fillColor=#0f172a;strokeColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="35" y="245" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="state-uploading" value="UPLOADING&#xa;incomplete" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#dbeafe;strokeColor=#2563eb;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#1e3a8a;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="90" y="220" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-pending" value="PENDING_SCAN&#xa;accepted" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#dcfce7;strokeColor=#16a34a;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#14532d;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="345" y="220" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-scanning" value="SCANNING&#xa;antivirus active" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#78350f;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="620" y="220" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-clean" value="CLEAN&#xa;download allowed" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#bbf7d0;strokeColor=#15803d;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#14532d;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="900" y="100" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-infected" value="INFECTED&#xa;blocked" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fecaca;strokeColor=#dc2626;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#7f1d1d;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="900" y="245" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-scan-failed" value="SCAN_FAILED&#xa;blocked" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fecaca;strokeColor=#dc2626;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#7f1d1d;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="900" y="390" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-rejected" value="REJECTED&#xa;upload failed" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fee2e2;strokeColor=#dc2626;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#7f1d1d;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="345" y="430" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-deleting" value="DELETING&#xa;maintenance only" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e2e8f0;strokeColor=#64748b;strokeWidth=2;fontSize=15;fontStyle=1;fontColor=#334155;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="620" y="620" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-removed" value="" style="ellipse;aspect=fixed;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#0f172a;strokeWidth=3;" vertex="1" parent="1">
+          <mxGeometry x="900" y="645" width="30" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-start-upload" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#334155;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="state-initial" target="state-uploading">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-upload-pending" value="complete + verify" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#334155;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="state-uploading" target="state-pending">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-upload-rejected" value="failure and cleanup" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=block;strokeColor=#dc2626;fontSize=12;fontColor=#991b1b;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="state-uploading" target="state-rejected">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-pending-scanning" value="claim / lease" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#334155;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="state-pending" target="state-scanning">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-scanning-clean" value="CLEAN" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#15803d;fontSize=12;fontColor=#166534;labelBackgroundColor=#ffffff;exitX=1;exitY=0.2;entryX=0;entryY=0.5;" edge="1" parent="1" source="state-scanning" target="state-clean">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="860" y="140" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-scanning-infected" value="INFECTED" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#dc2626;fontSize=12;fontColor=#991b1b;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="state-scanning" target="state-infected">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-scanning-failed" value="terminal failure" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#dc2626;fontSize=12;fontColor=#991b1b;labelBackgroundColor=#ffffff;exitX=1;exitY=0.8;entryX=0;entryY=0.5;" edge="1" parent="1" source="state-scanning" target="state-scan-failed">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="860" y="430" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-scanning-retry" value="retry / expired lease" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=block;strokeColor=#d97706;fontSize=12;fontColor=#92400e;labelBackgroundColor=#ffffff;exitX=0;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="state-scanning" target="state-pending">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="590" y="360" /><mxPoint x="450" y="360" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-pending-failed" value="transport exhausted" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=block;strokeColor=#dc2626;fontSize=12;fontColor=#991b1b;labelBackgroundColor=#ffffff;exitX=1;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="state-pending" target="state-scan-failed">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="580" y="530" /><mxPoint x="860" y="530" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-upload-abandoned" value="expired upload" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=block;strokeColor=#64748b;fontSize=12;fontColor=#475569;labelBackgroundColor=#ffffff;exitX=0.1;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="state-uploading" target="state-deleting">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="55" y="580" /><mxPoint x="590" y="580" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-terminal-deleting" value="authorized delete" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=block;strokeColor=#64748b;fontSize=12;fontColor=#475569;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="state-rejected" target="state-deleting">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-deleting-removed" value="removed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#334155;fontSize=12;fontColor=#334155;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="state-deleting" target="state-removed">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="note" value="Only CLEAN allows download. Any scanner error, unknown result, integrity mismatch or exhausted retry remains blocked. DELETING is internal maintenance; direct deletion from PENDING_SCAN is not represented because the adapter does not authorize it." style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#f97316;fontSize=13;fontColor=#7c2d12;align=left;verticalAlign=middle;spacingLeft=10;spacingRight=10;" vertex="1" parent="1">
+          <mxGeometry x="35" y="755" width="1075" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="Solid = normal transition. Dashed = rejection, retry or maintenance.&#xa;UPLOADING is never an accepted upload; PENDING_SCAN is the accepted state before scanning." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#cbd5e1;fontSize=13;fontColor=#334155;align=left;verticalAlign=middle;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="35" y="830" width="1075" height="55" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -21,6 +21,23 @@ fi
 
 status=0
 for source in $sources; do
+  relative=${source#"$root"/}
+  path_parts=$(printf '%s\n' "$relative" | awk -F/ '{ print NF }')
+  if [ "$path_parts" -ne 4 ] && [ "$root" != "docs/diagrams/sequence/logic/rabbitmq-scan" ]; then
+    printf 'diagrams-check: source must use <category>/<scope-kind>/<scope-name>/<slug>.drawio: %s\n' "$source" >&2
+    status=1
+  else
+    scope_kind=$(printf '%s\n' "$relative" | cut -d/ -f2)
+    case "$scope_kind" in
+      feature|logic|system)
+        ;;
+      *)
+        printf 'diagrams-check: invalid scope kind (expected feature, logic or system): %s\n' "$source" >&2
+        status=1
+        ;;
+    esac
+  fi
+
   if ! xmllint --noout "$source"; then
     printf 'diagrams-check: invalid XML: %s\n' "$source" >&2
     status=1

@@ -36,7 +36,8 @@ Ce skill transforme une demande de documentation technique en paire de diagramme
 
 ## Taxonomie et nommage
 
-Les diagrammes sont ranges par question principale sous `docs/diagrams/<category>/` :
+Les diagrammes sont ranges par question principale et par perimetre sous
+`docs/diagrams/<category>/<scope-kind>/<scope-name>/` :
 
 - `use_case/` : acteurs, systeme et objectifs metier ;
 - `sequence/` : ordre temporel des appels et retours ;
@@ -45,9 +46,29 @@ Les diagrammes sont ranges par question principale sous `docs/diagrams/<category
 - `data_flow/` : circulation des metadonnees et des octets ;
 - `deployment/` : services, reseau et dependances d'execution.
 
-Le nom canonique est `docs/diagrams/<category>/<slug>.drawio`, accompagne de
-`docs/diagrams/<category>/<slug>-simplified.drawio`. Les fichiers rendus sont places dans
-`docs/diagrams/<category>/renders/` avec les memes slugs et l'extension `.png`.
+Le `<scope-kind>` est obligatoire et vaut `feature`, `logic` ou `system` :
+
+- `feature/<feature-name>/` regroupe un parcours ou une fonctionnalite metier, par exemple `feature/file-upload/` ;
+- `logic/<logic-name>/` regroupe un comportement technique transversal, par exemple `logic/scan-retry/` ;
+- `system/<system-name>/` regroupe une vue globale d'architecture ou de deploiement, par exemple `system/securefiles/`.
+
+Dans chaque scope, le nom canonique est `<slug>.drawio`, accompagne de
+`<slug>-simplified.drawio`. Les apercus restent dans le meme scope, sous
+`renders/<slug>.png` et `renders/<slug>-simplified.png`.
+
+Exemple canonique :
+
+```text
+docs/diagrams/architecture/system/securefiles/
+	architecture.drawio
+	architecture-simplified.drawio
+	renders/
+		architecture.png
+		architecture-simplified.png
+```
+
+Ne jamais placer une source directement sous une categorie, ni partager un dossier
+`renders/` entre plusieurs scopes. Cette regle s'applique aussi a `architecture/`.
 
 ## Choix du format et de l'outil
 
@@ -67,7 +88,9 @@ Mermaid et Excalidraw peuvent servir de brouillon de travail ou rester dans `doc
 
 ### 1. Cadrer la demande
 
-Identifier le sujet, les acteurs, la frontiere du systeme, le type de diagramme, le niveau de detail et le chemin de sortie. Si plusieurs flux sont demandes, les separer en diagrammes courts plutot que de construire une planche illisible.
+Identifier le sujet, les acteurs, la frontiere du systeme, le type de diagramme, le niveau de detail, le
+`scope-kind`, le `scope-name` et le chemin de sortie. Si plusieurs flux sont demandes, les separer en
+diagrammes courts plutot que de construire une planche illisible.
 
 ### 2. Collecter les preuves
 
@@ -84,7 +107,7 @@ Identifier le sujet, les acteurs, la frontiere du systeme, le type de diagramme,
 - Pour une sequence, afficher les requetes, les reponses et les transitions dans l'ordre. Pour une architecture, orienter les flux de gauche a droite et regrouper les couches sans impliquer une dependance technique interdite.
 - Ne pas inventer de base de donnees, de file, d'acteur, d'endpoint, de statut ou de retry absent des sources.
 - Creer d'abord la vue detaillee, puis une vue `-simplified` qui reduit les participants et les libelles sans supprimer la question principale, les statuts critiques, les frontieres de securite ou la separation des octets et des metadonnees.
-- Garder les deux vues dans la meme categorie et utiliser les memes identifiants de provenance lorsque les noeuds representent le meme comportement.
+- Garder les deux vues dans le meme scope et utiliser les memes identifiants de provenance lorsque les noeuds representent le meme comportement.
 
 ### 3 bis. Verifier la logique avant le rendu
 
@@ -114,7 +137,11 @@ Avant de placer les formes, ecrire le petit graphe du diagramme : point de depar
 
 ### 4. Conserver les sources natives et les apercus
 
-Lorsque l'utilisateur demande un fichier, produire `docs/diagrams/<category>/<slug>.drawio` et sa variante `-simplified.drawio`. Ne pas presenter une URL de rendu comme unique source de verite. Ajouter une courte note de provenance si le diagramme depend d'un contrat ou d'une feature precise.
+Lorsque l'utilisateur demande un fichier, produire les deux sources dans le meme scope :
+`docs/diagrams/<category>/<scope-kind>/<scope-name>/<slug>.drawio` et sa variante
+`<slug>-simplified.drawio`. Produire les apercus dans le sous-dossier voisin
+`renders/`. Ne pas presenter une URL de rendu comme unique source de verite. Ajouter une courte note de
+provenance si le diagramme depend d'un contrat ou d'une feature precise.
 
 Le PNG est l'apercu canonique pour le README. Utiliser un exporteur draw.io natif configurable par `DRAWIO_BIN`, ou un autre moteur local explicitement verifie. Le JPG est facultatif et ne doit pas remplacer le PNG pour les textes fins. Si aucun exporteur n'est disponible, ne pas ajouter de lien d'image casse : conserver les `.drawio` et signaler le blocage d'export.
 
@@ -125,7 +152,7 @@ Le PNG est l'apercu canonique pour le README. Utiliser un exporteur draw.io nati
 - Comparer les statuts, endpoints et transitions du diagramme avec les fichiers lus avant de le declarer exact.
 - Executer `git diff --check` apres une creation ou une modification de source documentaire lorsque l'outil d'execution est disponible.
 - Valider les deux fichiers `.drawio` comme XML avant tout rendu ou export.
-- Verifier que le PNG est non vide, lisible a la taille cible et reference uniquement une source `.drawio` existante.
+- Verifier que le PNG est non vide, lisible a la taille cible, place dans le `renders/` du meme scope et reference uniquement une source `.drawio` existante.
 - Si le rendu MCP echoue, conserver les sources natives, decrire l'erreur et ne pas affirmer qu'un apercu visuel a ete genere.
 
 ## Invariants SecureFiles a representer

@@ -1,12 +1,12 @@
 # Diagrammes SecureFiles
 
-Les diagrammes editables sont des fichiers XML natifs draw.io. Une demande de diagramme produit toujours une paire dans la meme categorie :
+Les diagrammes editables sont des fichiers XML natifs draw.io. Une demande de diagramme produit toujours une paire dans le meme scope :
 
 ```text
-docs/diagrams/<category>/<slug>.drawio
-docs/diagrams/<category>/<slug>-simplified.drawio
-docs/diagrams/<category>/renders/<slug>.png
-docs/diagrams/<category>/renders/<slug>-simplified.png
+docs/diagrams/<category>/<scope-kind>/<scope-name>/<slug>.drawio
+docs/diagrams/<category>/<scope-kind>/<scope-name>/<slug>-simplified.drawio
+docs/diagrams/<category>/<scope-kind>/<scope-name>/renders/<slug>.png
+docs/diagrams/<category>/<scope-kind>/<scope-name>/renders/<slug>-simplified.png
 ```
 
 Categories :
@@ -17,6 +17,15 @@ Categories :
 - `component` : relations entre composants ;
 - `data_flow` : circulation des metadonnees et des octets ;
 - `deployment` : services, reseau et dependances d'execution.
+
+Scopes :
+
+- `feature/<name>` : fonctionnalite ou parcours metier, par exemple `feature/file-upload` ;
+- `logic/<name>` : logique technique transversale, par exemple `logic/scan-retry` ;
+- `system/<name>` : vue globale d'architecture ou de deploiement, par exemple `system/securefiles`.
+
+Chaque scope possede son propre dossier `renders/`. Les diagrammes d'architecture suivent la meme
+regle et ne doivent jamais etre places directement sous `architecture/`.
 
 Mermaid et Excalidraw peuvent etre conserves dans `_legacy/` comme sources historiques ou brouillons. Ils ne remplacent jamais les fichiers `.drawio` canoniques.
 

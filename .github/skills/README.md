@@ -15,7 +15,7 @@ Ces skills sont des guides locaux, adaptes au domaine de SecureFiles. Ils repren
 
 Le prompt `/create-securefiles-diagrams` declenche ce workflow avec un sujet, un type de diagramme et une categorie/slug optionnels. Chaque demande doit produire un fichier `.drawio` detaille et son compagnon `-simplified.drawio`; Mermaid et Excalidraw restent des formats de brouillon ou d'archive.
 
-Les diagrammes sont ranges sous `docs/diagrams/<category>/` (`use_case`, `sequence`, `architecture`, `component`, `data_flow` ou `deployment`). `make diagrams-check` valide les sources natives et leurs paires. `make diagrams-export` produit les apercus PNG avec un binaire draw.io configure par `DRAWIO_BIN`; `DIAGRAM_EXPORT_JPG=1` ajoute les JPG.
+Les diagrammes sont ranges sous `docs/diagrams/<category>/<scope-kind>/<scope-name>/` (`use_case`, `sequence`, `architecture`, `component`, `data_flow` ou `deployment`, puis `feature`, `logic` ou `system`). Chaque scope possede un dossier `renders/` pour ses apercus. `make diagrams-check` valide les sources natives, leur hierarchie et leurs paires. `make diagrams-export` produit les apercus PNG avec un binaire draw.io configure par `DRAWIO_BIN`; `DIAGRAM_EXPORT_JPG=1` ajoute les JPG.
 
 Chaque skill renvoie vers les regles partagees dans `rules/`. Charger uniquement les skills utiles a la tache, et charger `securefiles-security` pour tout changement qui touche le contenu ou le statut d'un fichier.
 
