@@ -4,6 +4,7 @@ import {
   Clock3,
   CloudUpload,
   Download,
+  HardDrive,
   Info,
   Search,
   ShieldCheck,
@@ -13,6 +14,7 @@ import type { FileMetadataResponse } from '../../api/filesApi';
 import { Button } from '../../shared/actions/Button';
 import { GenericTable, type TableColumn } from '../../shared/data/GenericTable';
 import { FileActionsMenu } from '../../shared/files/FileActionsMenu';
+import { BarreProgression } from '../../shared/feedback/BarreProgression/BarreProgression';
 import { Icon } from '../../shared/feedback/Icon';
 import { Tag } from '../../shared/feedback/Tag';
 import { Tooltip } from '../../shared/feedback/Tooltip';
@@ -94,6 +96,20 @@ export function SharedComponentsShowcasePage() {
           </Button>
           <Button variant="gradient">Action accentuée</Button>
         </Row>
+      </Section>
+
+      <Section
+        description="Une progression accessible avec une valeur actuelle et une limite explicite."
+        icon={HardDrive}
+        title="Barre de progression"
+      >
+        <BarreProgression
+          currentValue={62}
+          gradient="linear-gradient(90deg, #3967F6 0%, #6F8FFF 100%)"
+          maxValue={100}
+          title="Stockage disponible"
+          valueFormatter={(value) => `${Math.round(value)} %`}
+        />
       </Section>
 
       <Section

@@ -45,6 +45,15 @@ export type UploadConfiguration = {
   maximumSizeBytes: number;
 };
 
+export type StorageQuotaResponse = {
+  quotaBytes: number;
+  usedBytes: number;
+};
+
+export type GetStorageQuotaOptions = {
+  signal?: AbortSignal;
+};
+
 export type BackendHealthStatus = 'online' | 'offline';
 
 export type UserRole = 'developpeur' | 'admin' | 'utilisateur';
@@ -174,6 +183,39 @@ export async function getUploadConfiguration(): Promise<UploadConfiguration> {
       error,
       'UPLOAD_CONFIGURATION_REQUEST_FAILED',
       'La taille maximale autorisée ne peut pas être lue.',
+    );
+  }
+}
+
+export async function getStorageQuota(
+  options: GetStorageQuotaOptions = {},
+): Promise<StorageQuotaResponse> {
+  try {
+    const response = await axios.get<StorageQuotaResponse>('/api/v1/users/me/storage', {
+      signal: options.signal,
+      withCredentials: true,
+    });
+    const { quotaBytes, usedBytes } = response.data;
+    if (
+      !Number.isSafeInteger(quotaBytes)
+      || quotaBytes <= 0
+      || !Number.isSafeInteger(usedBytes)
+      || usedBytes < 0
+    ) {
+      throw new FilesApiError(
+        'INVALID_STORAGE_QUOTA',
+        'La capacité de stockage reçue est invalide.',
+      );
+    }
+    return { quotaBytes, usedBytes };
+  } catch (error) {
+    if (error instanceof FilesApiError) {
+      throw error;
+    }
+    throw normalizeApiError(
+      error,
+      'STORAGE_QUOTA_REQUEST_FAILED',
+      'La capacité de stockage ne peut pas être lue.',
     );
   }
 }
