@@ -32,6 +32,10 @@ public class StoredFileEntity {
     @Column(name = "status", nullable = false, length = 32)
     private FileStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "quota_state", nullable = false, length = 16)
+    private QuotaAccountingState quotaState;
+
     @Column(name = "size_bytes")
     private Long sizeBytes;
 
@@ -78,6 +82,7 @@ public class StoredFileEntity {
             String originalFilename,
             String clientContentType,
             FileStatus status,
+            QuotaAccountingState quotaState,
             Long sizeBytes,
             String sha256,
             String storageKey,
@@ -94,6 +99,7 @@ public class StoredFileEntity {
         this.originalFilename = originalFilename;
         this.clientContentType = clientContentType;
         this.status = status;
+        this.quotaState = quotaState;
         this.sizeBytes = sizeBytes;
         this.sha256 = sha256;
         this.storageKey = storageKey;
@@ -125,6 +131,10 @@ public class StoredFileEntity {
 
     public FileStatus getStatus() {
         return status;
+    }
+
+    public QuotaAccountingState getQuotaState() {
+        return quotaState;
     }
 
     public Long getSizeBytes() {
@@ -177,6 +187,7 @@ public class StoredFileEntity {
 
     public void updateScanState(
             FileStatus status,
+            QuotaAccountingState quotaState,
             int scanAttemptCount,
             UUID scanLeaseId,
             Instant scanLeaseUntil,
@@ -184,6 +195,7 @@ public class StoredFileEntity {
             String failureCode,
             Instant updatedAt) {
         this.status = status;
+        this.quotaState = quotaState;
         this.scanAttemptCount = scanAttemptCount;
         this.scanLeaseId = scanLeaseId;
         this.scanLeaseUntil = scanLeaseUntil;

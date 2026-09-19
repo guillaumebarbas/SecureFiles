@@ -4,6 +4,7 @@ import com.securefiles.domain.file.model.FileScanRequested;
 import com.securefiles.domain.file.model.StoredFile;
 import com.securefiles.domain.file.port.out.FileAcceptancePort;
 import com.securefiles.config.QuotaProperties;
+import com.securefiles.infrastructure.entity.QuotaAccountingState;
 import com.securefiles.infrastructure.mapper.OutboxEventMapper;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,9 +49,10 @@ public class JpaFileAcceptanceAdapter implements FileAcceptancePort {
                 storedFile.storageVersion().orElseThrow(),
                 storedFile.updatedAt(),
                 com.securefiles.domain.file.model.FileStatus.UPLOADING,
-                storedFile.status());
+                storedFile.status(),
+                QuotaAccountingState.RESERVED);
         if (acceptedRows != 1) {
-            if (fileQuotaRepository.release(storedFile.ownerId(), sizeBytes) != 1) {
+            if (fileQuotaRepository.releaseReservation(storedFile.ownerId(), sizeBytes) != 1) {
                 throw new IllegalStateException("Quota reservation could not be released");
             }
             return false;

@@ -76,6 +76,7 @@ class FileScanSizeLimitIntegrationTest {
         Path file = createGeneratedFile("securefiles-above-clamav-limit-", ABOVE_TEST_LIMIT_SIZE_BYTES);
         try {
             String authenticationCookie = authenticationCookie();
+            long initialUsedBytes = usedStorageBytes(authenticationCookie);
             UUID fileId = uploadFile(file, authenticationCookie);
             JsonNode terminalResponse = awaitTerminalStatus(
                     fileId,
@@ -85,6 +86,8 @@ class FileScanSizeLimitIntegrationTest {
             assertThat(terminalResponse.path("status").asText())
                     .withFailMessage("Unexpected scan result: %s. %s", terminalResponse, buildDiagnostic(fileId))
                     .isEqualTo("SCAN_FAILED");
+
+            assertThat(usedStorageBytes(authenticationCookie)).isEqualTo(initialUsedBytes);
 
                 ResponseEntity<Void> downloadResponse = restTemplate.exchange(
                     apiUrl() + "/" + fileId + "/content",
@@ -189,6 +192,22 @@ class FileScanSizeLimitIntegrationTest {
 
     private String apiUrl() {
         return "http://localhost:" + serverPort + "/api/v1/files";
+    }
+
+    private String storageQuotaUrl() {
+        return "http://localhost:" + serverPort + "/api/v1/users/me/storage";
+    }
+
+    private long usedStorageBytes(String authenticationCookie) {
+        ResponseEntity<JsonNode> quotaResponse = restTemplate.exchange(
+                storageQuotaUrl(),
+                org.springframework.http.HttpMethod.GET,
+                authenticatedEntity(authenticationCookie),
+                JsonNode.class);
+        assertThat(quotaResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode quota = quotaResponse.getBody();
+        assertThat(quota).isNotNull();
+        return quota.path("usedBytes").asLong();
     }
 
     private String authenticationCookie() {

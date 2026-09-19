@@ -58,6 +58,12 @@ mvn test
 mvn spring-boot:run
 ```
 
+Apres toute demande ou modification du backend, lancer depuis la racine du depot
+`env -u DATABASE_URL -u DATABASE_USERNAME -u DATABASE_PASSWORD make back`. Conserver les
+logs jusqu'a l'initialisation complete ou l'echec du processus, verifier le message de
+demarrage Spring et, lorsque le serveur est disponible, `GET /actuator/health` doit retourner
+`UP`.
+
 Depuis `frontend/` :
 
 ```bash

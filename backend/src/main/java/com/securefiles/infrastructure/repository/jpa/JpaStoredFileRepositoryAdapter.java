@@ -8,6 +8,7 @@ import com.securefiles.domain.file.model.list.FileListQuery;
 import com.securefiles.domain.file.port.out.ExpiredScanRecoveryPort;
 import com.securefiles.domain.file.port.out.StoredFilePage;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
+import com.securefiles.infrastructure.entity.QuotaAccountingState;
 import com.securefiles.infrastructure.entity.StoredFileEntity;
 import com.securefiles.infrastructure.mapper.ScanAttemptEntityMapper;
 import com.securefiles.infrastructure.mapper.OutboxEventMapper;
@@ -81,7 +82,14 @@ public class JpaStoredFileRepositoryAdapter implements StoredFileRepository, Exp
                 || storedFile.getStatus() == FileStatus.REJECTED) {
             return;
         }
-        if (fileQuotaRepository.release(storedFile.getOwnerId(), storedFile.getSizeBytes()) != 1) {
+        int releasedRows = switch (storedFile.getQuotaState()) {
+            case NONE -> 1;
+            case RESERVED -> fileQuotaRepository.releaseReservation(
+                    storedFile.getOwnerId(), storedFile.getSizeBytes());
+            case CONSUMED -> fileQuotaRepository.releaseConsumed(
+                    storedFile.getOwnerId(), storedFile.getSizeBytes());
+        };
+        if (releasedRows != 1) {
             throw new IllegalStateException("File quota accounting is inconsistent");
         }
     }
@@ -278,10 +286,12 @@ public class JpaStoredFileRepositoryAdapter implements StoredFileRepository, Exp
                 storedFile.nextScanAt().orElse(null),
                 storedFile.failureCode().orElse(null),
                 storedFile.updatedAt(),
-                FileStatus.SCANNING);
+                FileStatus.SCANNING,
+                QuotaAccountingState.forStatus(storedFile.status()));
         if (updatedRows != 1) {
             return false;
         }
+        updateQuotaAfterScan(storedFile);
         scanAttemptRepository.save(scanAttemptMapper.toEntity(scanAttempt));
         return true;
     }
@@ -294,11 +304,36 @@ public class JpaStoredFileRepositoryAdapter implements StoredFileRepository, Exp
                 storedFile.failureCode().orElseThrow(),
                 storedFile.updatedAt(),
                 FileStatus.PENDING_SCAN,
-                FileStatus.SCAN_FAILED);
+                FileStatus.SCAN_FAILED,
+                QuotaAccountingState.NONE);
         if (updatedRows != 1) {
             return false;
         }
+        storedFile.sizeBytes().ifPresent(sizeBytes -> releaseReservation(storedFile.ownerId(), sizeBytes));
         scanAttemptRepository.save(scanAttemptMapper.toEntity(scanAttempt));
         return true;
+    }
+
+    private void updateQuotaAfterScan(StoredFile storedFile) {
+        switch (storedFile.status()) {
+            case CLEAN -> consumeReservation(
+                    storedFile.ownerId(), storedFile.sizeBytes().orElseThrow());
+            case INFECTED, SCAN_FAILED -> storedFile.sizeBytes()
+                    .ifPresent(sizeBytes -> releaseReservation(storedFile.ownerId(), sizeBytes));
+            default -> {
+            }
+        }
+    }
+
+    private void consumeReservation(String ownerId, long sizeBytes) {
+        if (fileQuotaRepository.consumeReservation(ownerId, sizeBytes) != 1) {
+            throw new IllegalStateException("File quota reservation could not be consumed");
+        }
+    }
+
+    private void releaseReservation(String ownerId, long sizeBytes) {
+        if (fileQuotaRepository.releaseReservation(ownerId, sizeBytes) != 1) {
+            throw new IllegalStateException("File quota reservation could not be released");
+        }
     }
 }

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkBackendHealth,
   getCurrentUser,
+  getStorageQuota,
   getUploadConfiguration,
   listFiles,
   loginUser,
@@ -18,6 +19,7 @@ vi.mock('../api/filesApi', () => ({
   checkBackendHealth: vi.fn(),
   getCurrentUser: vi.fn(),
   getDownloadUrl: vi.fn(),
+  getStorageQuota: vi.fn(),
   getUploadConfiguration: vi.fn(),
   listFiles: vi.fn(),
   loginUser: vi.fn(),
@@ -27,6 +29,7 @@ vi.mock('../api/filesApi', () => ({
 
 const mockedCheckBackendHealth = vi.mocked(checkBackendHealth);
 const mockedGetCurrentUser = vi.mocked(getCurrentUser);
+const mockedGetStorageQuota = vi.mocked(getStorageQuota);
 const mockedGetUploadConfiguration = vi.mocked(getUploadConfiguration);
 const mockedListFiles = vi.mocked(listFiles);
 const mockedLoginUser = vi.mocked(loginUser);
@@ -48,6 +51,7 @@ describe('App', () => {
     window.history.replaceState({}, '', '/');
     mockedCheckBackendHealth.mockResolvedValue('online');
     mockedGetCurrentUser.mockRejectedValue(new Error('Not authenticated'));
+    mockedGetStorageQuota.mockResolvedValue({ quotaBytes: 100, usedBytes: 40 });
     mockedGetUploadConfiguration.mockResolvedValue({ maximumSizeBytes: 1024 });
     mockedListFiles.mockResolvedValue(emptyFilesPage);
   });

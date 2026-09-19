@@ -10,8 +10,8 @@ public interface FileQuotaJpaRepository extends JpaRepository<StoredFileQuotaEnt
 
     @Modifying
     @Query(value = """
-            insert into stored_file_quota(owner_id, quota_bytes, used_bytes)
-            values (:ownerId, :quotaBytes, 0)
+            insert into stored_file_quota(owner_id, quota_bytes, used_bytes, reserved_bytes)
+            values (:ownerId, :quotaBytes, 0, 0)
                                 on conflict (owner_id) do update
                                         set quota_bytes = excluded.quota_bytes
             """, nativeQuery = true)
@@ -20,10 +20,9 @@ public interface FileQuotaJpaRepository extends JpaRepository<StoredFileQuotaEnt
     @Modifying
     @Query(value = """
             update stored_file_quota
-               set used_bytes = used_bytes + :sizeBytes
+                                                         set reserved_bytes = reserved_bytes + :sizeBytes
              where owner_id = :ownerId
-                                                         and used_bytes <= quota_bytes
-                                                         and :sizeBytes <= quota_bytes - used_bytes
+                                                         and :sizeBytes <= quota_bytes - used_bytes - reserved_bytes
             """, nativeQuery = true)
     int reserve(
             @Param("ownerId") String ownerId,
@@ -31,12 +30,36 @@ public interface FileQuotaJpaRepository extends JpaRepository<StoredFileQuotaEnt
 
     @Modifying
     @Query(value = """
-                                update stored_file_quota
-                                        set used_bytes = used_bytes - :sizeBytes
+            update stored_file_quota
+               set used_bytes = used_bytes + :sizeBytes,
+                   reserved_bytes = reserved_bytes - :sizeBytes
              where owner_id = :ownerId
-                                        and used_bytes >= :sizeBytes
+               and reserved_bytes >= :sizeBytes
+               and used_bytes <= quota_bytes - :sizeBytes
             """, nativeQuery = true)
-    int release(
+    int consumeReservation(
+            @Param("ownerId") String ownerId,
+            @Param("sizeBytes") long sizeBytes);
+
+    @Modifying
+    @Query(value = """
+            update stored_file_quota
+               set reserved_bytes = reserved_bytes - :sizeBytes
+             where owner_id = :ownerId
+               and reserved_bytes >= :sizeBytes
+            """, nativeQuery = true)
+    int releaseReservation(
+            @Param("ownerId") String ownerId,
+            @Param("sizeBytes") long sizeBytes);
+
+    @Modifying
+    @Query(value = """
+            update stored_file_quota
+               set used_bytes = used_bytes - :sizeBytes
+             where owner_id = :ownerId
+               and used_bytes >= :sizeBytes
+            """, nativeQuery = true)
+    int releaseConsumed(
             @Param("ownerId") String ownerId,
             @Param("sizeBytes") long sizeBytes);
 }

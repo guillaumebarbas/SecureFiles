@@ -28,6 +28,7 @@ Merge the feature branches in this order:
 13. `13-project-initialization-workflow.md` from `feature/project-initialization` centralizes local project initialization and front/back launch commands.
 14. `14-secure-download-and-action-menu.md` from `fix/project-initialization-startup` allows authenticated cross-owner downloads of `CLEAN` files and keeps file action menus within the viewport.
 15. `15-secure-file-resilience.md` from `feat/secure-file-resilience` hardens scan timeouts, leases, broker redrive, deletion recovery, quotas, rate limiting, and public metadata exposure.
+16. `16-secure-file-lifecycle.md` from `feat/secure-file-lifecycle` separates clean-file quota accounting, adds the storage progress view, and keeps upload statuses synchronized without navigation.
 
 The summaries remain with the branch that delivers the corresponding
 implementation. After merging the branches in sequence, this directory gives

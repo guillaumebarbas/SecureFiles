@@ -139,6 +139,17 @@ Le controleur ne decide pas si un fichier est telechargeable : cette decision ap
 3. Lancer le test, le build ou le lint le plus cible immediatement.
 4. Elargir seulement si le resultat le justifie.
 
+Apres toute correction d'un incident de demarrage ou d'execution backend, relancer depuis
+`backend/` `mvn --batch-mode spring-boot:run` et conserver les logs jusqu'a l'initialisation
+complete ou l'echec du processus. Verifier le message de demarrage Spring puis, lorsque le
+serveur est disponible, `GET /actuator/health` avec un statut `UP` ; les seuls tests de
+compilation ou tests unitaires ne suffisent pas a declarer une correction runtime valide.
+
+Pour toute demande ou modification du backend, lancer aussi depuis la racine du depot
+`env -u DATABASE_URL -u DATABASE_USERNAME -u DATABASE_PASSWORD make back`. Attendre
+l'initialisation complete ou l'echec de Spring Boot, puis verifier les logs de demarrage et
+`GET /actuator/health` avec un statut `UP` lorsque le serveur est disponible.
+
 ## Format de compte rendu
 
 Commencer par les marqueurs de contexte applicables, puis `ANALYSE`, `IMPLEMENTATION`, `REVUE` ou `DOCUMENTATION`. Signaler clairement les risques restants et les validations executees.

@@ -294,15 +294,41 @@ export function FileUpload({
     const requestController = new AbortController();
     let cancelled = false;
     let pollingTimer: ReturnType<typeof setTimeout> | null = null;
+    let pollingInFlight = false;
+    let pollingStopped = false;
     let retryCount = 0;
 
-    function scheduleNextPoll(poll: () => Promise<void>) {
-      if (!cancelled) {
-        pollingTimer = setTimeout(poll, METADATA_POLL_INTERVAL_MS);
+    function clearPollingTimer() {
+      if (pollingTimer) {
+        clearTimeout(pollingTimer);
+        pollingTimer = null;
       }
     }
 
+    function stopPolling() {
+      pollingStopped = true;
+      clearPollingTimer();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    function scheduleNextPoll() {
+      if (cancelled || pollingStopped) {
+        return;
+      }
+
+      clearPollingTimer();
+      pollingTimer = setTimeout(() => {
+        pollingTimer = null;
+        void pollMetadata();
+      }, METADATA_POLL_INTERVAL_MS);
+    }
+
     async function pollMetadata() {
+      if (cancelled || pollingStopped || pollingInFlight) {
+        return;
+      }
+
+      pollingInFlight = true;
       try {
         const response = await getFileMetadata(fileId, {
           signal: requestController.signal,
@@ -322,7 +348,9 @@ export function FileUpload({
           return { kind: 'accepted', response };
         });
         if (!isTerminalStatus(response.status)) {
-          scheduleNextPoll(pollMetadata);
+          scheduleNextPoll();
+        } else {
+          stopPolling();
         }
       } catch (error) {
         if (cancelled) {
@@ -349,18 +377,30 @@ export function FileUpload({
           };
         });
         if (willRetry) {
-          scheduleNextPoll(pollMetadata);
+          scheduleNextPoll();
+        } else {
+          stopPolling();
         }
+      } finally {
+        pollingInFlight = false;
       }
     }
 
-    scheduleNextPoll(pollMetadata);
+    function handleVisibilityChange() {
+      if (document.visibilityState !== 'visible') {
+        return;
+      }
+
+      clearPollingTimer();
+      void pollMetadata();
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    scheduleNextPoll();
     return () => {
       cancelled = true;
+      stopPolling();
       requestController.abort();
-      if (pollingTimer) {
-        clearTimeout(pollingTimer);
-      }
     };
   }, [acceptedFileId]);
 

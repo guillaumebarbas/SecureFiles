@@ -34,6 +34,8 @@ describe('SharedComponentsShowcasePage', () => {
 
     expect(screen.getByRole('heading', { name: 'Actions' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Action principale' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Barre de progression' })).toBeVisible();
+    expect(screen.getByRole('progressbar', { name: 'Stockage disponible' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Upload de fichier' })).toBeVisible();
     expect(screen.getByLabelText('Choisir un fichier')).toBeInTheDocument();
 

@@ -3,6 +3,7 @@ import { Check, Clock3, CloudUpload, Filter, FolderOpen, RefreshCw, ShieldAlert,
 import type { LucideIcon } from 'lucide-react';
 import {
   deleteFile,
+  getFileMetadata,
   listFiles,
   type FileSortField,
   type FileMetadataResponse,
@@ -24,6 +25,7 @@ const DEFAULT_PAGE_SIZE = 10;
 const DEFAULT_SORT_FIELD: FileSortField = 'createdAt';
 const DEFAULT_SORT_DIRECTION: SortDirection = 'desc';
 const PAGE_SIZE_OPTIONS = [5, 10, 25];
+const METADATA_POLL_INTERVAL_MS = 250;
 const statusFilterOptions: readonly { value: ScanStatus; label: string }[] = [
   { value: 'CLEAN', label: 'Sain' },
   { value: 'INFECTED', label: 'Infecté' },
@@ -65,6 +67,13 @@ function statusTone(status: ScanStatus): 'danger' | 'success' | 'warning' {
   }
 
   return 'warning';
+}
+
+function isTerminalStatus(status: ScanStatus) {
+  return status === 'CLEAN'
+    || status === 'INFECTED'
+    || status === 'SCAN_FAILED'
+    || status === 'REJECTED';
 }
 
 function formatFileSize(sizeBytes: number | null) {
@@ -174,6 +183,7 @@ export function DashboardPage({
   const [selectedStatuses, setSelectedStatuses] = useState<ScanStatus[]>([]);
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const [activeUploadFileId, setActiveUploadFileId] = useState<string | null>(null);
   const statusFilterRootRef = useRef<HTMLDivElement>(null);
   const statusFilterPanelId = useId().replace(/:/g, '') + '-status-filter';
 
@@ -225,6 +235,96 @@ export function DashboardPage({
   }, [currentUser, isAuthenticated, page, pageSize, refreshVersion, selectedStatuses, sortDirection, sortField]);
 
   useEffect(() => {
+    const trackedFileIds = new Set(
+      files
+        .filter((file) => file.fileId !== activeUploadFileId && !isTerminalStatus(file.status))
+        .map((file) => file.fileId),
+    );
+    if (trackedFileIds.size === 0) {
+      return undefined;
+    }
+
+    const requestController = new AbortController();
+    const pollingTimers = new Map<string, ReturnType<typeof setTimeout>>();
+    const pollingInFlight = new Set<string>();
+    let cancelled = false;
+
+    function clearPollingTimer(fileId: string) {
+      const pollingTimer = pollingTimers.get(fileId);
+      if (pollingTimer) {
+        clearTimeout(pollingTimer);
+        pollingTimers.delete(fileId);
+      }
+    }
+
+    function scheduleNextPoll(fileId: string) {
+      if (cancelled || !trackedFileIds.has(fileId) || pollingTimers.has(fileId)) {
+        return;
+      }
+
+      pollingTimers.set(fileId, setTimeout(() => {
+        pollingTimers.delete(fileId);
+        void pollMetadata(fileId);
+      }, METADATA_POLL_INTERVAL_MS));
+    }
+
+    async function pollMetadata(fileId: string) {
+      if (cancelled || pollingInFlight.has(fileId)) {
+        return;
+      }
+
+      pollingInFlight.add(fileId);
+      try {
+        const response = await getFileMetadata(fileId, {
+          signal: requestController.signal,
+        });
+        if (cancelled) {
+          return;
+        }
+
+        setFiles((currentFiles) => currentFiles.map((currentFile) => (
+          currentFile.fileId === fileId ? response : currentFile
+        )));
+        if (isTerminalStatus(response.status)) {
+          setActiveUploadFileId((currentFileId) => (
+            currentFileId === fileId ? null : currentFileId
+          ));
+          return;
+        }
+
+        scheduleNextPoll(fileId);
+      } catch {
+        if (!cancelled) {
+          scheduleNextPoll(fileId);
+        }
+      } finally {
+        pollingInFlight.delete(fileId);
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState !== 'visible') {
+        return;
+      }
+
+      trackedFileIds.forEach((fileId) => {
+        clearPollingTimer(fileId);
+        void pollMetadata(fileId);
+      });
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    trackedFileIds.forEach(scheduleNextPoll);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      pollingTimers.forEach((pollingTimer) => clearTimeout(pollingTimer));
+      requestController.abort();
+    };
+  }, [activeUploadFileId, files]);
+
+  useEffect(() => {
     if (!isStatusFilterOpen) {
       return;
     }
@@ -232,6 +332,7 @@ export function DashboardPage({
   }, [isStatusFilterOpen]);
 
   function handleFileAccepted(file: FileMetadataResponse) {
+    setActiveUploadFileId(isTerminalStatus(file.status) ? null : file.fileId);
     setAnimatedFileId(file.fileId);
     setFilesError(null);
     setPage(DEFAULT_PAGE);
@@ -242,6 +343,11 @@ export function DashboardPage({
     setFiles((currentFiles) => currentFiles.map((currentFile) => (
       currentFile.fileId === file.fileId ? file : currentFile
     )));
+    if (isTerminalStatus(file.status)) {
+      setActiveUploadFileId((currentFileId) => (
+        currentFileId === file.fileId ? null : currentFileId
+      ));
+    }
   }
 
   function handleFilesRetry() {

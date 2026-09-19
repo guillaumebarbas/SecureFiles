@@ -144,6 +144,16 @@ Pour regenerer les apercus, installer ou fournir le binaire draw.io desktop puis
 - `GET /api/v1/users/me` : renvoie le profil de l'utilisateur authentifie. Sans session
    valide, il renvoie `204 No Content` plutot que `401 Unauthorized`. Le JWT est verifie
    cryptographiquement et la session doit encore etre active en base lorsqu'il est present.
+- `GET /api/v1/users/me/storage` : renvoie `{ "usedBytes": <entier>, "quotaBytes": <entier> }`
+   pour l'utilisateur authentifie. L'identite est derivee de la session, jamais d'un identifiant
+   fourni par le client. Lorsqu'aucune ligne de quota n'existe encore, `usedBytes` vaut `0` et
+   `quotaBytes` reprend la valeur configuree par proprietaire (`securefiles.quota.per-owner`,
+   `STORAGE_QUOTA_PER_OWNER`). Les deux valeurs sont des octets ; le profil peut les afficher
+   avec les libelles de stockage de la console sans modifier le quota persiste. `usedBytes`
+   compte uniquement les fichiers `CLEAN` ; les fichiers `PENDING_SCAN` et `SCANNING` utilisent
+   une reservation interne pour proteger le quota concurrent sans reduire cette valeur visible,
+   et les fichiers `INFECTED` ou `SCAN_FAILED` ne sont pas comptes. Sans session valide, la route
+   renvoie `204 No Content`.
 - `POST /api/v1/auth/logout` : revoque la session courante et efface le cookie HttpOnly.
 - `GET /api/v1/auth/csrf` : initialise le cookie CSRF lisible par le frontend en production.
 - `GET /actuator/health` : healthcheck technique.
@@ -261,6 +271,11 @@ etre demarrees avant son execution :
 cd backend
 SECUREFILES_INTEGRATION=true mvn -Dtest=FileScanFlowIntegrationTest test
 ```
+
+Cette classe verifie egalement qu'un upload accepte en `202/PENDING_SCAN` ne reduit pas
+`usedBytes` avant le scan. Apres un resultat `CLEAN`, la taille est transferee de la
+reservation interne vers `usedBytes`; un resultat `INFECTED` ou `SCAN_FAILED` libere la
+reservation sans consommer le quota visible.
 
 Le test `UserAuthenticationFlowIntegrationTest` verifie l'inscription, la session, le
 refus d'un suffixe different au-dela de 72 octets et la revocation :
@@ -415,6 +430,7 @@ curl -c cookies.txt -b cookies.txt \
    http://localhost:8080/api/v1/auth/login
 
 curl -b cookies.txt http://localhost:8080/api/v1/users/me
+curl -b cookies.txt http://localhost:8080/api/v1/users/me/storage
 curl -b cookies.txt -F "file=@./document.pdf" http://localhost:8080/api/v1/files
 curl -b cookies.txt http://localhost:8080/api/v1/files
 curl -b cookies.txt -OJ http://localhost:8080/api/v1/files/<id>/content
@@ -446,7 +462,9 @@ isole, jamais un malware reel.
    la liste et le download restent volontairement accessibles selon les decisions MVP existantes.
    Les quotas sont actuellement calcules par proprietaire ; une autorisation par tenant et un
    fournisseur d'identite externe restent a evaluer avant exposition publique.
-- **Capacite** : le quota de stockage par proprietaire est reserve atomiquement avant `PENDING_SCAN`.
+- **Capacite** : une reservation interne est ajoutee atomiquement avant `PENDING_SCAN` pour
+   proteger l'admission concurrente, mais `usedBytes` ne compte que les fichiers `CLEAN`.
+   Un fichier `INFECTED` ou `SCAN_FAILED` libere sa reservation sans consommer le quota visible.
    Le rate limiting des uploads et des connexions est partage par PostgreSQL et renvoie `429`
    lorsque le bucket correspondant est depasse ; les buckets de connexion sont namespaces par
    IP et ne se melangent pas avec ceux d'upload. Les compteurs expires sont purges par un reaper.

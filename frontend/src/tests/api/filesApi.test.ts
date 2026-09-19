@@ -6,6 +6,7 @@ import {
   deleteFile,
   getFileMetadata,
   getDownloadUrl,
+  getStorageQuota,
   getUploadConfiguration,
   listFiles,
   loginUser,
@@ -133,6 +134,19 @@ describe('filesApi', () => {
     await expect(getUploadConfiguration()).resolves.toEqual({ maximumSizeBytes: 1024 });
 
     expect(axios.get).toHaveBeenCalledWith('/api/v1/files/config');
+  });
+
+  it('gets the authenticated storage quota with an abort signal', async () => {
+    const response = { quotaBytes: 100, usedBytes: 40 };
+    const controller = new AbortController();
+    vi.mocked(axios.get).mockResolvedValue({ data: response } as never);
+
+    await expect(getStorageQuota({ signal: controller.signal })).resolves.toEqual(response);
+
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/users/me/storage', {
+      signal: controller.signal,
+      withCredentials: true,
+    });
   });
 
   it('gets the files visible to the current requester with an abort signal', async () => {

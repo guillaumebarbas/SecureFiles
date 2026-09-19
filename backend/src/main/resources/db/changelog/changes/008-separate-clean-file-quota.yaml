@@ -1,0 +1,52 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-separate-clean-file-quota
+      author: securefiles
+      changes:
+        - addColumn:
+            tableName: stored_file_quota
+            columns:
+              - column:
+                  name: reserved_bytes
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: stored_file
+            columns:
+              - column:
+                  name: quota_state
+                  type: VARCHAR(16)
+                  defaultValue: NONE
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: |
+              update stored_file
+                 set quota_state = case
+                     when status = 'CLEAN' then 'CONSUMED'
+                     when status in ('PENDING_SCAN', 'SCANNING') then 'RESERVED'
+                     when status = 'DELETING' then 'CONSUMED'
+                     else 'NONE'
+                   end;
+        - sql:
+            sql: |
+              update stored_file_quota quota
+                 set used_bytes = coalesce((
+                         select sum(file.size_bytes)
+                           from stored_file file
+                          where file.owner_id = quota.owner_id
+                            and file.quota_state = 'CONSUMED'
+                       ), 0),
+                     reserved_bytes = coalesce((
+                         select sum(file.size_bytes)
+                           from stored_file file
+                          where file.owner_id = quota.owner_id
+                            and file.quota_state = 'RESERVED'
+                       ), 0);
+        - sql:
+            sql: |
+              alter table stored_file_quota
+                add constraint ck_stored_file_quota_reserved_non_negative
+                check (reserved_bytes >= 0);
