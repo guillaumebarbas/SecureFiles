@@ -94,6 +94,30 @@ describe('DashboardPage', () => {
     });
   });
 
+  it('updates an uploading file status without changing page', async () => {
+    const uploadingFile: FileMetadataResponse = {
+      author: 'Alice Martin',
+      createdAt: '2026-09-15T10:00:00Z',
+      fileId: '11111111-1111-1111-1111-111111111111',
+      originalFilename: 'uploading-document.txt',
+      sizeBytes: null,
+      status: 'UPLOADING',
+    };
+    const cleanFile: FileMetadataResponse = {
+      ...uploadingFile,
+      sizeBytes: 12,
+      status: 'CLEAN',
+    };
+    mockedListFiles.mockResolvedValue(createFilesPageResponse([uploadingFile]));
+    mockedGetFileMetadata.mockResolvedValue(cleanFile);
+
+    render(<DashboardPage />);
+
+    const table = screen.getByRole('table', { name: 'Fichiers uploadés' });
+    expect(await within(table).findByText('UPLOADING')).toBeVisible();
+    expect(await within(table).findByText('CLEAN', {}, { timeout: 2000 })).toBeVisible();
+  });
+
   it('shows an author column in the recent files register', () => {
     render(<DashboardPage />);
 

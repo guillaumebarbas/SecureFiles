@@ -5,6 +5,7 @@ import {
   getFileMetadata,
   getUploadConfiguration,
   uploadFile,
+  type FileMetadataResponse,
   type UploadFileResponse,
 } from '../../../../api/filesApi';
 import { FileUpload } from '../../../../shared/forms/FileUpload/FileUpload';
@@ -177,6 +178,95 @@ describe('FileUpload', () => {
     expect(onAccepted).toHaveBeenCalledWith(pendingResponse);
     expect(await screen.findByText('CLEAN', {}, { timeout: 2000 })).toBeVisible();
     expect(onStatusChange).toHaveBeenCalledWith(cleanResponse);
+  });
+
+  it('refreshes the status immediately when the browser tab becomes visible again', async () => {
+    vi.useFakeTimers();
+    const file = new File(['safe content'], 'document.txt', { type: 'text/plain' });
+    const pendingResponse: UploadFileResponse = {
+      createdAt: '2026-09-15T10:00:00Z',
+      fileId: '11111111-1111-1111-1111-111111111111',
+      originalFilename: 'document.txt',
+      sizeBytes: file.size,
+      status: 'PENDING_SCAN',
+    };
+    const cleanResponse = { ...pendingResponse, status: 'CLEAN' as const };
+    mockedUploadFile.mockResolvedValue(pendingResponse);
+    mockedGetFileMetadata.mockResolvedValue(cleanResponse);
+
+    render(<FileUpload />);
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Choisir un fichier'), { target: { files: [file] } });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Envoyer le fichier' }));
+      await Promise.resolve();
+    });
+
+    expect(mockedGetFileMetadata).not.toHaveBeenCalled();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+    await act(async () => {
+      fireEvent(document, new Event('visibilitychange'));
+      await Promise.resolve();
+    });
+
+    expect(mockedGetFileMetadata).toHaveBeenCalledOnce();
+    expect(screen.getByText('CLEAN')).toBeVisible();
+  });
+
+  it('does not start a second metadata request while one is in flight', async () => {
+    vi.useFakeTimers();
+    const file = new File(['safe content'], 'document.txt', { type: 'text/plain' });
+    const pendingResponse: UploadFileResponse = {
+      createdAt: '2026-09-15T10:00:00Z',
+      fileId: '11111111-1111-1111-1111-111111111111',
+      originalFilename: 'document.txt',
+      sizeBytes: file.size,
+      status: 'PENDING_SCAN',
+    };
+    const cleanResponse: FileMetadataResponse = { ...pendingResponse, status: 'CLEAN' };
+    let resolveMetadata: ((response: FileMetadataResponse) => void) | undefined;
+    mockedUploadFile.mockResolvedValue(pendingResponse);
+    mockedGetFileMetadata.mockImplementation(() => new Promise((resolve) => {
+      resolveMetadata = resolve;
+    }));
+
+    render(<FileUpload />);
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Choisir un fichier'), { target: { files: [file] } });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Envoyer le fichier' }));
+      await Promise.resolve();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+    await act(async () => {
+      fireEvent(document, new Event('visibilitychange'));
+      await Promise.resolve();
+    });
+    await act(async () => {
+      fireEvent(document, new Event('visibilitychange'));
+      await Promise.resolve();
+    });
+
+    expect(mockedGetFileMetadata).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      resolveMetadata?.(cleanResponse);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('CLEAN')).toBeVisible();
   });
 
   it('clears the accepted file and invites a new selection', async () => {
