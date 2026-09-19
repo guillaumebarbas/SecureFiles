@@ -1038,6 +1038,12 @@ Prompt :
 make init devrait npm install aussi
 Resultat : La cible `init` execute maintenant `init-frontend` juste apres `init-env`, avant Docker et Maven. `npm install` est donc lance meme si la compilation backend est bloquee par Maven absent.
 - - - - -
+
+- - - - -
+Prompt :
+Peux tu aller dans documents, prendre les 3 derniers screen les analysé, les rename et les mettre pour qu'il soit utilisé dans le readme en premier pour faire rapidement la présentation des pages une à une avec leur screen
+Resultat : Les trois dernières captures de la console ont été analysées, renommées dans `docs/screenshots` et ajoutées en tête du README avec une présentation du Dashboard, du Profil et de la Bibliothèque.
+- - - - -
 - - - - -
 Prompt :
 PS C:\Users\Guillaume\Documents\branches\SecureFiles> make init
@@ -1076,6 +1082,13 @@ Resultat : README.md indique maintenant d'importer `chocolateyProfile.psm1` avan
 Prompt :
 c'est bizarre sur windows j'ai pas les animations css dans google chrome
 Resultat : Verification de `frontend/src/styles.css` : les animations et transitions sont presentes. La media query `prefers-reduced-motion: reduce` reduit volontairement leurs durees a `0.01ms`. Le diagnostic recommande de verifier les effets d'animation Windows et l'emulation de mouvement reduit dans Chrome DevTools.
+- - - - -
+
+- - - - -
+Prompt :
+Peux tu me faire un diagramme des etats lors d'un upload.
+Resultat :
+Diagrammes natifs draw.io detaille et simplifie ajoutes pour le cycle de vie d'un upload, avec apercus PNG exportes et transitions verifiees a partir du code.
 - - - - -
 
 - - - - -
@@ -1272,4 +1285,23 @@ Alors qu'on devrait compté seulement si c'est clean.
 Resultat :
 Le quota visible compte maintenant uniquement les fichiers `CLEAN`; une reservation interne protege les uploads en attente, puis est consommee ou liberee selon le resultat du scan. Les fichiers `INFECTED` et `SCAN_FAILED` restent dans MinIO prive jusqu'a suppression explicite ou reprise de suppression. Tests backend et validations EICAR executes.
 - - - - -
+
+- - - - -
+Prompt :
+Je vois que le skills diagram est bon mais j'aimerai qu'il sépare mieux dans l'arborescendre, dans renders, des separations par logique, feature,. Pareil pour architecture
+
+Refacto et rajoute cette regle dans le skill
+Resultat :
+Arborescence des diagrammes refactoree par categorie et scope (`feature`, `logic` ou `system`), avec un dossier `renders` propre a chaque scope. Les diagrammes existants ont ete deplaces, les regles et references alignees, et `make diagrams-check` verifie maintenant cette hierarchie.
+- - - - -
+- - - - -
+Prompt :
+Follow instructions in #prompt:create-securefiles-diagrams.prompt.md with these arguments: Peux tu me créer le diagrame de sequence et un diagrame pour expliquer à partir du moment ou le rabitMq recoit quelque chose (le but est d'avoir une explication du rabitMq)
+Resultat : Deux paires de diagrammes natifs draw.io, détaillées et simplifiées, décrivent la livraison RabbitMQ, le scan, les retries TTL, la DLQ, le redrive borné et l'isolation des messages poison. Les sources sont rangées par scope, les quatre PNG ont été exportés et les liens README ajoutés.
+- - - - -
+
+- - - - -
+Prompt :
+Peux tu analyse le projet et mettre à jour le readme/ le simplifier si besoin.
+Resultat : README.md simplifié après comparaison avec le code réel : présentation conservée, contrat API corrigé, démarrage, configuration et tests regroupés, détails internes des agents retirés.
 - - - - -
