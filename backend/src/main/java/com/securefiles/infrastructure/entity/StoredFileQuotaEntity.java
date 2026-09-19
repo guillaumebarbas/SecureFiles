@@ -19,12 +19,36 @@ public class StoredFileQuotaEntity {
     @Column(name = "used_bytes", nullable = false)
     private long usedBytes;
 
+    @Column(name = "reserved_bytes", nullable = false)
+    private long reservedBytes;
+
     protected StoredFileQuotaEntity() {
     }
 
     public StoredFileQuotaEntity(String ownerId, long quotaBytes, long usedBytes) {
+        this(ownerId, quotaBytes, usedBytes, 0L);
+    }
+
+    public StoredFileQuotaEntity(String ownerId, long quotaBytes, long usedBytes, long reservedBytes) {
         this.ownerId = ownerId;
         this.quotaBytes = quotaBytes;
         this.usedBytes = usedBytes;
+        this.reservedBytes = reservedBytes;
+    }
+
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public long getQuotaBytes() {
+        return quotaBytes;
+    }
+
+    public long getUsedBytes() {
+        return usedBytes;
+    }
+
+    public long getReservedBytes() {
+        return reservedBytes;
     }
 }

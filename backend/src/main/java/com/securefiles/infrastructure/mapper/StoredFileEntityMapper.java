@@ -1,6 +1,7 @@
 package com.securefiles.infrastructure.mapper;
 
 import com.securefiles.domain.file.model.StoredFile;
+import com.securefiles.infrastructure.entity.QuotaAccountingState;
 import com.securefiles.infrastructure.entity.StoredFileEntity;
 import java.util.Objects;
 
@@ -14,6 +15,7 @@ public final class StoredFileEntityMapper {
                 storedFile.originalFilename(),
                 storedFile.clientContentType().orElse(null),
                 storedFile.status(),
+                QuotaAccountingState.forStatus(storedFile.status()),
                 storedFile.sizeBytes().orElse(null),
                 storedFile.sha256().orElse(null),
                 storedFile.storageKey().orElse(null),
@@ -53,6 +55,7 @@ public final class StoredFileEntityMapper {
         Objects.requireNonNull(entity, "entity must not be null");
         entity.updateScanState(
                 storedFile.status(),
+                QuotaAccountingState.forStatus(storedFile.status()),
                 storedFile.scanAttemptCount(),
                 storedFile.scanLeaseId().orElse(null),
                 storedFile.scanLeaseUntil().orElse(null),

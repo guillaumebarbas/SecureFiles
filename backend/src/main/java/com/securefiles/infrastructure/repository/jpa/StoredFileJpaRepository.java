@@ -1,6 +1,7 @@
 package com.securefiles.infrastructure.repository.jpa;
 
 import com.securefiles.domain.file.model.FileStatus;
+import com.securefiles.infrastructure.entity.QuotaAccountingState;
 import com.securefiles.infrastructure.entity.StoredFileEntity;
 import java.time.Instant;
 import java.util.Collection;
@@ -92,6 +93,7 @@ public interface StoredFileJpaRepository extends JpaRepository<StoredFileEntity,
          @Query("""
               update StoredFileEntity file
                  set file.status = :failedStatus,
+                          file.quotaState = :noneQuotaState,
                      file.scanLeaseId = null,
                      file.scanLeaseUntil = null,
                      file.nextScanAt = null,
@@ -106,7 +108,8 @@ public interface StoredFileJpaRepository extends JpaRepository<StoredFileEntity,
               @Param("failureCode") String failureCode,
               @Param("failedAt") Instant failedAt,
               @Param("pendingStatus") FileStatus pendingStatus,
-              @Param("failedStatus") FileStatus failedStatus);
+              @Param("failedStatus") FileStatus failedStatus,
+              @Param("noneQuotaState") QuotaAccountingState noneQuotaState);
 
          @Modifying(clearAutomatically = true, flushAutomatically = true)
          @Query("""
@@ -144,6 +147,7 @@ public interface StoredFileJpaRepository extends JpaRepository<StoredFileEntity,
       @Query("""
                     update StoredFileEntity file
                          set file.status = :pendingStatus,
+                          file.quotaState = :reservedQuotaState,
                                file.sizeBytes = :sizeBytes,
                                file.sha256 = :sha256,
                                file.storageKey = :storageKey,
@@ -164,7 +168,8 @@ public interface StoredFileJpaRepository extends JpaRepository<StoredFileEntity,
                     @Param("storageVersion") String storageVersion,
                     @Param("completedAt") Instant completedAt,
                     @Param("uploadingStatus") FileStatus uploadingStatus,
-                    @Param("pendingStatus") FileStatus pendingStatus);
+                    @Param("pendingStatus") FileStatus pendingStatus,
+                    @Param("reservedQuotaState") QuotaAccountingState reservedQuotaState);
 
          @Query("""
               select file.id
@@ -226,6 +231,7 @@ public interface StoredFileJpaRepository extends JpaRepository<StoredFileEntity,
     @Query("""
          update StoredFileEntity file
             set file.status = :completedStatus,
+                     file.quotaState = :quotaState,
              file.scanLeaseId = null,
              file.scanLeaseUntil = null,
              file.nextScanAt = :nextScanAt,
@@ -243,6 +249,7 @@ public interface StoredFileJpaRepository extends JpaRepository<StoredFileEntity,
          @Param("nextScanAt") Instant nextScanAt,
          @Param("failureCode") String failureCode,
          @Param("completedAt") Instant completedAt,
-         @Param("scanningStatus") FileStatus scanningStatus);
+         @Param("scanningStatus") FileStatus scanningStatus,
+         @Param("quotaState") QuotaAccountingState quotaState);
 
 }

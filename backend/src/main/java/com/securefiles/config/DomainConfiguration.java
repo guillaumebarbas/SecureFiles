@@ -3,11 +3,13 @@ package com.securefiles.config;
 import com.securefiles.application.mapper.UploadFileMapper;
 import com.securefiles.application.mapper.UploadConfigurationMapper;
 import com.securefiles.application.mapper.FileMetadataMapper;
+import com.securefiles.application.mapper.StorageQuotaMapper;
 import com.securefiles.application.mapper.UserMapper;
 import com.securefiles.domain.user.model.UserRole;
 import com.securefiles.domain.user.port.in.AuthenticateUser;
 import com.securefiles.domain.user.port.in.CreateUser;
 import com.securefiles.domain.file.port.in.GetFileMetadata;
+import com.securefiles.domain.file.port.in.GetStorageQuota;
 import com.securefiles.domain.file.port.in.GetUploadConfiguration;
 import com.securefiles.domain.file.port.in.DownloadFile;
 import com.securefiles.domain.file.port.in.DeleteFile;
@@ -21,10 +23,12 @@ import com.securefiles.domain.file.port.out.ExpiredScanRecoveryPort;
 import com.securefiles.domain.file.port.out.FileAcceptancePort;
 import com.securefiles.domain.file.port.out.FileContentStorage;
 import com.securefiles.domain.file.port.out.StoredFileRepository;
+import com.securefiles.domain.file.port.out.StorageQuotaRepository;
 import com.securefiles.domain.file.usecases.DownloadFileUseCase;
 import com.securefiles.domain.file.usecases.DeleteFileUseCase;
 import com.securefiles.domain.file.usecases.FailScanUseCase;
 import com.securefiles.domain.file.usecases.GetFileMetadataUseCase;
+import com.securefiles.domain.file.usecases.GetStorageQuotaUseCase;
 import com.securefiles.domain.file.usecases.GetUploadConfigurationUseCase;
 import com.securefiles.domain.file.usecases.ListFilesUseCase;
 import com.securefiles.domain.file.usecases.RecoverExpiredScanUseCase;
@@ -86,6 +90,11 @@ public class DomainConfiguration {
     }
 
     @Bean
+    public StorageQuotaMapper storageQuotaMapper() {
+        return new StorageQuotaMapper();
+    }
+
+    @Bean
     public UserMapper userMapper() {
         return new UserMapper();
     }
@@ -134,6 +143,13 @@ public class DomainConfiguration {
     @Bean
     public GetUploadConfiguration getUploadConfiguration(UploadProperties properties) {
         return new GetUploadConfigurationUseCase(properties.maximumSize().toBytes());
+    }
+
+    @Bean
+    public GetStorageQuota getStorageQuota(
+            StorageQuotaRepository repository,
+            QuotaProperties properties) {
+        return new GetStorageQuotaUseCase(repository, properties.perOwner().toBytes());
     }
 
     @Bean

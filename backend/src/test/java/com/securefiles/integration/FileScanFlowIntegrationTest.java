@@ -52,7 +52,8 @@ import org.awaitility.core.ConditionTimeoutException;
     "securefiles.rabbitmq.relay-interval-millis=100",
     "securefiles.rabbitmq.maximum-dead-letter-redrives=1",
     "securefiles.scan.lease-duration=PT30S",
-    "securefiles.scan.retry-delay=PT1S"
+    "securefiles.scan.retry-delay=PT1S",
+    "securefiles.quota.per-owner=10737418240B"
 })
 class FileScanFlowIntegrationTest {
 
@@ -115,6 +116,78 @@ class FileScanFlowIntegrationTest {
 
             assertThat(terminalResponse.path("status").asText()).isEqualTo("CLEAN");
         }
+
+    @Test
+    void upload_shouldIncreaseUsedQuota_whenScanReachesClean() throws Exception {
+        String authenticationCookie = authenticationCookie();
+        ResponseEntity<JsonNode> initialQuotaResponse = restTemplate.exchange(
+                storageQuotaUrl(),
+                org.springframework.http.HttpMethod.GET,
+                authenticatedEntity(authenticationCookie),
+                JsonNode.class);
+
+        assertThat(initialQuotaResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode initialQuota = initialQuotaResponse.getBody();
+        assertThat(initialQuota).isNotNull();
+        long initialUsedBytes = initialQuota.path("usedBytes").asLong();
+        long initialQuotaBytes = initialQuota.path("quotaBytes").asLong();
+        assertThat(initialUsedBytes).isZero();
+        assertThat(initialQuotaBytes).isEqualTo(10_737_418_240L);
+
+        ClassPathResource file = new ClassPathResource("integration/safe-file.txt");
+        long uploadedSizeBytes = file.contentLength();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.set(HttpHeaders.COOKIE, authenticationCookie);
+        MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
+        requestBody.add("file", file);
+
+        ResponseEntity<JsonNode> uploadHttpResponse = restTemplate.postForEntity(
+                apiUrl(),
+                new HttpEntity<>(requestBody, headers),
+                JsonNode.class);
+
+        assertThat(uploadHttpResponse.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+        assertThat(uploadHttpResponse.getBody()).isNotNull();
+        assertThat(uploadHttpResponse.getBody().path("status").asText()).isEqualTo("PENDING_SCAN");
+        UUID fileId = UUID.fromString(uploadHttpResponse.getBody().path("fileId").asText());
+
+        JsonNode terminalResponse;
+        try {
+            terminalResponse = await()
+                .atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofMillis(250))
+                .until(
+                    () -> restTemplate.exchange(
+                            apiUrl() + "/" + fileId,
+                            org.springframework.http.HttpMethod.GET,
+                            authenticatedEntity(authenticationCookie),
+                            JsonNode.class)
+                        .getBody(),
+                    response -> isTerminal(response.path("status").asText()));
+        } catch (ConditionTimeoutException exception) {
+            throw new AssertionError(buildTerminalDiagnostic(fileId), exception);
+        }
+
+        assertThat(terminalResponse.path("status").asText()).isEqualTo("CLEAN");
+
+        ResponseEntity<JsonNode> updatedQuotaResponse = restTemplate.exchange(
+                storageQuotaUrl(),
+                org.springframework.http.HttpMethod.GET,
+                authenticatedEntity(authenticationCookie),
+                JsonNode.class);
+
+        assertThat(updatedQuotaResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode updatedQuota = updatedQuotaResponse.getBody();
+        assertThat(updatedQuota).isNotNull();
+        long updatedUsedBytes = updatedQuota.path("usedBytes").asLong();
+        long updatedQuotaBytes = updatedQuota.path("quotaBytes").asLong();
+        long updatedAvailableBytes = updatedQuotaBytes - updatedUsedBytes;
+
+        assertThat(updatedQuotaBytes).isEqualTo(initialQuotaBytes);
+        assertThat(updatedUsedBytes).isEqualTo(initialUsedBytes + uploadedSizeBytes);
+        assertThat(updatedAvailableBytes).isLessThan(initialQuotaBytes - initialUsedBytes);
+    }
 
     @Test
     void upload_shouldReachClean_whenMultipartStorageIsUsed() throws Exception {
@@ -214,6 +287,8 @@ class FileScanFlowIntegrationTest {
 
     private void assertUploadedFileReachesStatus(Path file, String expectedStatus, Duration timeout) {
         String authenticationCookie = authenticationCookie();
+        long initialUsedBytes = usedStorageBytes(authenticationCookie);
+        long uploadedSizeBytes = file.toFile().length();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         headers.set(HttpHeaders.COOKIE, authenticationCookie);
@@ -258,6 +333,11 @@ class FileScanFlowIntegrationTest {
                 terminalResponse,
                 buildTerminalDiagnostic(fileId))
             .isEqualTo(expectedStatus);
+
+            long expectedUsedBytes = "CLEAN".equals(expectedStatus)
+                ? initialUsedBytes + uploadedSizeBytes
+                : initialUsedBytes;
+            assertThat(usedStorageBytes(authenticationCookie)).isEqualTo(expectedUsedBytes);
     }
 
     private Path externalTestFile(String environmentVariable) {
@@ -356,6 +436,22 @@ class FileScanFlowIntegrationTest {
 
     private String apiUrl() {
         return "http://localhost:" + serverPort + "/api/v1/files";
+    }
+
+    private String storageQuotaUrl() {
+        return "http://localhost:" + serverPort + "/api/v1/users/me/storage";
+    }
+
+    private long usedStorageBytes(String authenticationCookie) {
+        ResponseEntity<JsonNode> quotaResponse = restTemplate.exchange(
+                storageQuotaUrl(),
+                org.springframework.http.HttpMethod.GET,
+                authenticatedEntity(authenticationCookie),
+                JsonNode.class);
+        assertThat(quotaResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode quota = quotaResponse.getBody();
+        assertThat(quota).isNotNull();
+        return quota.path("usedBytes").asLong();
     }
 
     private String authenticationCookie() {
