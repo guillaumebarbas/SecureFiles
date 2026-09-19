@@ -337,6 +337,12 @@ Prompt :
 Il faut améliorer les tags, il manque des couleurs de fond + l'animation de couleur au hover.
 
 Maintenant on va vouloir ajouter des nouveaux composant dans la bibliotheque de composants.
+- - - - -
+Prompt :
+J'ai toujours une erreur sur git hub ci , peux tu check avec le mcp, relance, et voir ce qui ne va pas sur la pr 35 ? #attachment:Pasted text #1
+Resultat :
+Correction du listener dead-letter RabbitMQ avec un convertisseur raw dedie, commit `382a57f` pousse sur la PR #35. Les jobs backend, frontend et backend-integration sont tous passes au vert sur GitHub Actions.
+- - - - -
 
 Un SideNavBar lateral:
 Avec un NavHeader contenant une icone (qui sera un shield pour representé l'application) une petite description.
