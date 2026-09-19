@@ -8,7 +8,10 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
+import java.sql.Types;
 import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -282,7 +285,7 @@ class FileScanFlowIntegrationTest {
     }
 
     private void createPendingScanFile(UUID fileId) {
-        java.time.Instant now = java.time.Instant.now();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         jdbcTemplate.update(
                 """
                 insert into stored_file (
@@ -290,15 +293,28 @@ class FileScanFlowIntegrationTest {
                     scan_attempt_count, created_at, updated_at, entity_version)
                 values (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                fileId,
-                "dead-letter-integration-owner",
-                "malformed-message.bin",
-                "application/octet-stream",
-                "PENDING_SCAN",
-                0,
-                now,
-                now,
-                0L);
+                new Object[] {
+                    fileId,
+                    "dead-letter-integration-owner",
+                    "malformed-message.bin",
+                    "application/octet-stream",
+                    "PENDING_SCAN",
+                    0,
+                    now,
+                    now,
+                    0L
+                },
+                new int[] {
+                    Types.OTHER,
+                    Types.VARCHAR,
+                    Types.VARCHAR,
+                    Types.VARCHAR,
+                    Types.VARCHAR,
+                    Types.INTEGER,
+                    Types.TIMESTAMP_WITH_TIMEZONE,
+                    Types.TIMESTAMP_WITH_TIMEZONE,
+                    Types.BIGINT
+                });
     }
 
     private String fileStatus(UUID fileId) {
