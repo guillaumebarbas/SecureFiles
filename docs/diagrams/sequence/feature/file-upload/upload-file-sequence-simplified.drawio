@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" modified="2026-09-18T00:00:00.000Z" agent="SecureFilesAgent" version="1.6.0" type="device">
   <diagram name="Upload file simplified" id="upload-file-simplified">
-    <mxGraphModel dx="1800" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1450" math="0" shadow="0">
+    <mxGraphModel dx="2100" dy="1500" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2050" pageHeight="1500" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -24,17 +24,20 @@
         <mxCell id="participant-storage" value="MinIO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=2;fontSize=14;fontStyle=1;fontColor=#78350f;" vertex="1" parent="1">
           <mxGeometry x="695" y="145" width="150" height="52" as="geometry" />
         </mxCell>
-        <mxCell id="participant-db" value="PostgreSQL / Outbox" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#7c3aed;strokeWidth=2;fontSize=13;fontStyle=1;fontColor=#4c1d95;" vertex="1" parent="1">
+        <mxCell id="participant-db" value="FileAcceptancePort / JpaFileAcceptanceAdapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;strokeWidth=2;fontSize=10;fontStyle=1;fontColor=#14532d;" vertex="1" parent="1">
           <mxGeometry x="900" y="145" width="180" height="52" as="geometry" />
         </mxCell>
-        <mxCell id="participant-mq" value="RabbitMQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce7f3;strokeColor=#db2777;strokeWidth=2;fontSize=14;fontStyle=1;fontColor=#831843;" vertex="1" parent="1">
+        <mxCell id="participant-relay" value="OutboxRabbitMqRelay" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce7f3;strokeColor=#db2777;strokeWidth=2;fontSize=11;fontStyle=1;fontColor=#831843;" vertex="1" parent="1">
           <mxGeometry x="1135" y="145" width="150" height="52" as="geometry" />
         </mxCell>
+        <mxCell id="participant-mq" value="RabbitMQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce7f3;strokeColor=#db2777;strokeWidth=2;fontSize=14;fontStyle=1;fontColor=#831843;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="145" width="150" height="52" as="geometry" />
+        </mxCell>
         <mxCell id="participant-scan" value="ScanFileUseCase" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;strokeWidth=2;fontSize=13;fontStyle=1;fontColor=#14532d;" vertex="1" parent="1">
-          <mxGeometry x="1340" y="145" width="170" height="52" as="geometry" />
+          <mxGeometry x="1565" y="145" width="170" height="52" as="geometry" />
         </mxCell>
         <mxCell id="participant-av" value="ClamAV" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#dc2626;strokeWidth=2;fontSize=14;fontStyle=1;fontColor=#7f1d1d;" vertex="1" parent="1">
-          <mxGeometry x="1565" y="145" width="150" height="52" as="geometry" />
+          <mxGeometry x="1790" y="145" width="150" height="52" as="geometry" />
         </mxCell>
 
         <mxCell id="lifeline-user" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=6 6;strokeColor=#94a3b8;endArrow=none;" edge="1" parent="1">
@@ -50,16 +53,19 @@
           <mxGeometry relative="1" as="geometry"><mxPoint x="770" y="197" as="sourcePoint" /><mxPoint x="770" y="1265" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="lifeline-db" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=6 6;strokeColor=#a78bfa;endArrow=none;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="990" y="197" as="sourcePoint" /><mxPoint x="990" y="1265" as="targetPoint" /></mxGeometry>
+          <mxGeometry relative="1" as="geometry"><mxPoint x="990" y="197" as="sourcePoint" /><mxPoint x="990" y="1450" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="lifeline-relay" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=6 6;strokeColor=#f472b6;endArrow=none;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1210" y="197" as="sourcePoint" /><mxPoint x="1210" y="1450" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="lifeline-mq" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=6 6;strokeColor=#f472b6;endArrow=none;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="1210" y="197" as="sourcePoint" /><mxPoint x="1210" y="1265" as="targetPoint" /></mxGeometry>
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1415" y="197" as="sourcePoint" /><mxPoint x="1415" y="1450" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="lifeline-scan" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=6 6;strokeColor=#4ade80;endArrow=none;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="1425" y="197" as="sourcePoint" /><mxPoint x="1425" y="1265" as="targetPoint" /></mxGeometry>
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1650" y="197" as="sourcePoint" /><mxPoint x="1650" y="1450" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="lifeline-av" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;dashPattern=6 6;strokeColor=#f87171;endArrow=none;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="1640" y="197" as="sourcePoint" /><mxPoint x="1640" y="1265" as="targetPoint" /></mxGeometry>
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1865" y="197" as="sourcePoint" /><mxPoint x="1865" y="1450" as="targetPoint" /></mxGeometry>
         </mxCell>
 
         <mxCell id="message-01" value="POST /api/v1/files" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#334155;fontSize=13;fontColor=#0f172a;labelBackgroundColor=#ffffff;" edge="1" parent="1">
@@ -74,10 +80,10 @@
         <mxCell id="message-04" value="stored" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;strokeColor=#d97706;fontSize=13;fontColor=#78350f;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry"><mxPoint x="770" y="430" as="sourcePoint" /><mxPoint x="555" y="430" as="targetPoint" /></mxGeometry>
         </mxCell>
-        <mxCell id="message-05" value="PENDING_SCAN + scan request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#7c3aed;fontSize=13;fontColor=#4c1d95;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+        <mxCell id="message-05" value="accept PENDING_SCAN + FILE_SCAN_REQUESTED" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#16a34a;fontSize=13;fontColor=#14532d;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry"><mxPoint x="555" y="495" as="sourcePoint" /><mxPoint x="990" y="495" as="targetPoint" /></mxGeometry>
         </mxCell>
-        <mxCell id="message-06" value="commit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;strokeColor=#7c3aed;fontSize=13;fontColor=#4c1d95;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+        <mxCell id="message-06" value="reserve quota + save metadata + Outbox; commit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;strokeColor=#7c3aed;fontSize=13;fontColor=#4c1d95;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry"><mxPoint x="990" y="560" as="sourcePoint" /><mxPoint x="555" y="560" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="message-07" value="PENDING_SCAN" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;strokeColor=#2563eb;fontSize=13;fontColor=#1e3a8a;labelBackgroundColor=#ffffff;" edge="1" parent="1">
@@ -90,33 +96,36 @@
         <mxCell id="phase-divider" value="Asynchronous scan" style="shape=line;html=1;strokeColor=#cbd5e1;dashed=1;fontSize=12;fontColor=#64748b;" vertex="1" parent="1">
           <mxGeometry x="40" y="745" width="1675" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="message-09" value="publish scan request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#db2777;fontSize=13;fontColor=#831843;labelBackgroundColor=#ffffff;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="990" y="810" as="sourcePoint" /><mxPoint x="1210" y="810" as="targetPoint" /></mxGeometry>
+        <mxCell id="message-09" value="read unpublished Outbox event" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#db2777;fontSize=13;fontColor=#831843;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1210" y="810" as="sourcePoint" /><mxPoint x="990" y="810" as="targetPoint" /></mxGeometry>
         </mxCell>
-        <mxCell id="message-10" value="deliver scan request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#db2777;fontSize=13;fontColor=#831843;labelBackgroundColor=#ffffff;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="1210" y="875" as="sourcePoint" /><mxPoint x="1425" y="875" as="targetPoint" /></mxGeometry>
+        <mxCell id="message-10" value="publish scan request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#db2777;fontSize=13;fontColor=#831843;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1210" y="875" as="sourcePoint" /><mxPoint x="1415" y="875" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="message-10b" value="deliver scan request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#db2777;fontSize=13;fontColor=#831843;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1415" y="940" as="sourcePoint" /><mxPoint x="1650" y="940" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="message-11" value="read file stream" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#d97706;fontSize=13;fontColor=#78350f;labelBackgroundColor=#ffffff;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="1425" y="940" as="sourcePoint" /><mxPoint x="770" y="940" as="targetPoint" /></mxGeometry>
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1650" y="1005" as="sourcePoint" /><mxPoint x="770" y="1005" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="message-12" value="stream bytes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;strokeColor=#d97706;fontSize=13;fontColor=#78350f;labelBackgroundColor=#ffffff;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="770" y="1005" as="sourcePoint" /><mxPoint x="1425" y="1005" as="targetPoint" /></mxGeometry>
+          <mxGeometry relative="1" as="geometry"><mxPoint x="770" y="1070" as="sourcePoint" /><mxPoint x="1650" y="1070" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="message-13" value="INSTREAM bytes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#dc2626;fontSize=13;fontColor=#7f1d1d;labelBackgroundColor=#ffffff;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="1425" y="1070" as="sourcePoint" /><mxPoint x="1640" y="1070" as="targetPoint" /></mxGeometry>
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1650" y="1135" as="sourcePoint" /><mxPoint x="1865" y="1135" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="message-14" value="OK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;strokeColor=#dc2626;fontSize=13;fontColor=#7f1d1d;labelBackgroundColor=#ffffff;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="1640" y="1135" as="sourcePoint" /><mxPoint x="1425" y="1135" as="targetPoint" /></mxGeometry>
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1865" y="1200" as="sourcePoint" /><mxPoint x="1650" y="1200" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="message-15" value="save CLEAN" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#16a34a;fontSize=13;fontColor=#14532d;labelBackgroundColor=#ffffff;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="1425" y="1200" as="sourcePoint" /><mxPoint x="990" y="1200" as="targetPoint" /></mxGeometry>
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1650" y="1265" as="sourcePoint" /><mxPoint x="990" y="1265" as="targetPoint" /></mxGeometry>
         </mxCell>
         <mxCell id="message-16" value="ACK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;strokeColor=#db2777;fontSize=13;fontColor=#831843;labelBackgroundColor=#ffffff;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry"><mxPoint x="1425" y="1265" as="sourcePoint" /><mxPoint x="1210" y="1265" as="targetPoint" /></mxGeometry>
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1650" y="1330" as="sourcePoint" /><mxPoint x="1415" y="1330" as="targetPoint" /></mxGeometry>
         </mxCell>
 
-        <mxCell id="footer-note" value="PostgreSQL stores metadata, status and Outbox events; MinIO carries the file bytes." style="shape=note;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#64748b;fontSize=13;fontColor=#334155;" vertex="1" parent="1">
-          <mxGeometry x="40" y="1310" width="950" height="48" as="geometry" />
+        <mxCell id="footer-note" value="The acceptance adapter reserves quota and persists metadata plus the Outbox event transactionally in PostgreSQL; MinIO carries the file bytes." style="shape=note;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#64748b;fontSize=13;fontColor=#334155;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1380" width="1250" height="48" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

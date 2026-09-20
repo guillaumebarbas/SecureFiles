@@ -427,6 +427,13 @@ Prompt :
 go trois pr (j'ai déja fait un backup), le mcp est lancé
 Resultat : Le backup a ete preserve et les trois branches ont ete construites depuis `origin/main` sans ecraser les changements existants.
 - - - - -
+- - - - -
+Prompt :
+Follow instructions in #prompt:create-securefiles-diagrams.prompt.md with these arguments: Fait un diagrame , diagrame de sequence pour le use_case download.
+
+Et je pense que le diagramme upload secure file , et sequence du read me doit etre mis à jour
+Resultat : Paire de diagrammes natifs draw.io ajoutee pour le download, sequence upload mise a jour pour la reservation de quota et l'Outbox, et README reference les vues detaillee et simplifiee.
+- - - - -
 
 - - - - -
 Prompt :
